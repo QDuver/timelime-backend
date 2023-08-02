@@ -3,32 +3,31 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from google.cloud import secretmanager
 import json
+import flask
+from flask_cors import CORS
 
-def get_secret(project_id, secret_id):
-    client = secretmanager.SecretManagerServiceClient()
-    secret_name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+app = flask.Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-    try:
-        response = client.access_secret_version(name=secret_name, )
-        return json.loads(response.payload.data.decode("UTF-8"))
-    except Exception as e:
-        print(f"Error retrieving secret: {e}")
-        return None
+client = secretmanager.SecretManagerServiceClient()
+secret_name = f"projects/82528465111/secrets/firestore_pulls/versions/latest"
 
-# Replace 'your_project_id' and 'your_secret_id' with your actual GCP project ID and secret ID.
-project_id = "82528465111"
-secret_id = "firestore_pulls"
+response = client.access_secret_version(name=secret_name, )
+secret = json.loads(response.payload.data.decode("UTF-8"))
 
-
-secret = get_secret(project_id, secret_id)
 cred = credentials.Certificate(secret)
-
 firebase_admin.initialize_app(cred)
-
 db = firestore.client()
-collection = db.collection("timelines")
 
-docs = collection.get()
+@app.route("/")
+def index():
+    return "Hello World!"
 
-for doc in docs:
-    print(doc.to_dict())
+@app.route("/data/<collection_name>")
+def get_timelines(collection_name):
+    docs = db.collection(collection_name).get()
+    json_data = [doc.to_dict() for doc in docs]
+    return json.dumps(json_data)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
