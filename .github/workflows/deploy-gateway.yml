@@ -23,9 +23,10 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Run script and save output
-      id: vars
-      run: echo "::set-output name=CONFIG_ID::$(python deploy-gateway.py)"
+    - name: Run Python script
+      run: |
+        python deploy-gateway.py
 
-    - name: Use the output
-      run: echo "The number is ${{ steps.vars.outputs.CONFIG_ID }}"
+    - name: Store number
+      run: |
+        echo "${RANDOM}" > number.txt
