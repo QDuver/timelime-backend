@@ -29,7 +29,7 @@ jobs:
 
     - name: Read generated ID from file
       id: read-id
-      run: echo "GENERATED_ID=$(cat generated_id.txt)" >> $GITHUB_ENV
+      run: echo "GENERATED_ID=$(cat config-id.txt)" >> $GITHUB_ENV
 
     - name: Use ID in another step
-      run: echo "The generated ID is $GENERATED_ID"
+      run: echo "The generated ID is ${{ env.GENERATED_ID }}"
