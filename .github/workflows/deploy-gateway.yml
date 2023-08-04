@@ -27,5 +27,9 @@ jobs:
       run: |
         python deploy-gateway.py
 
+    - name: Read generated ID from file
+      id: read-id
+      run: echo "::set-env name=CONFIG_ID::$(cat config-id.txt)"
+
     - name: Use ID in another step
-      run: echo "The printed ID is ${{ steps.python-step.outputs.id }}"
+      run: echo "The generated ID is $CONFIG_ID"
