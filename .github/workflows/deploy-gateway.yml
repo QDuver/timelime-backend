@@ -30,3 +30,15 @@ jobs:
     - name: Store number
       run: |
         echo "${RANDOM}" > number.txt
+
+  use-number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Use number
+        run: |
+          with open("number.txt", "r") as f:
+            number = int(f.read())
+          echo "The number is ${number}
