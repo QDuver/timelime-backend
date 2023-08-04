@@ -23,6 +23,10 @@ db = firestore.client()
 def index():
     return "Hello World!"
 
+@app.route("/quentin")
+def get_quentin():
+    return "Hello Quentin!"
+
 @app.route("/data/<collection_name>")
 def get_timelines(collection_name):
     docs = db.collection(collection_name).get()
