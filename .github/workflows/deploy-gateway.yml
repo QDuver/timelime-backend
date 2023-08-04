@@ -31,6 +31,9 @@ jobs:
       id: read-id
       run: echo "GENERATED_ID=$(cat config-id.txt)" >> $GITHUB_ENV
 
+    - name: chmod
+      run: chmod +x gcloud_build_image.sh
+
     - name: Deploy ESPV2 image
       run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p timelime-dev
 
