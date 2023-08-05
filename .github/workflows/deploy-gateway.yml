@@ -18,6 +18,12 @@ jobs:
         service_account_email: ${{ secrets.GCP_EMAIL }}
         service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
+    - name: Configure Docker
+      run: gcloud auth configure-docker europe-west2-docker.pkg.dev
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
     - name: Build Docker image
       run: docker build . -t timelime-backend-img
 
