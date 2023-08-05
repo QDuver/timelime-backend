@@ -31,6 +31,7 @@ jobs:
       run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --region europe-west2 --no-allow-unauthenticated
 
 
+
     # - name: Set up Python
     #   uses: actions/setup-python@v2
     #   with:
