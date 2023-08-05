@@ -19,16 +19,16 @@ jobs:
         service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
     - name: Build Docker image
-      run: docker build . -t timelime-bakend-img
+      run: docker build . -t timelime-backend-img
 
     - name: Tag Docker image
-      run: docker tag timelime-bakend-img:latest europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-bakend/timelime-bakend-img:latest
+      run: docker tag timelime-backend-img:latest europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Push image
-      run: docker push europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-bakend/timelime-bakend-img:latest
+      run: docker push europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-bakend --image europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-bakend/timelime-bakend-img:latest --region europe-west2 --no-allow-unauthenticated
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --region europe-west2 --no-allow-unauthenticated
 
 
     # - name: Set up Python
