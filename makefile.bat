@@ -11,4 +11,6 @@ curl -X POST \
      -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
      -H "Content-Type: application/json" \
      -d @request_payload.json https://<CLOUD_RUN_SERVICE_URL>
-     
+
+
+curl -X POST "https://oauth2.googleapis.com/token" -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=$(cat secrets/timelime-dev-7f677154d05e.json)"
