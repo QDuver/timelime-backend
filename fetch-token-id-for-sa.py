@@ -14,9 +14,9 @@ def make_authorized_get_request():
     """
 
     # Cloud Run uses your service's hostname as the `audience` value
-    # audience = 'https://timelime-backend-private-uavkhjofda-nw.a.run.app'
+    # audience = 'https://timelime-backend-uavkhjofda-nw.a.run.app'
     # # For Cloud Run, `endpoint` is the URL (hostname + path) receiving the request
-    endpoint = 'https://timelime-backend-private-uavkhjofda-nw.a.run.app/quentin'
+    endpoint = 'https://timelime-backend-uavkhjofda-nw.a.run.app/quentin'
 
 
     # auth_req = google.auth.transport.requests.Request()
