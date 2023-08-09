@@ -9,13 +9,13 @@ from flask import request, jsonify
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# client = secretmanager.SecretManagerServiceClient()
-# secret_name = f"projects/82528465111/secrets/firestore_pulls/versions/latest"
+client = secretmanager.SecretManagerServiceClient()
+secret_name = f"projects/82528465111/secrets/firestore_pulls/versions/latest"
 
-# response = client.access_secret_version(name=secret_name, )
-# secret = json.loads(response.payload.data.decode("UTF-8"))
+response = client.access_secret_version(name=secret_name, )
+secret = json.loads(response.payload.data.decode("UTF-8"))
 
-secret = 'secrets/timelime-dev-7f677154d05e.json'
+# secret = 'secrets/timelime-dev-7f677154d05e.json'
 
 cred = credentials.Certificate(secret)
 fbapp = firebase_admin.initialize_app(cred)
