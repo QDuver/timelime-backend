@@ -21,6 +21,8 @@ cred = credentials.Certificate(secret)
 fbapp = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+users = db.collection('users').get()
+users = [user.to_dict()['email'] for user in users]
 
 def token_required(route_function):
     def decorated_function(*args, **kwargs):
@@ -33,6 +35,9 @@ def token_required(route_function):
             
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
+        
+        if decoded_token['email'] not in users:
+            return jsonify({"message": "Invalid user"}), 401
         
         return route_function(*args, **kwargs)
     
