@@ -8,8 +8,7 @@ schemes:
   - https
 produces:
   - application/json
-security:
-- firebase: []
+
 
 paths:
   /quentinoo:
@@ -34,3 +33,6 @@ paths:
       x-google-issuer: "https://securetoken.google.com/timelime-dev"
       x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
       x-google-audiences: "timelime-dev"
+
+security:
+  - firebase: []
