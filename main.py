@@ -12,6 +12,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def get_creds():
+    print(compute_engine.Credentials())
+    print(compute_engine.Credentials().project_id)
+    print(compute_engine.Credentials().__dict__.project_id)
     try:
         print(compute_engine.Credentials().project_id)
         client = secretmanager.SecretManagerServiceClient()
