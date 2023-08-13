@@ -12,14 +12,15 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def get_creds():
-    if not(compute_engine.project_id):
-        secret = 'secrets/timelime-dev-7f677154d05e.json'
-    else:
+    try:
+        print(compute_engine.Credentials().project_id)
         client = secretmanager.SecretManagerServiceClient()
         secret_name = f"projects/{compute_engine.project_number}/secrets/GCP_CREDENTIALS/versions/latest"
 
         response = client.access_secret_version(name=secret_name, )
         secret = json.loads(response.payload.data.decode("UTF-8"))
+    except:
+        secret = 'secrets/timelime-dev-7f677154d05e.json'
 
     cred = credentials.Certificate(secret)
     return cred
