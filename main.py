@@ -6,19 +6,17 @@ import flask
 from flask_cors import CORS
 from flask import request, jsonify
 from google.auth import compute_engine
+import os
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def get_creds():
-    print(compute_engine.Credentials())
-    print(compute_engine.Credentials().__dict__)
-    print(compute_engine.Credentials().__dict__.project_id)
+    print(os.environ.get('GCP_PROJECT_NUMBER'))
     try:
-        print(compute_engine.Credentials().project_id)
         client = secretmanager.SecretManagerServiceClient()
-        secret_name = f"projects/{compute_engine.project_number}/secrets/GCP_CREDENTIALS/versions/latest"
+        secret_name = f"projects/{os.environ.get('GCP_PROJECT_NUMBER')}/secrets/GCP_CREDENTIALS/versions/latest"
 
         response = client.access_secret_version(name=secret_name, )
         secret = json.loads(response.payload.data.decode("UTF-8"))

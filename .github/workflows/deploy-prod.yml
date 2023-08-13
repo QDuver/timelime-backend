@@ -2,7 +2,7 @@ name: Push to Prod
 
 on:
   push:
-    branches: [ prod ]
+    branches: [ main ]
 
 jobs:
   run-script:
@@ -10,6 +10,7 @@ jobs:
     env:
       GCP_PROJECT_ID: timelime-prod
       GCP_EMAIL: main-219@timelime-prod.iam.gserviceaccount.com
+      GCP_PROJECT_NUMBER: 260031091728
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -37,7 +38,7 @@ jobs:
       run: docker push europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
 
 
 
@@ -58,7 +59,7 @@ jobs:
       run: chmod +x gcloud_build_image.sh
 
     - name: Deploy ESPV2 image
-      run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p {{ env.GCP_PROJECT_ID }}
+      run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p timelime-dev
 
     - name: Deploy ESPV2 service
-      run: gcloud run deploy gateway --image="gcr.io/{{ env.GCP_PROJECT_ID }}/endpoints-runtime-serverless:2.45.0-gateway-uavkhjofda-nw.a.run.app-${{ env.GENERATED_ID }}" --region europe-west2 --platform managed --project={{ env.GCP_PROJECT_ID }} --allow-unauthenticated
+      run: gcloud run deploy gateway --image="gcr.io/timelime-dev/endpoints-runtime-serverless:2.45.0-gateway-uavkhjofda-nw.a.run.app-${{ env.GENERATED_ID }}" --region europe-west2 --platform managed --project=timelime-dev --allow-unauthenticated

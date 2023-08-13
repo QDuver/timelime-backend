@@ -10,6 +10,7 @@ jobs:
     env:
       GCP_PROJECT_ID: timelime-dev
       GCP_EMAIL: main-641@timelime-dev.iam.gserviceaccount.com
+      GCP_PROJECT_NUMBER: 82528465111
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -37,7 +38,7 @@ jobs:
       run: docker push europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
 
 
 
