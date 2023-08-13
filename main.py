@@ -5,19 +5,26 @@ import json
 import flask
 from flask_cors import CORS
 from flask import request, jsonify
+from google.auth import compute_engine
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# client = secretmanager.SecretManagerServiceClient()
-# secret_name = f"projects/82528465111/secrets/firestore_pulls/versions/latest"
 
-# response = client.access_secret_version(name=secret_name, )
-# secret = json.loads(response.payload.data.decode("UTF-8"))
+def get_creds():
+    if not(compute_engine.project_id):
+        secret = 'secrets/timelime-dev-7f677154d05e.json'
+    else:
+        client = secretmanager.SecretManagerServiceClient()
+        secret_name = f"projects/{compute_engine.project_number}/secrets/GCP_CREDENTIALS/versions/latest"
 
-secret = 'secrets/timelime-dev-7f677154d05e.json'
+        response = client.access_secret_version(name=secret_name, )
+        secret = json.loads(response.payload.data.decode("UTF-8"))
 
-cred = credentials.Certificate(secret)
+    cred = credentials.Certificate(secret)
+    return cred
+
+cred = get_creds()
 fbapp = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
