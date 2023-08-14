@@ -37,7 +37,7 @@ def token_required(route_function):
         global user
         print(request.headers)
         try:
-            token = request.headers.get("Authorization")
+            token = request.headers.get("X-Forwarded-Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
             print(e, flush=True)
