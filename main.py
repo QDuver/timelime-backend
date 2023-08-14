@@ -35,7 +35,7 @@ user = None
 def token_required(route_function):
     def decorated_function(*args, **kwargs):
         global user
-        print(request.headers.get("Authorization"))
+        print(request.headers)
         try:
             token = request.headers.get("Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
