@@ -41,14 +41,8 @@ jobs:
     #   run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
 
 
-
-    # - name: Set up Python
-    #   uses: actions/setup-python@v2
-    #   with:
-    #     python-version: 3.8
-
-    # - name: Deploy endpoint config
-    #   run: gcloud endpoints services deploy openapi-run.yaml --project ${{ env.GCP_PROJECT_ID }}
+    - name: Deploy endpoint config
+      run: gcloud endpoints services deploy openapi-run.yaml --project ${{ env.GCP_PROJECT_ID }}
 
     - name: Run Python script
       run: |
