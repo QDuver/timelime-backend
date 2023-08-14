@@ -47,6 +47,9 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Deploy endpoint config
+      run: gcloud endpoints services deploy openapi-run.yaml --project ${{ env.GCP_PROJECT_ID }}
+
     - name: Run Python script
       run: |
         python deploy-gateway.py
