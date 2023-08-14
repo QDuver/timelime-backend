@@ -35,46 +35,101 @@ user = None
 def token_required(route_function):
     def decorated_function(*args, **kwargs):
         global user
-        print(request.headers)
         try:
-            token = request.headers.get("X-Forwarded-Authorization")
+            token = request.headers.get("X-Forwarded-Authorization") if 'X-Forwarded-Authorization' in request.headers else request.headers.get("Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
-            print(e, flush=True)
             return jsonify({"message": 'token error'}), 401
             
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
 
         
-        user = db.collection("users").where("email", "==", decoded_token['email']).limit(1)
+        user = db.collection("users").where("email", "==", decoded_token['email'])
 
         try:
-            user = user.get()[0].to_dict()   
+            uid = user.get()[0].id
+            user = user.get()[0].to_dict()
+            user['uid'] = uid
         except:
-            return jsonify({"message": "Invalid user"}), 401   
+            user = None  
 
         return route_function(*args, **kwargs)
     
     return decorated_function
 
+def generic_error_handler(func):
+    def decorator(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(e, flush=True)
+            response = {
+                'error': True,
+                'message': str(e),
+            }
+            return jsonify(response), 500  # Return a 500 Internal Server Error
+    return decorator
+
 @app.route("/", endpoint="index")
 @token_required
+@generic_error_handler
 def index():
-    print(user, flush=True)
     return "Hello World!"
 
-@app.route("/quentin", endpoint="get_quentin")
+@app.route("/auth", endpoint="get_auth")
 @token_required
-def get_quentin():
-    return "Hello Quentin!"
+@generic_error_handler
+def get_auth():
+    if(user):
+        return user
+    else:
+        return jsonify({"message": "User not found"})
+    
+@app.route("/user", methods=['POST'], endpoint="add_user")
+@token_required
+@generic_error_handler
+def add_user():
+    keys = ['email', 'displayName', 'emailVerified', 'photoURL']
+    user = {key: request.json[key] for key in keys if key in request.json}
+    print(user)
+    db.collection("users").add(user)
+    return json.dumps(user)
 
-@app.route("/data/<collection_name>", endpoint="get_timelines")
+@app.route("/timelines", endpoint="get_timelines")
 @token_required
-def get_timelines(collection_name):
-    docs = db.collection(collection_name).get()
-    json_data = [doc.to_dict() for doc in docs]
-    return json.dumps(json_data)
+@generic_error_handler
+def get_timelines():
+    print(user['uid'])
+    docs = db.collection('timelines').where("uid", "==", user['uid']).order_by("lastUsed", direction=firestore.Query.DESCENDING).get()
+    return json.dumps([dict(doc.to_dict(), id=doc.id) for doc in docs])
+
+@app.route("/timeline/<timeline_id>", endpoint="get_timeline")
+@token_required
+@generic_error_handler
+def get_timeline(timeline_id):
+    doc = db.collection('timelines').document(timeline_id).get()
+    doc_id = doc.id
+    doc = doc.to_dict()
+    doc['isEditable'] = not (user == None or doc['uid'] != user['uid'])
+    doc['restrictedAccess'] = not doc['isEditable'] and not doc['isPublic']
+    doc['id'] = doc_id
+    return json.dumps(doc)
+
+
+@app.route("/events/<timeline_id>", endpoint="get_events")
+@token_required
+@generic_error_handler
+def get_events(timeline_id):
+    docs = db.collection('events').where("tid", "==", timeline_id).get()
+    return json.dumps([dict(doc.to_dict(), id=doc.id) for doc in docs])
+
+@app.route("/categories/<timeline_id>", endpoint="get_categories")
+@token_required
+@generic_error_handler
+def get_categories(timeline_id):
+    docs = db.collection('categories').where("tid", "==", timeline_id).get()
+    return json.dumps([dict(doc.to_dict(), id=doc.id) for doc in docs])
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
