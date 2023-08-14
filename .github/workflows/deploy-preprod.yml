@@ -62,7 +62,7 @@ jobs:
       run: chmod +x gcloud_build_image.sh
 
     - name: Deploy ESPV2 image
-      run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p timelime-dev
+      run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p ${{ env.GCP_PROJECT_ID }}
 
     - name: Deploy ESPV2 service
-      run: gcloud run deploy gateway --image="gcr.io/timelime-dev/endpoints-runtime-serverless:2.45.0-gateway-uavkhjofda-nw.a.run.app-${{ env.GENERATED_ID }}" --region europe-west2 --platform managed --project=timelime-dev --service-account ${{env.GCP_EMAIL}}
+      run: gcloud run deploy gateway --image="gcr.io/${{ env.GCP_PROJECT_ID }}/endpoints-runtime-serverless:2.45.0-gateway-uavkhjofda-nw.a.run.app-${{ env.GENERATED_ID }}" --allow-unauthenticated --region europe-west2 --platform managed --project=${{ env.GCP_PROJECT_ID }} --service-account ${{env.GCP_EMAIL}}
