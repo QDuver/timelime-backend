@@ -21,7 +21,7 @@ def get_creds():
         response = client.access_secret_version(name=secret_name, )
         secret = json.loads(response.payload.data.decode("UTF-8"))
     except:
-        secret = 'secrets/timelime-dev-7f677154d05e.json'
+        secret = 'secrets/timelime-dev-sa.json'
 
     cred = credentials.Certificate(secret)
     return cred
