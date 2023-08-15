@@ -35,11 +35,17 @@ user = None
 def token_required(route_function):
     def decorated_function(*args, **kwargs):
         global user
+
         try:
             token = request.headers.get("X-Forwarded-Authorization") if 'X-Forwarded-Authorization' in request.headers else request.headers.get("Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
-            return jsonify({"message": 'token error'}), 401
+            print(e, flush=True)
+            return jsonify({"message": 'token expired'}), 401
+            if('Token expired' in str(e)):
+                return jsonify({"message": 'token expired'}), 401
+            else:
+                return jsonify({"message": 'token error'}), 401
             
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
