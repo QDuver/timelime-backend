@@ -41,7 +41,6 @@ def token_required(route_function):
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
             print(e, flush=True)
-            return jsonify({"message": 'token expired'}), 401
             if('Token expired' in str(e)):
                 return jsonify({"message": 'token expired'}), 401
             else:
@@ -125,10 +124,11 @@ def get_timeline(timeline_id):
 
 @app.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def get_events(timeline_id):
-    docs = db.collection('events').where("tid", "==", timeline_id).get()
-    return json.dumps([dict(doc.to_dict(), id=doc.id) for doc in docs])
+    events = events.get_events()
+
+    return json.dumps(merged)
 
 @app.route("/categories/<timeline_id>", endpoint="get_categories")
 @token_required
