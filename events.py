@@ -1,11 +1,24 @@
 from firestore_db import FirestoreDB
 from functools import cmp_to_key
 
+def create_or_edit_event(event):
+    db = FirestoreDB()
+    event.pop('categoryColor', None)
+    event.pop('categoryName', None)
+    if('id' in event and event['id']):
+        db.edit('events', event['id'], event)
+    else:
+        event.pop('id', None)
+        db.add('events', event)
+
+
+
+
 def get_events(timeline_id): 
     db = FirestoreDB()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [dict(event, isPressed = False, categoryColor = '#4a8098', categoryName = None, showCircle = False, isSticky = False ) for event in events]
-    events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate'] != None]
+    events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = db.get('categories', where=('tid', '==', timeline_id))
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
@@ -17,7 +30,7 @@ def merge_with_categories(events, categories):
     for event in events:
         for category in categories:
             if('categoryId' in event and event['categoryId'] == category['id']):
-                event['categoryColor'] = category['color'] if 'color' in category and category['color'] != None else '#4a8098'
+                event['categoryColor'] = category['color'] if 'color' in category and category['color'] else '#4a8098'
                 event['categoryName'] = category['name']
                 event['categoryId'] = category['id']
 
@@ -33,7 +46,10 @@ def merge_with_categories(events, categories):
 def create_end_events(events):
     end_events = []
     for event in events:
-        if('endDate' in event and event['endDate'] != None):
+        if('endDate' in event and event['endDate']):
+            print('end event', event['endDate'])
+            if(event['endDate'] == ''):
+                print(event)
             event['endEventId'] = 'end'+event['id']
             end_events.append({
                 'id': 'end'+event['id'],
@@ -73,11 +89,9 @@ def  splitDate(date):
         date = date[1:]
         isNegative = True
     
-    print('splitDate', date.split('-'), date.split('-')[0], isNegative, flush=True)
     rv = {
       'year': int(date.split('-')[0]) if not isNegative else int(date.split('-')[0]) * -1,
       'month': int(date.split('-')[1]) if len(date.split('-')) > 1 else None,
       'day': int(date.split('-')[2]) if len(date.split('-')) > 2 else None
     }
-    print(rv, flush=True)
     return rv

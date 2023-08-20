@@ -8,6 +8,7 @@ from firestore_db import FirestoreDB
 import events
 from google.cloud import secretmanager
 import os
+import time
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -88,11 +89,9 @@ def add_user():
 
 @app.route("/timelines", endpoint="get_timelines")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_timelines():
-    print(user, flush=True)
     timelines = db.get("timelines", where=('uid', '==', user['id']), order_by=('lastUsed', 'DESCENDING'))
-    print(timelines, flush=True)
     return json.dumps(timelines)
 
 @app.route("/timeline/<timeline_id>", endpoint="get_timeline")
@@ -100,6 +99,8 @@ def get_timelines():
 @generic_error_handler
 def get_timeline(timeline_id):
     doc = db.get("timelines", doc=timeline_id)
+    doc['lastUsed'] = int(time.time())
+    db.edit("timelines", timeline_id, doc)
     doc['isEditable'] = not (user == None or doc['uid'] != user['id'])
     doc['restrictedAccess'] = not doc['isEditable'] and not doc['isPublic']
     return json.dumps(doc)
@@ -107,11 +108,33 @@ def get_timeline(timeline_id):
 
 @app.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_events(timeline_id):
-    merged = events.get_events(timeline_id)
+    ev = events.get_events(timeline_id)
+    return json.dumps(ev)
 
-    return json.dumps(merged)
+@app.route("/events", endpoint="post_event", methods=['POST'])
+@token_required
+@generic_error_handler
+def post_event():
+    event = request.json
+    events.create_or_edit_event(event)
+    return json.dumps(event)
+
+
+@app.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
+@token_required
+@generic_error_handler
+def delete_event(event_id):
+    db.delete("events", event_id)
+    return json.dumps({})
+   
+@app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
+@token_required
+@generic_error_handler
+def delete_timeline(timeline_id):
+    db.delete("timelines", timeline_id)
+    return json.dumps({})
 
 @app.route("/categories/<timeline_id>", endpoint="get_categories")
 @token_required
@@ -122,4 +145,3 @@ def get_categories(timeline_id):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
-

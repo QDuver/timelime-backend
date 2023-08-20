@@ -6,6 +6,15 @@ class FirestoreDB:
     def __init__(self):
         self.db = firestore.client()
 
+    def delete(self, collection, doc):
+        return self.db.collection(collection).document(doc).delete()
+    
+    def edit(self, collection, doc, data):
+        return self.db.collection(collection).document(doc).update(data)
+
+    def add(self, collection, data):
+        return self.db.collection(collection).add(data)
+
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
         if doc:
