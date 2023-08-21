@@ -120,6 +120,21 @@ def get_timeline(timeline_id):
     return json.dumps(doc)
 
 
+@app.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
+@token_required
+# @generic_error_handler
+def edit_timeline():
+    timeline = request.json
+    db.edit("timelines", timeline['id'], timeline)
+    return json.dumps(timeline)
+
+@app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
+@token_required
+@generic_error_handler
+def delete_timeline(timeline_id):
+    db.delete("timelines", timeline_id)
+    return json.dumps({})
+
 @app.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
 @generic_error_handler
@@ -142,20 +157,26 @@ def post_event():
 def delete_event(event_id):
     db.delete("events", event_id)
     return json.dumps({})
-   
-@app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
-@token_required
-@generic_error_handler
-def delete_timeline(timeline_id):
-    db.delete("timelines", timeline_id)
-    return json.dumps({})
 
-@app.route("/categories/<timeline_id>", endpoint="get_categories")
+
+@app.route("/categories/<timeline_id>", endpoint="get_categories", methods=['GET'])
 @token_required
 @generic_error_handler
 def get_categories(timeline_id):
     categories = db.get("categories", where=('tid', '==', timeline_id))
     return json.dumps(categories)
+
+@app.route("/categories/<catgory_id>", endpoint="delete_category", methods=['DELETE'])
+@token_required
+@generic_error_handler
+def delete_category(catgory_id):
+    db.delete("categories", catgory_id)
+    events = db.get("events", where=('category', '==', catgory_id))
+    for event in events:
+        event['categoryId'] = None
+        events.create_or_edit_event(event)
+
+    return json.dumps({})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

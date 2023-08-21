@@ -3,6 +3,13 @@ from functools import cmp_to_key
 
 def create_or_edit_event(event):
     db = FirestoreDB()
+    if('categoryId' in event and event['categoryId']):
+        db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
+    else:
+        new_cat = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid']})
+        print(new_cat[1].id, flush=True)
+        event['categoryId'] = new_cat[1].id
+
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
     if('id' in event and event['id']):
@@ -32,24 +39,20 @@ def merge_with_categories(events, categories):
             if('categoryId' in event and event['categoryId'] == category['id']):
                 event['categoryColor'] = category['color'] if 'color' in category and category['color'] else '#4a8098'
                 event['categoryName'] = category['name']
-                event['categoryId'] = category['id']
+                event['categoryId'] = category['id']   
 
-    # unassignCatIdWhereEmptyCatName
+        if('categoryId' in event and event['categoryId'] not in [category['id'] for category in categories]):
+            event['categoryColor'] = None
+            event['categoryName'] = None
+            event['categoryId'] = None
+
     
-#   private unassignCatIdWhereEmptyCatName(events) {
-#     events
-#       .filter((event) => !event.categoryName && event.categoryId)
-#       .map((event) => (event.categoryId = null));
-#   }
     return events
 
 def create_end_events(events):
     end_events = []
     for event in events:
         if('endDate' in event and event['endDate']):
-            print('end event', event['endDate'])
-            if(event['endDate'] == ''):
-                print(event)
             event['endEventId'] = 'end'+event['id']
             end_events.append({
                 'id': 'end'+event['id'],
