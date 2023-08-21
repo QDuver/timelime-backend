@@ -45,6 +45,7 @@ def token_required(route_function):
             return jsonify({"message": "Invalid token"}), 401
         
         user = db.get("users", where=('email', '==', decoded_token['email']))[0]
+        print('USER', user, flush=True)
 
         return route_function(*args, **kwargs)
     
