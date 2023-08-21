@@ -35,7 +35,6 @@ def token_required(route_function):
             token = request.headers.get("X-Forwarded-Authorization") if 'X-Forwarded-Authorization' in request.headers else request.headers.get("Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
-            print(e, flush=True)
             if('Token expired' in str(e)):
                 return jsonify({"message": 'token expired'}), 401
             else:
@@ -43,9 +42,11 @@ def token_required(route_function):
             
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
-        
-        user = db.get("users", where=('email', '==', decoded_token['email']))[0]
-        print('USER', user, flush=True)
+
+        try:
+            user = db.get("users", where=('email', '==', decoded_token['email']))[0]
+        except:
+            user = None
 
         return route_function(*args, **kwargs)
     
@@ -72,7 +73,7 @@ def index():
 
 @app.route("/auth", endpoint="get_auth")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def get_auth():
     if(user):
         return user
@@ -83,9 +84,21 @@ def get_auth():
 @token_required
 @generic_error_handler
 def add_user():
+    existing_user = db.get("users", where=('email', '==', request.json['email']))
+    if(len(existing_user) > 0):
+        return json.dumps(existing_user[0])
+
     keys = ['email', 'displayName', 'emailVerified', 'photoURL']
     user = {key: request.json[key] for key in keys if key in request.json}
     db.db.collection("users").add(user)
+    return json.dumps(user)
+
+@app.route("/user", methods=['PUT'], endpoint="edit_user")
+@token_required
+@generic_error_handler
+def edit_user():
+    user = request.json
+    db.edit("users", user['id'], user)
     return json.dumps(user)
 
 @app.route("/timelines", endpoint="get_timelines")
