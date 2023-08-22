@@ -25,26 +25,27 @@ cred = credentials.Certificate(secret)
 firebase_admin.initialize_app(cred)
 db = FirestoreDB()
 
-
-
 def token_required(route_function):
     def decorated_function(*args, **kwargs):
         global user
+        global db
 
         try:
             token = request.headers.get("X-Forwarded-Authorization") if 'X-Forwarded-Authorization' in request.headers else request.headers.get("Authorization")
             decoded_token = firebase_admin.auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
+            print(e, flush=True)
             if('Token expired' in str(e)):
-                return jsonify({"message": 'token expired'}), 401
+                return jsonify({"message": 'Token expired'}), 401
             else:
-                return jsonify({"message": 'token error'}), 401
+                return jsonify({"message": 'Unauthorized'}), 401
             
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
 
         try:
             user = db.get("users", where=('email', '==', decoded_token['email']))[0]
+            db.set_user(user)
         except:
             user = None
 
@@ -65,11 +66,6 @@ def generic_error_handler(func):
             return jsonify(response), 500  # Return a 500 Internal Server Error
     return decorator
 
-@app.route("/", endpoint="index")
-@token_required
-@generic_error_handler
-def index():
-    return "Hello World!"
 
 @app.route("/auth", endpoint="get_auth")
 @token_required
@@ -82,20 +78,23 @@ def get_auth():
     
 @app.route("/user", methods=['POST'], endpoint="add_user")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def add_user():
     existing_user = db.get("users", where=('email', '==', request.json['email']))
     if(len(existing_user) > 0):
         return json.dumps(existing_user[0])
 
-    keys = ['email', 'displayName', 'emailVerified', 'photoURL']
-    user = {key: request.json[key] for key in keys if key in request.json}
-    db.db.collection("users").add(user)
+    if('id' in request.json): #email signup
+        db.add("users", request.json, request.json['id'])
+    else:
+        keys = ['email', 'displayName', 'photoURL']
+        user = {key: request.json[key] for key in keys if key in request.json}
+        db.add("users", user)
     return json.dumps(user)
 
 @app.route("/user", methods=['PUT'], endpoint="edit_user")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def edit_user():
     user = request.json
     db.edit("users", user['id'], user)
@@ -109,14 +108,20 @@ def get_timelines():
     return json.dumps(timelines)
 
 @app.route("/timeline/<timeline_id>", endpoint="get_timeline")
-@token_required
 @generic_error_handler
 def get_timeline(timeline_id):
     doc = db.get("timelines", doc=timeline_id)
     doc['lastUsed'] = int(time.time())
-    db.edit("timelines", timeline_id, doc)
-    doc['isEditable'] = not (user == None or doc['uid'] != user['id'])
-    doc['restrictedAccess'] = not doc['isEditable'] and not doc['isPublic']
+    try:
+        db.edit("timelines", timeline_id, doc)
+    except: 
+        pass
+
+    if(db.authedUser['id'] != doc['uid']):
+        if(not doc['isPublic']):
+            return jsonify({"message": "This timeline can only be viewed by its owner"}), 401
+        else:
+            doc['isEditable'] = False
     return json.dumps(doc)
 
 
@@ -134,7 +139,6 @@ def edit_timeline():
 def create_timeline():
     timeline = {'uid': user['id'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
-    print(timeline, flush=True)
     return json.dumps(timeline)
 
 @app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -148,7 +152,7 @@ def delete_timeline(timeline_id):
 @token_required
 @generic_error_handler
 def get_events(timeline_id):
-    ev = events.get_events(timeline_id)
+    ev = events.get_events(timeline_id, db)
     return json.dumps(ev)
 
 @app.route("/events", endpoint="post_event", methods=['POST'])
@@ -156,7 +160,7 @@ def get_events(timeline_id):
 @generic_error_handler
 def post_event():
     event = request.json
-    events.create_or_edit_event(event)
+    events.create_or_edit_event(event, db)
     return json.dumps(event)
 
 

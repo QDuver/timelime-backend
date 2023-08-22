@@ -1,12 +1,11 @@
 from firestore_db import FirestoreDB
 from functools import cmp_to_key
 
-def create_or_edit_event(event):
-    db = FirestoreDB()
+def create_or_edit_event(event, db):
     if('categoryId' in event and event['categoryId']):
         db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
     else:
-        event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid']})
+        event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
@@ -19,8 +18,7 @@ def create_or_edit_event(event):
 
 
 
-def get_events(timeline_id): 
-    db = FirestoreDB()
+def get_events(timeline_id, db): 
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [dict(event, isPressed = False, categoryColor = '#4a8098', categoryName = None, showCircle = False, isSticky = False ) for event in events]
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
