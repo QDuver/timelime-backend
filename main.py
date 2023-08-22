@@ -122,10 +122,19 @@ def get_timeline(timeline_id):
 
 @app.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def edit_timeline():
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
+    return json.dumps(timeline)
+
+@app.route("/timeline", endpoint="create_timeline", methods=['POST'])
+@token_required
+@generic_error_handler
+def create_timeline():
+    timeline = {'uid': user['id'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
+    timeline['id'] = db.add("timelines", timeline)
+    print(timeline, flush=True)
     return json.dumps(timeline)
 
 @app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])

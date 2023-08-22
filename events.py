@@ -6,9 +6,7 @@ def create_or_edit_event(event):
     if('categoryId' in event and event['categoryId']):
         db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
     else:
-        new_cat = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid']})
-        print(new_cat[1].id, flush=True)
-        event['categoryId'] = new_cat[1].id
+        event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid']})
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)

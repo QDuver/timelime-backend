@@ -13,7 +13,7 @@ class FirestoreDB:
         return self.db.collection(collection).document(doc).update(data)
 
     def add(self, collection, data):
-        return self.db.collection(collection).add(data)
+        return self.db.collection(collection).add(data)[1].id
 
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
