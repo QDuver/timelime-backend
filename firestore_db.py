@@ -13,19 +13,19 @@ class FirestoreDB:
 
     def forbid_if_too_many_entries(self, collection):
         print('forbid_if_too_many_entries', self.authedUser, flush=True)
-        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.authedUser['id']))) > 100):
+        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.authedUser['uid']))) > 100):
             raise Exception("You've reached the maximum quota of timelines")
 
-        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.authedUser['id']))) > 1000):
+        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.authedUser['uid']))) > 1000):
             raise Exception("You've reached the maximum quota of categories")
         
-        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.authedUser['id']))) > 1000):
+        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.authedUser['uid']))) > 1000):
             raise Exception("You've reached the maximum quota of events")
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
         idKey = 'uid' if collection != 'users' else 'id'
-        if(doc[idKey] != self.authedUser['id']):
+        if(doc[idKey] != self.authedUser['uid']):
             raise Exception('You are not the owner of this timeline')
 
     def delete(self, collection, doc):

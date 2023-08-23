@@ -9,6 +9,7 @@ import events
 from google.cloud import secretmanager
 import os
 import time
+import datetime
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -80,16 +81,15 @@ def get_auth():
 @token_required
 # @generic_error_handler
 def add_user():
+    print('add_user', request.json, flush=True)
     existing_user = db.get("users", where=('email', '==', request.json['email']))
     if(len(existing_user) > 0):
         return json.dumps(existing_user[0])
 
-    if('id' in request.json): #email signup
-        db.add("users", request.json, request.json['id'])
-    else:
-        keys = ['email', 'displayName', 'photoURL']
-        user = {key: request.json[key] for key in keys if key in request.json}
-        db.add("users", user)
+
+    keys = ['email', 'displayName', 'photoURL', 'uid']
+    user = {key: request.json[key] for key in keys if key in request.json}
+    db.add("users", user, doc_id=request.json['uid'])
     return json.dumps(user)
 
 @app.route("/user", methods=['PUT'], endpoint="edit_user")
@@ -97,14 +97,14 @@ def add_user():
 # @generic_error_handler
 def edit_user():
     user = request.json
-    db.edit("users", user['id'], user)
+    db.edit("users", user['uid'], user)
     return json.dumps(user)
 
 @app.route("/timelines", endpoint="get_timelines")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def get_timelines():
-    timelines = db.get("timelines", where=('uid', '==', user['id']), order_by=('lastUsed', 'DESCENDING'))
+    timelines = db.get("timelines", where=('uid', '==', user['uid']), order_by=('lastUsed', 'DESCENDING'))
     return json.dumps(timelines)
 
 @app.route("/timeline/<timeline_id>", endpoint="get_timeline")
@@ -117,7 +117,7 @@ def get_timeline(timeline_id):
     except: 
         pass
 
-    if(db.authedUser['id'] != doc['uid']):
+    if(db.authedUser['uid'] != doc['uid']):
         if(not doc['isPublic']):
             return jsonify({"message": "This timeline can only be viewed by its owner"}), 401
         else:
@@ -137,8 +137,10 @@ def edit_timeline():
 @token_required
 @generic_error_handler
 def create_timeline():
-    timeline = {'uid': user['id'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
+    timeline = {'uid': user['uid'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
+    default_event = {'uid': user['uid'], 'tid': timeline['id'], 'name': 'New event', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    events.create_or_edit_event(default_event, db)
     return json.dumps(timeline)
 
 @app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -150,7 +152,7 @@ def delete_timeline(timeline_id):
 
 @app.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def get_events(timeline_id):
     ev = events.get_events(timeline_id, db)
     return json.dumps(ev)

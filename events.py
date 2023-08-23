@@ -10,7 +10,7 @@ def create_or_edit_event(event, db):
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
     if('id' in event and event['id']):
-        db.edit('events', event['id'], event)
+        db.edit('events', event['id'], {**event, 'isDefault': False})
     else:
         event.pop('id', None)
         db.add('events', event)
@@ -19,8 +19,8 @@ def create_or_edit_event(event, db):
 
 
 def get_events(timeline_id, db): 
+    print('get_events', timeline_id, flush=True)
     events = db.get('events', where=('tid', '==', timeline_id))
-    events = [dict(event, isPressed = False, categoryColor = '#4a8098', categoryName = None, showCircle = False, isSticky = False ) for event in events]
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = db.get('categories', where=('tid', '==', timeline_id))
     events = merge_with_categories(events, categories)
