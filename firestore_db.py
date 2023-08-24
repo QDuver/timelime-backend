@@ -8,11 +8,9 @@ class FirestoreDB:
         self.db = firestore.client()
 
     def set_user(self, user):
-        print('SET USER', user, flush=True)
         self.authedUser = user
 
     def forbid_if_too_many_entries(self, collection):
-        print('forbid_if_too_many_entries', self.authedUser, flush=True)
         if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.authedUser['uid']))) > 100):
             raise Exception("You've reached the maximum quota of timelines")
 

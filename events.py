@@ -2,24 +2,32 @@ from firestore_db import FirestoreDB
 from functools import cmp_to_key
 
 def create_or_edit_event(event, db):
+    print('create_or_edit_event', event, flush=True)
     if('categoryId' in event and event['categoryId']):
         db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
     else:
+        print('creating category', flush=True)
         event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
+        print('created cateogry', event, flush=True)
 
+    print('COUCOU', flush=True)
     event.pop('categoryColor', None)
+    print(event, flush=True)
     event.pop('categoryName', None)
+    print(event, flush=True)
     if('id' in event and event['id']):
+        print('EDIT', flush=True)
         db.edit('events', event['id'], {**event, 'isDefault': False})
     else:
+        print('CREATE', flush=True)
         event.pop('id', None)
-        db.add('events', event)
+        event_id = db.add('events', event)
+        print(event_id, flush=True)
 
 
 
 
 def get_events(timeline_id, db): 
-    print('get_events', timeline_id, flush=True)
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = db.get('categories', where=('tid', '==', timeline_id))

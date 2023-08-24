@@ -47,7 +47,9 @@ def token_required(route_function):
         try:
             user = db.get("users", where=('email', '==', decoded_token['email']))[0]
             db.set_user(user)
-        except:
+        except Exception as e:
+            print('SETTING USER AS NONE')
+            print(e, flush=True)
             user = None
 
         return route_function(*args, **kwargs)
@@ -81,7 +83,6 @@ def get_auth():
 @token_required
 # @generic_error_handler
 def add_user():
-    print('add_user', request.json, flush=True)
     existing_user = db.get("users", where=('email', '==', request.json['email']))
     if(len(existing_user) > 0):
         return json.dumps(existing_user[0])
@@ -137,6 +138,7 @@ def edit_timeline():
 @token_required
 @generic_error_handler
 def create_timeline():
+    req = request.json #for some reason if I remove this, won't work
     timeline = {'uid': user['uid'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
     default_event = {'uid': user['uid'], 'tid': timeline['id'], 'name': 'New event', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}

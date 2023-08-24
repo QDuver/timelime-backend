@@ -11,7 +11,6 @@ def init_source(name):
     page = auth.list_users()
     while page:
         for user in page.users:
-            print(user)
             users.append(user)
         page = page.get_next_page()
 
@@ -21,7 +20,6 @@ def init_destination(name):
     destination = firebase_admin.initialize_app(cred, name=name)
     # destination_auth = auth.get_auth(destination)
     for user in users:
-        print(user)
         try:
             auth.create_user(
                 uid=user.uid,
