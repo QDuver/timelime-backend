@@ -4,12 +4,13 @@ import flask
 from firebase_admin import firestore, auth, credentials
 from flask import jsonify, request
 from flask_cors import CORS
-from firestore_db import FirestoreDB
+from firestore_db.firestore_db import FirestoreDB
 import events
 from google.cloud import secretmanager
 import os
 import time
 import datetime
+import custom_jwt.custom_jwt as custom_jwt
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -78,7 +79,14 @@ def get_auth():
         return user
     else:
         return jsonify({"message": "User not found"})
-    
+
+@app.route("/unauthed_token", endpoint="get_unauthed_token", methods=['POST'])
+@generic_error_handler
+def get_auth():
+    print(request.headers, flush=True)
+    token = custom_jwt.encode_token(request.headers, request.json['tempUserId'])
+    return jsonify({"token": token})
+
 @app.route("/user", methods=['POST'], endpoint="add_user")
 @token_required
 # @generic_error_handler
@@ -145,6 +153,16 @@ def create_timeline():
     events.create_or_edit_event(default_event, db)
     return json.dumps(timeline)
 
+@app.route("/unauthedTimeline", endpoint="create_unauthed_timeline", methods=['POST'])
+# @generic_error_handler
+def create_unauthed_timeline():
+    print(request.headers, flush=True)
+    print(request.json, flush=True)
+
+    # print(req.header['X-Service-Key'], flush=True)
+    return json.dumps({})
+
+
 @app.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
 @token_required
 @generic_error_handler
@@ -194,6 +212,7 @@ def delete_category(catgory_id):
         events.create_or_edit_event(event)
 
     return json.dumps({})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

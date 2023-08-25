@@ -1,4 +1,4 @@
-from firestore_db import FirestoreDB
+from firestore_db.firestore_db import FirestoreDB
 from functools import cmp_to_key
 
 def create_or_edit_event(event, db):
