@@ -1,13 +1,15 @@
-import openai
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email
 
-openai.api_key = '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'
+sg = SendGridAPIClient('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')
 
-response = openai.ChatCompletion.create(
-  model="gpt-3.5-turbo",
-  messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": ''' Generate a timeline of the Roman Empire. It has to be in JSON format with keys: title, description, startDate, endDate. endDate is optional. Max 20 events '''},
-    ]
-)
+html_content = "<p>Hello World!</p>"
 
-print(response['choices'][0]['message']['content'])
+message = Mail(
+    to_emails="quentin.duverge@gmail.com",
+    from_email=Email('quentin.duverge@gmail.com', "Your name"),
+    subject="Hello world",
+    html_content=html_content
+    )
+response = sg.send(message)

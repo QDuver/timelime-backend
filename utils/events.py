@@ -1,5 +1,6 @@
 from functools import cmp_to_key
 from flask import current_app as app
+import time 
 
 def create_or_edit_event(event):
     event['uid'] = app.config['user']['uid']
@@ -14,19 +15,29 @@ def create_or_edit_event(event):
         app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     else:
         event.pop('id', None)
+        event['lastUsed'] = int(time.time())
         event_id = app.config['db'].add('events', event)
         print(event_id, flush=True)
 
+def set_to_highlight(events):
+    filtered = [e for e in events if "lastUsed" in e]
+    if(len(filtered)== 0):
+        return events
+    lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
+    for event in events:
+        event['toHighlight'] = False
+        if(event == lastUsedEvent):
+            event['toHighlight'] = ((time.time() - event['lastUsed']) < 5)
+    return events
 
-
-
-def get_events(timeline_id): 
+def get_events(timeline_id):    
     events = app.config['db'].get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
+    events = set_to_highlight(events)
     return {'events': events, 'categories': categories}
 
 

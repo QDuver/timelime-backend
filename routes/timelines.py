@@ -3,7 +3,6 @@ from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators import token_required, generic_error_handler
 import utils.events as events
-import custom_jwt.custom_jwt as custom_jwt
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -52,12 +51,6 @@ def create_timeline():
     default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': 'New event', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(default_event)
     return json.dumps(timeline)
-
-@timeline_bp.route("/unauthed_timeline", endpoint="create_unauthed_timeline", methods=['POST'])
-@generic_error_handler
-def create_unauthed_timeline():
-    uid = custom_jwt.decode_token(request.json['token'], request.json['tempUserId'])['tempUserId']
-    return json.dumps({})
 
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])

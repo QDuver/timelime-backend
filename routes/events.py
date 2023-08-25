@@ -8,7 +8,7 @@ events_bp = Blueprint('events', __name__)
 
 @events_bp.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def get_events(timeline_id):
     ev = events.get_events(timeline_id)
     return json.dumps(ev)
@@ -24,7 +24,7 @@ def post_event():
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def delete_event(event_id):
     app.config['db'].delete("events", event_id)
     return json.dumps({})
