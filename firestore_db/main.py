@@ -22,8 +22,9 @@ class FirestoreDB:
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
-        idKey = 'uid' if collection != 'users' else 'id'
-        if(doc[idKey] != self.authedUser['uid']):
+        print(doc, flush=True)
+        print(self.authedUser, flush=True)
+        if(doc['uid'] != self.authedUser['uid']):
             raise Exception('You are not the owner of this timeline')
 
     def delete(self, collection, doc):

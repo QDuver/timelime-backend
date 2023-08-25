@@ -1,36 +1,29 @@
-from firestore_db.firestore_db import FirestoreDB
 from functools import cmp_to_key
+from flask import current_app as app
 
-def create_or_edit_event(event, db):
-    print('create_or_edit_event', event, flush=True)
+def create_or_edit_event(event):
+    event['uid'] = app.config['user']['uid']
     if('categoryId' in event and event['categoryId']):
-        db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
+        app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
     else:
-        print('creating category', flush=True)
-        event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
-        print('created cateogry', event, flush=True)
+        event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
 
-    print('COUCOU', flush=True)
     event.pop('categoryColor', None)
-    print(event, flush=True)
     event.pop('categoryName', None)
-    print(event, flush=True)
     if('id' in event and event['id']):
-        print('EDIT', flush=True)
-        db.edit('events', event['id'], {**event, 'isDefault': False})
+        app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     else:
-        print('CREATE', flush=True)
         event.pop('id', None)
-        event_id = db.add('events', event)
+        event_id = app.config['db'].add('events', event)
         print(event_id, flush=True)
 
 
 
 
-def get_events(timeline_id, db): 
-    events = db.get('events', where=('tid', '==', timeline_id))
+def get_events(timeline_id): 
+    events = app.config['db'].get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
-    categories = db.get('categories', where=('tid', '==', timeline_id))
+    categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
@@ -41,7 +34,7 @@ def merge_with_categories(events, categories):
     for event in events:
         for category in categories:
             if('categoryId' in event and event['categoryId'] == category['id']):
-                event['categoryColor'] = category['color'] if 'color' in category and category['color'] else '#4a8098'
+                event['categoryColor'] = category['color'] if 'color' in category and category['color'] else None
                 event['categoryName'] = category['name']
                 event['categoryId'] = category['id']   
 

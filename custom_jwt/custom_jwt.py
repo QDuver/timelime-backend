@@ -2,17 +2,12 @@ import jwt
 
 audience = 'time-lime'
 
-def encode_token(headers, key):
-    
-
-    payload = {
-        'aud': audience,  # Audience
-        'origin': headers['Origin'],  # Origin
-    }
-
-
-    token = jwt.encode(payload, key, algorithm='HS256')
-    return token
+def encode_token(headers, key): 
+    return jwt.encode({ 'aud': audience, 'origin': headers['Origin'], }, key, algorithm='HS256')
 
 def decode_token(token, key):
-    audience = jwt.decode(token, key, algorithms=['HS256'], audience=audience)
+    decoded = jwt.decode(token, key, algorithms=['HS256'], audience=audience)
+    if(decoded['aud'] != audience):
+        raise Exception('Invalid audience')
+    if 'localhost' not in decoded['origin'] and 'time-lime' not in decoded['origin'] and 'timelime' not in decoded['origin']: 
+        raise Exception('Invalid origin')
