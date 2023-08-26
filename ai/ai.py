@@ -7,7 +7,7 @@ response = openai.ChatCompletion.create(
   messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": '''
-        Generate a timeline of the Roman Empire. 
+        Generate a timeline of Henry VIII. 
         It has to be in JSON format with keys: title, description, startDate, endDate. endDate is optional. 
         Dates have to be in either YYYY-MM-DD or YYYY-MM or YYYY format.
         Max 20 events '''},
