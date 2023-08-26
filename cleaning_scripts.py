@@ -15,13 +15,14 @@ except:
 
 cred = credentials.Certificate(secret)
 firebase_admin.initialize_app(cred)
-db = FirestoreDB()
+# db = FirestoreDB()
+db = firestore.client()
 
-def delete_all_categories():
+def delete_all(collection):
 
-    cats = db.get('categories')
-    for cat in cats:
-        db.delete('categories', cat['id'])
+    docs = db.collection(collection)
+    for doc in docs.stream():
+        doc.reference.delete()
 
 
 def delete_all_my_first_event_events():
@@ -50,6 +51,4 @@ def assign_uid_to_categories():
             db.edit('categories', category['id'], {'uid': event['uid']})
 
 if __name__ == "__main__":
-    pass
-    delete_all_my_first_event_events()
-    delete_all_first_timelines()
+    delete_all('users')

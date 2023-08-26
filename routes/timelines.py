@@ -48,7 +48,7 @@ def create_timeline():
     print(app.config['user'], flush=True)
     timeline = {'uid': app.config['user']['uid'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = app.config['db'].add("timelines", timeline)
-    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': 'New event', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': 'Day I created my first timeline', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(default_event)
     return json.dumps(timeline)
 

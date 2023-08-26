@@ -41,7 +41,7 @@ def token_required(route_function):
             return jsonify({"message": "Invalid token"}), 401
 
         try:
-            current_app.config['user'] = current_app.config['db'].get("users", where=('email', '==', decoded_token['email']))[0]
+            current_app.config['user'] = current_app.config['db'].get("users", where=('uid', '==', decoded_token['uid']))[0]
             current_app.config['db'].set_user(current_app.config['user'])
         except Exception as e:
             print('SETTING USER AS NONE')

@@ -21,7 +21,7 @@ def create_or_edit_event(event):
 
 def set_to_highlight(events):
     filtered = [e for e in events if "lastUsed" in e]
-    if(len(filtered)== 0):
+    if(len(filtered) <= 1):
         return events
     lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
     for event in events:

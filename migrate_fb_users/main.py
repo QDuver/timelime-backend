@@ -1,17 +1,43 @@
 import firebase_admin
-from firebase_admin import auth, credentials
+from firebase_admin import auth, credentials, firestore
 
-users = []
+
+def migrate_to_firestore():
+
+    secret = './secrets/timelime-dev-sa.json'
+    cred = credentials.Certificate(secret)
+    firebase_admin.initialize_app(cred)
+    page = auth.list_users()
+    db = firestore.client()
+    while page:
+        for user in page.users:
+            data = user.__dict__['_data']
+            user2 = {'uid': data['localId']}
+            if('email' in data):
+                user2['email'] = data['email']
+            if('emailVerified' in data):
+                user2['emailVerified'] = data['emailVerified']
+            if('displayName' in data):
+                user2['displayName'] = data['displayName']
+            if('photoUrl' in data):
+                user2['photoUrl'] = data['photoUrl']
+
+            # print(user2)
+            db.collection('users').document(data['localId']).set(user2)
+            # users.append(user)
+        page = page.get_next_page()
+
 
 
 def init_source(name):
-    secret = 'migrate_fb_users/secrets/source.json'
+    secret = './secrets/timelime-dev-sa.json'
     cred = credentials.Certificate(secret)
     firebase_admin.initialize_app(cred)
     page = auth.list_users()
     while page:
         for user in page.users:
-            users.append(user)
+            print(user.__dict__, flush=True)
+            # users.append(user)
         page = page.get_next_page()
 
 def init_destination(name):
@@ -33,7 +59,7 @@ def init_destination(name):
             print(e)
             pass
 
-init_source('source')
-init_destination('destination')
+migrate_to_firestore()
+# init_destination('destination')
 
 

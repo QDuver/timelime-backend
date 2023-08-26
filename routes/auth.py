@@ -11,6 +11,7 @@ auth_bp = Blueprint('auth', __name__)
 @token_required
 # @generic_error_handler
 def get_auth():
+    print(app.config['user'], flush=True)
     if(app.config['user']):
         return app.config['user']
     else:
@@ -20,12 +21,12 @@ def get_auth():
 @token_required
 # @generic_error_handler
 def add_user():
-    existing_user = app.config['db'].get("users", where=('email', '==', request.json['email']))
+    existing_user = app.config['db'].get("users", where=('uid', '==', request.json['uid']))
     if(len(existing_user) > 0):
         return json.dumps(existing_user[0])
 
 
-    keys = ['email', 'displayName', 'photoURL', 'uid']
+    keys = ['email', 'displayName', 'photoURL', 'uid', 'emailVerified']
     user = {key: request.json[key] for key in keys if key in request.json}
     app.config['db'].add("users", user, doc_id=request.json['uid'])
     return json.dumps(user)
