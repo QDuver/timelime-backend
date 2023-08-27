@@ -1,1 +1,1 @@
-from .main import FirestoreDB
+from .firestore_db import FirestoreDB

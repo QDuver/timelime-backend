@@ -61,12 +61,13 @@ def create_end_events(events):
     end_events = []
     for event in events:
         if('endDate' in event and event['endDate']):
+            print('endDate', event['endDate'], flush=True)
             event['endEventId'] = 'end'+event['id']
             end_events.append({
                 'id': 'end'+event['id'],
                 'startDate': event['endDate'],
                 'isEndEvent': True,
-                'categoryColor': event['categoryColor'],
+                'categoryColor': event['categoryColor'] if 'categoryColor' in event else None,
             })
     return events + end_events
 

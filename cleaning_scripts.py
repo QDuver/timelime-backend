@@ -51,4 +51,5 @@ def assign_uid_to_categories():
             db.edit('categories', category['id'], {'uid': event['uid']})
 
 if __name__ == "__main__":
-    delete_all('users')
+    delete_all('timelines')
+    delete_all('events')
