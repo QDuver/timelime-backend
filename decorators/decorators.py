@@ -14,8 +14,6 @@ def token_required(route_function):
 
         if('X-Allow-Unauthorized' in request.headers):  
 
-            print('X-Allow-Unauthorized', flush=True)          
-
             secret_key = 'j8qxnvu7crbtc54dyi98'
             uid = request.headers['X-Allow-Unauthorized']
             hmac_hash = hmac.new(secret_key.encode('utf-8'), uid.encode('utf-8'), hashlib.sha256)
@@ -31,7 +29,6 @@ def token_required(route_function):
             token = request.headers.get("X-Forwarded-Authorization") if 'X-Forwarded-Authorization' in request.headers else request.headers.get("Authorization")
             decoded_token = auth.verify_id_token(token.split(" ")[1])
         except Exception as e:
-            print(e, flush=True)
             if('Token expired' in str(e)):
                 return jsonify({"message": 'Token expired'}), 401
             else:
@@ -44,7 +41,6 @@ def token_required(route_function):
             current_app.config['user'] = current_app.config['db'].get("users", where=('uid', '==', decoded_token['uid']))[0]
             current_app.config['db'].set_user(current_app.config['user'])
         except Exception as e:
-            print('SETTING USER AS NONE')
             print(e, flush=True)
             current_app.config['user'] = None
 

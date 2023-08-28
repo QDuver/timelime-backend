@@ -17,7 +17,6 @@ def create_or_edit_event(event):
         event.pop('id', None)
         event['lastUsed'] = int(time.time())
         event_id = app.config['db'].add('events', event)
-        print(event_id, flush=True)
 
 def set_to_highlight(events):
     filtered = [e for e in events if "lastUsed" in e]
@@ -62,7 +61,6 @@ def create_end_events(events):
     end_events = []
     for event in events:
         if('endDate' in event and event['endDate']):
-            print('endDate', event['endDate'], flush=True)
             event['endEventId'] = 'end'+event['id']
             end_events.append({
                 'id': 'end'+event['id'],

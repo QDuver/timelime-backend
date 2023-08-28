@@ -22,9 +22,7 @@ def migrate_to_firestore():
             if('photoUrl' in data):
                 user2['photoUrl'] = data['photoUrl']
 
-            # print(user2)
             db.collection('users').document(data['localId']).set(user2)
-            # users.append(user)
         page = page.get_next_page()
 
 
@@ -36,8 +34,6 @@ def init_source(name):
     page = auth.list_users()
     while page:
         for user in page.users:
-            print(user.__dict__, flush=True)
-            # users.append(user)
         page = page.get_next_page()
 
 def init_destination(name):

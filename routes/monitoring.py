@@ -2,9 +2,17 @@ from flask import Blueprint, jsonify, request
 from decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
 monitoring_bp = Blueprint('monitoring', __name__)
-client = error_reporting.Client()
-if('timelime' not in client._credentials.service_account_email):
-    client = error_reporting.Client.from_service_account_json('secrets/timelime-dev-sa.json')
+
+def get_local_credentials():
+    return error_reporting.Client.from_service_account_json('secrets/timelime-dev-sa.json')
+
+
+try:
+    client = error_reporting.Client()
+    if('timelime' not in client._credentials.service_account_email):
+        client = get_local_credentials()
+except:
+    client = get_local_credentials()
 
 @monitoring_bp.route("/report_error", endpoint="report_error", methods=['POST'])
 @token_required
@@ -17,3 +25,5 @@ def report_error():
         client.report_exception()
 
     return jsonify({"message": "Error reported"}), 200
+
+

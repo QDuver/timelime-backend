@@ -24,6 +24,7 @@ def get_timeline(timeline_id):
     if(not doc):
         return jsonify({"message": "Timeline not found"}), 404
     doc['lastUsed'] = int(time.time())
+    doc['isEditable'] = True
     try:
         db.edit("timelines", timeline_id, doc)
     except: 
@@ -57,7 +58,7 @@ def create_timeline():
     n_timelines = len(db.get("timelines", where=('uid', '==', app.config['user']['uid'])))
     timeline = {'uid': app.config['user']['uid'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
-    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Day I created my {utils.number_to_ordinal(n_timelines)} timeline', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Day I created my {utils.number_to_ordinal(n_timelines+1)} timeline', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(default_event)
     return json.dumps(timeline)
 
