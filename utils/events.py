@@ -34,6 +34,7 @@ def get_events(timeline_id):
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
     categories = [category for category in categories if 'name' in category and category['name']]
+    print(events, flush=True)
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
@@ -95,6 +96,7 @@ def custom_sort(a, b):
 
 
 def  splitDate(date):
+    date = str(date)
     isNegative = False
     if (date[0] == '-'):
         date = date[1:]

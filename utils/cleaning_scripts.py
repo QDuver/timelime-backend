@@ -4,6 +4,13 @@ from firestore_db import FirestoreDB, UnprotectedFirestoreDB
 
 db = UnprotectedFirestoreDB()
 
+def delete_timeline(timeline_id):
+    db.delete('timelines', timeline_id)
+    events = db.get('events', where=('tid', '==', timeline_id))
+    for event in events:
+        db.delete('events', event['id'])
+
+
 def delete_all(collection):
 
     docs = db.collection(collection)
