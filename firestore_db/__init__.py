@@ -1,1 +1,1 @@
-from .firestore_db import FirestoreDB
+from .firestore_db import FirestoreDB, UnprotectedFirestoreDB

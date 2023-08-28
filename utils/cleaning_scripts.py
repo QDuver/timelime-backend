@@ -1,22 +1,8 @@
-import json
-import firebase_admin
-from firebase_admin import firestore, auth, credentials
-from firestore_db import FirestoreDB
-from google.cloud import secretmanager
-import os
 
-try:
-    client = secretmanager.SecretManagerServiceClient()
-    secret_name = f"projects/{os.environ.get('GCP_PROJECT_NUMBER')}/secrets/GCP_CREDENTIALS/versions/latest"
-    response = client.access_secret_version(name=secret_name, )
-    secret = json.loads(response.payload.data.decode("UTF-8"))
-except:
-    secret = 'secrets/timelime-dev-sa.json'
 
-cred = credentials.Certificate(secret)
-firebase_admin.initialize_app(cred)
-# db = FirestoreDB()
-db = firestore.client()
+from firestore_db import FirestoreDB, UnprotectedFirestoreDB
+
+db = UnprotectedFirestoreDB()
 
 def delete_all(collection):
 
@@ -37,6 +23,14 @@ def delete_all_events_without_uid():
         if('uid' not in event):
             db.delete('events', event['id'])
 
+def delete_all_orphan_events():
+    events = db.get('events')
+    timelines = db.get('timelines')
+    tids = [timeline['id'] for timeline in timelines]
+    for event in events:
+        if('tid' in event and event['tid'] not in tids):
+            db.delete('events', event['id'])
+
 def delete_all_first_timelines():
     timelines = db.get('timelines')
     for timeline in timelines:
@@ -51,5 +45,4 @@ def assign_uid_to_categories():
             db.edit('categories', category['id'], {'uid': event['uid']})
 
 if __name__ == "__main__":
-    delete_all('timelines')
-    delete_all('events')
+    delete_all_orphan_events()

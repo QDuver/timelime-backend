@@ -18,7 +18,6 @@ def upload(name, title):
     user['uid'] = user['localId']
     db.set_user(user)
 
-    title = 'Space exploration'
     timeline = {'uid': user['uid'], 'name': title, 'isPublic': True, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
     for i, row in df.iterrows():
