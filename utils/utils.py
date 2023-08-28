@@ -7,5 +7,3 @@ def number_to_ordinal(n):
     }
     
     return ordinals.get(n, str(n) + "th")  # Default to "nth" for unsupported numbers
-
-print(number_to_ordinal(4))

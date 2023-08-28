@@ -10,6 +10,8 @@ def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
 
+        test_variable = 'TEST'
+
         if('X-Allow-Unauthorized' in request.headers):  
 
             print('X-Allow-Unauthorized', flush=True)          
@@ -19,9 +21,7 @@ def token_required(route_function):
             hmac_hash = hmac.new(secret_key.encode('utf-8'), uid.encode('utf-8'), hashlib.sha256)
             if(hmac_hash.hexdigest() == request.headers['Authorization'].split(" ")[1]):
                 user = {'uid': uid, 'isAnonymous': True}
-                print('user', user, flush=True)
                 current_app.config['db'].set_user(user)
-                print('current_app', current_app.config['db'].authedUser, flush=True)
                 current_app.config['user'] = user
                 return route_function(*args, **kwargs)
             else:
@@ -47,6 +47,7 @@ def token_required(route_function):
             print('SETTING USER AS NONE')
             print(e, flush=True)
             current_app.config['user'] = None
+
 
         return route_function(*args, **kwargs)
     

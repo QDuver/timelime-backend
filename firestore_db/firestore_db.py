@@ -10,6 +10,9 @@ class FirestoreDB:
     def set_user(self, user):
         self.authedUser = user
 
+    def is_anonymous_user(self):
+        return len(self.authedUser['uid']) < 12
+
     def forbid_if_too_many_entries(self, collection):
         if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.authedUser['uid']))) > 100):
             raise Exception("You've reached the maximum quota of timelines")
@@ -49,7 +52,10 @@ class FirestoreDB:
         if order_by:
             data = data.order_by(*order_by)
 
-        if not doc:
-            return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
-        if(doc):
-            return dict(data.get().to_dict(), id=doc)
+        try:
+            if not doc:
+                return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
+            if(doc):
+                return dict(data.get().to_dict(), id=doc)
+        except Exception as e:
+            return None

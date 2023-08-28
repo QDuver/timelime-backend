@@ -1,18 +1,15 @@
-import json
-import firebase_admin
 import flask
-from firebase_admin import credentials
 from flask_cors import CORS
 from firestore_db import FirestoreDB, firestore_init
 from utils import events as events
-import os
-from routes import timeline_bp, events_bp, auth_bp
+from routes import timeline_bp, events_bp, auth_bp, monitoring_bp
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.register_blueprint(timeline_bp)
 app.register_blueprint(events_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(monitoring_bp)
 
 firestore_init.init()
 
