@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
-from googleapiclient.discovery import build
+from utils.events import get_google_images
+
 other_bp = Blueprint('other', __name__)
 
 def get_local_credentials():
@@ -35,11 +36,5 @@ def report_error():
 @token_required
 @generic_error_handler
 def google_images():
-    API_KEY = "AIzaSyBl9-P8iSKJ_VXNAFnaaFPqb1XNaWVeluI"
-    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-
-    service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=request.json['query'], cx=SEARCH_ENGINE_ID, searchType="image").execute()
-    links = [link for link in result.get("items", [])]
-    print(links)
+    links = get_google_images(request.json['query'])
     return jsonify({"links": links}), 200

@@ -1,6 +1,7 @@
 import flask
 from flask_cors import CORS
-from firestore_db import FirestoreDB, firestore_init
+from firestore.firestore_db import FirestoreDB
+import firestore.firestore_init as firestore_init
 from utils import events as events
 from routes import timeline_bp, events_bp, auth_bp, other_bp
 

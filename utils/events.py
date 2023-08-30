@@ -1,6 +1,7 @@
 from functools import cmp_to_key
 from flask import current_app as app
 import time 
+from googleapiclient.discovery import build
 
 def create_or_edit_event(event):
     event['uid'] = app.config['user']['uid']
@@ -34,7 +35,6 @@ def get_events(timeline_id):
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
     categories = [category for category in categories if 'name' in category and category['name']]
-    print(events, flush=True)
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
@@ -108,3 +108,13 @@ def  splitDate(date):
       'day': int(date.split('-')[2]) if len(date.split('-')) > 2 else None
     }
     return rv
+
+
+def get_google_images(eventName):
+    API_KEY = "AIzaSyBl9-P8iSKJ_VXNAFnaaFPqb1XNaWVeluI"
+    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+
+    service = build("customsearch", "v1", developerKey=API_KEY)
+    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image").execute()
+    links = [link['link'] for link in result.get("items", [])]
+    return links

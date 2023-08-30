@@ -1,6 +1,7 @@
 
 
-from firestore_db import FirestoreDB, UnprotectedFirestoreDB
+from firestore.firestore_db import FirestoreDB, UnprotectedFirestoreDB
+from firebase_admin import firestore
 
 db = UnprotectedFirestoreDB()
 
@@ -13,6 +14,7 @@ def delete_timeline(timeline_id):
 
 def delete_all(collection):
 
+    db = firestore.client()
     docs = db.collection(collection)
     for doc in docs.stream():
         doc.reference.delete()
@@ -50,6 +52,3 @@ def assign_uid_to_categories():
         if('uid' not in category):
             event = db.get('event', where=('categoryId', '==', category['id']))[0]
             db.edit('categories', category['id'], {'uid': event['uid']})
-
-if __name__ == "__main__":
-    delete_all_orphan_events()

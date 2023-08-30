@@ -12,9 +12,10 @@ def generate(name, theme):
           {"role": "user", "content": f'''
           Generate a historic timeline of {theme},.
           It has to be in array of dictionnaries (JSON), each representing an event, with the following format: name, description, startDate, endDate. 
+          You can also label event with different categories, through fields categoryName and categoryColor.
           endDate is optional, but make sure you include at least 3 events which contain both startDate and endDate. 
           Dates have to be in either YYYY-MM-DD or YYYY-MM or YYYY format.
-          Max 18 events '''},
+          Max 25 events '''},
       ]
   )
 

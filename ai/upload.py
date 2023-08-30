@@ -1,5 +1,5 @@
 import pandas as pd
-from firestore_db import FirestoreDB, firestore_init
+from firestore.firestore_db import FirestoreDB
 from firebase_admin import auth
 import time
 from datetime import datetime
@@ -65,11 +65,10 @@ def process(df):
 
 
 def upload(name, title):
-    df = pd.read_csv(name+'.csv', index_col=False)
+    df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False)
     df = df.replace({np.nan: None})
     df = process(df)
 
-    firestore_init.init()
     db = FirestoreDB()
     user = auth.get_user_by_email('timelines.contact@gmail.com').__dict__['_data']
     user['uid'] = user['localId']
@@ -77,7 +76,9 @@ def upload(name, title):
 
     timeline = {'uid': user['uid'], 'name': title, 'isPublic': True, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
+    print('created', timeline['id'])
     for i, row in df.iterrows():
         event = {'uid': user['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+        event['imageURL'] = events.get_google_images(row['name'])[0]
         print(event)
         db.add('events', event)
