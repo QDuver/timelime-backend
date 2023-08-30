@@ -17,17 +17,17 @@ def create_or_edit_event(event):
     else:
         event.pop('id', None)
         event['lastUsed'] = int(time.time())
-        event_id = app.config['db'].add('events', event)
+        app.config['db'].add('events', event)
 
 def set_to_highlight(events):
     filtered = [e for e in events if "lastUsed" in e]
-    if(len(filtered) <= 1):
+    if(len(filtered) < 1):
         return events
     lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
     for event in events:
         event['toHighlight'] = False
         if(event == lastUsedEvent):
-            event['toHighlight'] = ((time.time() - event['lastUsed']) < 5)
+            event['toHighlight'] = ((time.time() - event['lastUsed']) < 10)
     return events
 
 def get_events(timeline_id):    

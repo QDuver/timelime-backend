@@ -40,6 +40,13 @@ def delete_all_orphan_events():
         if('tid' in event and event['tid'] not in tids):
             db.delete('events', event['id'])
 
+def delete_empty_timelines():
+    timelines = db.get('timelines')
+    for timeline in timelines:
+        events = db.get('events', where=('tid', '==', timeline['id']))
+        if(len(events) == 0):
+            db.delete('timelines', timeline['id'])
+
 def delete_all_first_timelines():
     timelines = db.get('timelines')
     for timeline in timelines:

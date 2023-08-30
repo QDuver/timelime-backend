@@ -17,27 +17,14 @@ def get_timelines():
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="get_timeline")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_timeline(timeline_id):
     db = app.config['db']
-    doc = db.get("timelines", doc=timeline_id)
-    if(not doc):
+    timeline = db.get("timelines", doc=timeline_id)
+    if(not timeline):
         return jsonify({"message": "Timeline not found"}), 404
-    doc['lastUsed'] = int(time.time())
-    doc['isEditable'] = True
-    try:
-        db.edit("timelines", timeline_id, doc)
-    except: 
-        pass
-
-    if(db.authedUser['uid'] != doc['uid']):
-        if(db.is_anonymous_user()):
-            return jsonify({"message": "This timeline has expired, Login to save your progress"}), 401
-        if(not doc['isPublic']):
-            return jsonify({"message": "This timeline can only be viewed by its owner"}), 401
-        else:
-            doc['isEditable'] = False
-    return json.dumps(doc)
+    timeline = process_timeline(db, timeline)
+    return json.dumps(timeline)
 
 
 @timeline_bp.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
@@ -47,6 +34,8 @@ def edit_timeline():
     db = app.config['db']
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
+    timeline = db.get("timelines", doc=timeline['id'])
+    timeline = process_timeline(db, timeline)
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline", endpoint="create_timeline", methods=['POST'])
@@ -55,10 +44,9 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    n_timelines = len(db.get("timelines", where=('uid', '==', app.config['user']['uid'])))
     timeline = {'uid': app.config['user']['uid'], 'name': 'New timeline', 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
-    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Day I created my {utils.number_to_ordinal(n_timelines+1)} timeline', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    default_event = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Day I created my new timeline', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(default_event)
     return json.dumps(timeline)
 
@@ -70,3 +58,22 @@ def delete_timeline(timeline_id):
     db = app.config['db']
     db.delete("timelines", timeline_id)
     return json.dumps({})
+
+
+def process_timeline(db, timeline):
+    timeline['lastUsed'] = int(time.time())
+    timeline['isEditable'] = True
+    try:
+        db.edit("timelines", timeline.id, timeline)
+    except: 
+        pass
+
+    if(db.authedUser['uid'] != timeline['uid']):
+        if(db.is_anonymous_user() and not timeline['isPublic']):
+            raise Exception('This timeline has expired, Login to save your progress')
+        if(not timeline['isPublic']):
+            raise Exception('This timeline is private')
+        else:
+            timeline['isEditable'] = False
+    
+    return timeline

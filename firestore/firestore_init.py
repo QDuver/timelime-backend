@@ -15,5 +15,4 @@ def init():
         secret = 'secrets/timelime-dev-sa.json'
 
     cred = credentials.Certificate(secret)
-    print('initialize_app')
     firebase_admin.initialize_app(cred)

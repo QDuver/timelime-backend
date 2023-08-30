@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from utils import events as events
 import numpy as np
+import re
 
 pd.set_option('display.max_columns', None)
 
@@ -31,18 +32,13 @@ def month_to_num(newDate):
             newDate = to_dd_mm_yyyy(newDate.strip())
     return newDate
 
-def handle_century(newDate):
-    if('th century' in newDate):
-        newDate = newDate.split('th century')[0]+'00'
-    return newDate
-
-
-
 def process_date(date):
     if(date == None): return None
     newDate = date.lower().strip()
     if('ac' in newDate): 
         newDate = '-'+newDate.replace('ac', '')
+    if('bce' in newDate):
+        newDate = '-'+newDate.replace('bce', '')
     if('bc' in newDate): 
         newDate = '-'+newDate.replace('bc', '')
     if('ad' in newDate):
@@ -51,22 +47,47 @@ def process_date(date):
     if(any(month in newDate for month in months)):
         newDate = month_to_num(newDate)
     
-    newDate = handle_century(newDate)   
-    if(newDate == 'present'):
+    if(newDate == 'present' or newDate == 'ongoing' ):
         newDate = datetime.now().year
 
     return str(newDate).strip()
 
 
+def handle_centuries(event):
+    if('century' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
+        event['endDate'] = str(int(event['startDate']) + 100)
+    return event
+
+def handle_decades(event):
+    if('s' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group()
+        event['endDate'] = str(int(event['startDate']) + 10)
+    return event
+
 def process(df):
     df['startDate'] = df['startDate'].apply(lambda x: process_date(x))
     df['endDate'] = df['endDate'].apply(lambda x: process_date(x))
+    df  = df.apply(lambda x: handle_centuries(x), axis=1)
+    df  = df.apply(lambda x: handle_decades(x), axis=1)
     return df
 
 
+def vaildate_date(date):
+    if(date == None): return
+    splitDate = events.splitDate(date)
+    if(splitDate['year'] < -271822 or splitDate['year'] > 271822):
+        raise Exception('year is out of range')
+
+def validate_dates(startDate, endDate):
+    if(startDate == None or endDate == None): return
+    if(startDate > endDate):
+        raise Exception('startDate is after endDate')
+
 def upload(name, title):
-    df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False)
+    df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
+    df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = process(df)
 
     db = FirestoreDB()
@@ -74,11 +95,15 @@ def upload(name, title):
     user['uid'] = user['localId']
     db.set_user(user)
 
-    timeline = {'uid': user['uid'], 'name': title, 'isPublic': True, 'lastUsed': int(time.time())}
+    timeline = {'uid': user['uid'], 'name': title, 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
     print('created', timeline['id'])
     for i, row in df.iterrows():
-        event = {'uid': user['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
-        event['imageURL'] = events.get_google_images(row['name'])[0]
-        print(event)
-        db.add('events', event)
+        try:
+            vaildate_date(row['startDate'])
+            vaildate_date(row['endDate'])
+            event = {'uid': user['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+            event['imageURL'] = events.get_google_images(row['name'])[0]
+            db.add('events', event)
+        except Exception as e:
+            print('error', e, 'could not load event', row.to_dict())

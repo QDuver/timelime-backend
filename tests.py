@@ -1,8 +1,4 @@
-from ai import ai
-ai.main()
+import datetime
 
-# from firestore_db import firestore_init
-# firestore_init.init()
-# from utils import cleaning_scripts
-# cleaning_scripts.delete_all_first_timelines()
-
+date = datetime.datetime(-500, 1, 1)
+print(date)
