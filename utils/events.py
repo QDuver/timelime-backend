@@ -39,8 +39,32 @@ def get_events(timeline_id):
     events = create_end_events(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
     events = set_to_highlight(events)
+    events = create_step_dates(events)
+    events = sorted(events, key=cmp_to_key(custom_sort))
     return {'events': events, 'categories': categories}
 
+
+def create_step_dates(events):
+    possible_gaps = [10000, 5000, 2500, 1000, 500, 250, 100, 50, 25, 10, 5, 2, 1]
+    unique_event_years = list(set([splitDate(event['startDate'])['year'] for event in events]))
+    first_year = splitDate(events[0]['startDate'])['year']
+    last_year = splitDate(events[-1]['startDate'])['year']
+    absolute_gap = last_year - first_year
+    gap_to_events = absolute_gap / (len(events) / 2)
+    step = min(possible_gaps, key=lambda x:abs(x-gap_to_events))
+    all_step_dates = []
+    for i in range(0, first_year, -step):
+        all_step_dates.append(i)
+    for i in range(0, last_year, step):
+        all_step_dates.append(i)
+    all_step_dates = list(set([date for date in all_step_dates if date > first_year and date < last_year and date not in unique_event_years]))
+    for date in all_step_dates:
+        events.append({
+            "name": str(date),
+            "startDate": str(date),
+            "isStepDate": True,
+        })
+    return events
 
 def merge_with_categories(events, categories):
     for event in events:

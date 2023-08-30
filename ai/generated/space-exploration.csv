@@ -1,25 +1,40 @@
 name,description,startDate,endDate
-Space Race Begins,Competition between the Soviet Union and the United States to explore outer space.,1955,
-Launch of Sputnik 1,"The Soviet Union successfully launches the world's first artificial satellite, initiating the Space Age.",1957-10-04,
-Launch of Explorer 1,The United States successfully launches its first satellite in response to the Sputnik launch.,1958-01-31,
-Yuri Gagarin becomes the First Human in Space,"Soviet cosmonaut Yuri Gagarin completes one orbit around the Earth aboard Vostok 1, becoming the first human in space.",1961-04-12,
-Alan Shepard becomes the First American in Space,"American astronaut Alan Shepard completes a suborbital spaceflight aboard Freedom 7, becoming the first American in space.",1961-05-05,
-John F. Kennedy's Moon Speech,President John F. Kennedy delivers a speech committing the United States to landing a man on the Moon before the end of the decade.,1961-05-25,
-Valentina Tereshkova becomes the First Woman in Space,Soviet cosmonaut Valentina Tereshkova becomes the first woman to travel to space aboard Vostok 6.,1963-06-16,
-Launch of Voskhod 1,"The Soviet Union launches the Voskhod 1 spacecraft, carrying a crew of three and becoming the first mission to have multiple astronauts on board.",1964-10-12,1964-10-13
-Gemini 3: First Manned Gemini Mission,"NASA's Gemini 3 spacecraft, piloted by Gus Grissom and John Young, performs three orbits of the Earth.",1965-03-23,
-Launch of Soyuz 1,"The Soviet Union launches Soyuz 1 with cosmonaut Vladimir Komarov aboard, but the mission ends in tragedy with Komarov's death during re-entry.",1967-04-23,1967-04-24
-Apollo 8: First Manned Mission to the Moon,"NASA's Apollo 8 mission, commanded by Frank Borman, becomes the first manned spacecraft to orbit the Moon.",1968-12-21,1968-12-27
-Apollo 11: First Moon Landing,"NASA's Apollo 11 mission, commanded by Neil Armstrong, successfully lands the first humans on the Moon.",1969-07-20,
-Launch of Salyut 1,"The Soviet Union launches Salyut 1, the world's first space station.",1971-04-19,
-Apollo-Soyuz Test Project,"The United States and the Soviet Union conduct a joint space mission, docking an Apollo spacecraft with a Soyuz spacecraft in orbit.",1975-07-15,1975-07-24
-Voyager 1 Launch,"NASA's Voyager 1 spacecraft is launched, later becoming the first human-made object to reach interstellar space.",1977-09-05,
-Launch of Space Shuttle Columbia,"NASA's Space Shuttle Columbia becomes the first operational space shuttle, beginning the era of reusable spacecraft.",1981-04-12,
-Mir Space Station Launch,"Soviet Union launches Mir, a modular space station that becomes the focus of long-duration human spaceflight for over a decade.",1986-02-20,
-Hubble Space Telescope Launch,"NASA's Hubble Space Telescope is launched, revolutionizing our understanding of the universe.",1990-04-24,
-International Space Station (ISS) Begins Assembly,Construction of the International Space Station begins with the launch of the Russian Zarya module.,1998-11-20,
-SpaceShipOne's First Spaceflight,"SpaceShipOne, a privately-funded spacecraft, becomes the first non-governmental crewed vehicle to reach space.",2004-06-21,
-New Horizons' Pluto Flyby,"NASA's New Horizons spacecraft conducts a flyby of Pluto, providing the first close-up images of the dwarf planet.",2015-07-14,
-Crew Dragon Demo-2: First Crewed SpaceX Mission,"NASA's Crew Dragon spacecraft, developed by SpaceX, launches astronauts Bob Behnken and Doug Hurley to the International Space Station.",2020-05-30,
-Artemis Program: NASA's Return to the Moon,"NASA announces the Artemis program, aiming to land the first woman and the next man on the Moon by 2024.",2019-03-27,
-Perseverance Rover Landing on Mars,NASA's Perseverance rover successfully lands on Mars to search for signs of ancient microbial life and collect samples for return to Earth.,2021-02-18,
+V-2 Rocket,"The V-2 rocket, developed by Germany during World War II, becomes the world's first long-range guided ballistic missile.",1944-10-03,1945-09-07
+Operation Paperclip,"The United States secretly recruits German scientists, including Wernher von Braun, who played a key role in the development of the V-2 rocket.",1945-05,
+Jet Propulsion Laboratory,Jet Propulsion Laboratory (JPL) is established by the US Army to develop guided missile technology.,1944-10,
+Soviet Union's R-1 Rocket,"The Soviet Union successfully tests its first guided ballistic missile, the R-1 rocket.",1948-10-22,
+NACA Established,The National Advisory Committee for Aeronautics (NACA) is established in the United States to conduct aerospace research.,1915-03-03,
+Intercontinental Ballistic Missile (ICBM),Both the United States and the Soviet Union develop Intercontinental Ballistic Missiles (ICBMs) capable of delivering nuclear warheads.,1957,1972
+Explorer 1,"The United States successfully launches Explorer 1, the first American satellite, into orbit.",1958-01-31,
+Sputnik 1,"The Soviet Union launches Sputnik 1, the world's first artificial satellite, marking the beginning of the Space Age.",1957-10-04,
+Luna 2,The Soviet Union's Luna 2 becomes the first human-made object to reach the Moon.,1959-09-12,
+Mercury-Redstone 3 (Freedom 7),"The United States launches its first human spaceflight mission, Mercury-Redstone 3, with astronaut Alan Shepard on board.",1961-05-05,
+Vostok 1,Yuri Gagarin becomes the first human to orbit the Earth aboard the Soviet spacecraft Vostok 1.,1961-04-12,
+Telstar 1,"Telstar 1, the world's first communication satellite, is launched into orbit by the United States.",1962-07-10,
+Mariner 2,"Mariner 2, an American space probe, becomes the first successful interplanetary mission, reaching Venus.",1962-08-27,
+Lunar Orbiter Program,The United States launches the Lunar Orbiter missions to photograph the Moon and scout potential landing sites for the Apollo program.,1966-08-10,1967-01-31
+Apollo 8,"Apollo 8 becomes the first manned spacecraft to orbit the Moon, with astronauts Frank Borman, Jim Lovell, and William Anders on board.",1968-12-21,
+Luna 16,"The Soviet Union's Luna 16 successfully returns a sample of lunar soil to Earth, marking the first unmanned sample return mission.",1970-09-20,
+Apollo 11,"Apollo 11, commanded by Neil Armstrong, lands on the Moon, making him the first person to set foot on its surface.",1969-07-20,
+Apollo-Soyuz Test Project,"The United States and the Soviet Union successfully carry out the Apollo-Soyuz Test Project, docking an American and a Soviet spacecraft in orbit.",1975,1976
+Viking 1,NASA's Viking 1 becomes the first spacecraft to land successfully on Mars.,1976-07-20,
+Voyager 2,"Voyager 2, launched by the United States, becomes the first spacecraft to fly by Jupiter, Saturn, Uranus, and Neptune.",1977-08-20,
+Space Shuttle Program,"The United States launches the Space Shuttle program, developing reusable spacecraft for various missions.",1981,2011
+Mir Space Station,"The Soviet Union launches the Mir Space Station, which becomes the first consistently inhabited long-duration space station.",1986-02-20,2001-03-23
+Hubble Space Telescope,"NASA launches the Hubble Space Telescope, providing unprecedented views of the universe.",1990-04-24,
+Mars Pathfinder,"NASA's Mars Pathfinder mission successfully lands a rover, named Sojourner, on Mars, marking the first successful Mars rover mission.",1997-07-04,
+International Space Station (ISS),"The United States and Russia begin construction of the International Space Station, which becomes the largest human-made structure in space.",1998,present
+Mars rovers Spirit and Opportunity,NASA's Mars rovers Spirit and Opportunity are launched and explore the Martian surface for several years.,2003,2010
+Discovery of Exoplanets,"The Kepler Space Telescope, launched by NASA, discovers thousands of exoplanets in other star systems.",2009,2018
+Mars Science Laboratory (Curiosity),"NASA's Mars Science Laboratory mission successfully lands the Curiosity rover on Mars, equipped with advanced scientific instruments.",2012-08-06,
+SpaceX Dragon,"SpaceX becomes the first privately-funded company to successfully launch and dock a spacecraft, the Dragon, to the International Space Station.",2012-05-22,
+Rosetta Mission,"ESA's Rosetta mission successfully orbits and lands on a comet, becoming the first mission to achieve this feat.",2004,2016
+New Horizons,"NASA's New Horizons spacecraft performs the first flyby of Pluto, providing detailed images and data of the distant dwarf planet.",2015-07-14,
+SpaceX Falcon Heavy,"SpaceX successfully launches the Falcon Heavy, the world's most powerful operational rocket, into space.",2018-02-06,
+Chang'e 4,China's Chang'e 4 mission becomes the first to land on the far side of the Moon.,2019-01-03,
+Artemis Program,"NASA announces the Artemis program, aiming to return humans to the Moon by 2024 and establish a sustainable lunar presence.",2019,
+Crew Dragon Demo-2,"SpaceX successfully launches the Crew Dragon spacecraft with NASA astronauts on board, marking the first crewed launch from American soil since 2011.",2020-05-30,
+Perseverance Rover,"NASA's Perseverance rover successfully lands on Mars, equipped with advanced instruments to search for signs of past microbial life.",2021-02-18,
+Artemis I,NASA plans the first launch of Space Launch System (SLS) and Orion spacecraft as part of the Artemis program.,2021,
+James Webb Space Telescope (JWST),"The James Webb Space Telescope, a joint project between NASA, ESA, and CSA, is scheduled for launch, aiming to explore the cosmos in unprecedented detail.",2021,
+Space Tourism,Private companies like SpaceX and Blue Origin begin offering space tourism experiences to individuals.,2021,present
