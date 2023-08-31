@@ -2,7 +2,7 @@ name: Push to Dev
 
 on:
   push:
-    branches: [ no-dev ]
+    branches: [ dev ]
 
 jobs:
   run-script:

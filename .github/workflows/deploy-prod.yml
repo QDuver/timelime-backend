@@ -2,7 +2,7 @@ name: Push to Prod
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
 
 jobs:
   run-script:
