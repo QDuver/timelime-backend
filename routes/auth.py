@@ -26,14 +26,14 @@ def add_user():
         return json.dumps(existing_user[0])
 
 
-    keys = ['email', 'displayName', 'photoURL', 'uid', 'emailVerified']
+    keys = ['email', 'displayName', 'photoURL', 'uid']
     user = {key: request.json[key] for key in keys if key in request.json}
     app.config['db'].add("users", user, doc_id=request.json['uid'])
     return json.dumps(user)
 
 @auth_bp.route("/user", methods=['PUT'], endpoint="edit_user")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def edit_user():
     user = request.json
     app.config['db'].edit("users", user['uid'], user)
