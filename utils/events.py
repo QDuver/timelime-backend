@@ -50,7 +50,7 @@ def create_step_dates(events):
     first_year = splitDate(events[0]['startDate'])['year']
     last_year = splitDate(events[-1]['startDate'])['year']
     absolute_gap = last_year - first_year
-    gap_to_events = absolute_gap / (len(events) / 2)
+    gap_to_events = absolute_gap / (len(events) / 4)
     step = min(possible_gaps, key=lambda x:abs(x-gap_to_events))
     all_step_dates = []
     for i in range(0, first_year, -step):

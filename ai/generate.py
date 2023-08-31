@@ -21,7 +21,6 @@ def generate(name, theme):
   )
 
   resp = response['choices'][0]['message']['content']
-  print(resp)
   obj = eval(resp)
   if(type(obj) == dict):
     obj = obj[list(obj.keys())[0]]
