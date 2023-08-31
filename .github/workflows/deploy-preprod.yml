@@ -2,7 +2,7 @@ name: Push to Dev
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ no-dev ]
 
 jobs:
   run-script:
@@ -38,7 +38,7 @@ jobs:
       run: docker push europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --allow-unauthenticated --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
 
 
     # - name: Deploy endpoint config
