@@ -5,6 +5,7 @@ from firebase_admin import credentials
 import os
 
 def init():
+    
 
     # try:
     client = secretmanager.SecretManagerServiceClient()
