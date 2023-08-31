@@ -15,3 +15,4 @@ def generate_image():
     )
 
     print(response["data"][0]["url"])
+    
