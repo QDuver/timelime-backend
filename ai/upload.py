@@ -1,5 +1,5 @@
 import pandas as pd
-from firestore.firestore_db import FirestoreDB
+from firestore.firestore_db import UnprotectedFirestoreDB
 from firebase_admin import auth
 import time
 from datetime import datetime
@@ -75,8 +75,8 @@ def process(df):
 
 def vaildate_date(date):
     if(date == None): return
-    splitDate = events.splitDate(date)
-    if(splitDate['year'] < -271822 or splitDate['year'] > 271822):
+    split_date = events.split_date(date)
+    if(split_date['year'] < -271822 or split_date['year'] > 271822):
         raise Exception('year is out of range')
 
 def validate_dates(startDate, endDate):
@@ -90,10 +90,9 @@ def upload(name, title):
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = process(df)
 
-    db = FirestoreDB()
-    user = auth.get_user_by_email('timelines.contact@gmail.com').__dict__['_data']
+    db = UnprotectedFirestoreDB()
+    user = auth.get_user_by_email('quentin.duverge@gmail.com').__dict__['_data']
     user['uid'] = user['localId']
-    db.set_user(user)
 
     timeline = {'uid': user['uid'], 'name': title, 'isPublic': False, 'lastUsed': int(time.time())}
     timeline['id'] = db.add("timelines", timeline)
