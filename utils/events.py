@@ -33,6 +33,8 @@ def set_to_highlight(events):
 def get_events(timeline_id):    
     events = app.config['db'].get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
+    if(len(events) < 1):
+        return {'events': [], 'categories': []}
     categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
     categories = [category for category in categories if 'name' in category and category['name']]
     events = merge_with_categories(events, categories)

@@ -58,6 +58,7 @@ class FirestoreDB:
             if(doc):
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
+            print(e, flush=True)
             return None
 
 

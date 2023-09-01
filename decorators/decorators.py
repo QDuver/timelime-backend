@@ -10,7 +10,7 @@ def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
 
-        test_variable = 'TEST'
+        print('token_required', flush=True)
 
         if('X-Allow-Unauthorized' in request.headers):  
 
@@ -37,8 +37,10 @@ def token_required(route_function):
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
 
+        print(decoded_token['uid'], flush=True)
         try:
             current_app.config['user'] = current_app.config['db'].get("users", where=('uid', '==', decoded_token['uid']))[0]
+            print(current_app.config['user'], flush=True)
             current_app.config['db'].set_user(current_app.config['user'])
         except Exception as e:
             print(e, flush=True)
