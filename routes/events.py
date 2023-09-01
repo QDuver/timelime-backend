@@ -1,7 +1,7 @@
 
 import json
 from flask import Blueprint, request, current_app as app
-from decorators import token_required, generic_error_handler
+from decorators.decorators import token_required, generic_error_handler
 import utils.events as events
 
 events_bp = Blueprint('events', __name__)

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from decorators import token_required, generic_error_handler
+from decorators.decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
 from utils.events import get_google_images
 

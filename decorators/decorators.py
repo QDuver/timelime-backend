@@ -5,6 +5,13 @@ import firebase_admin
 from firebase_admin import auth
 import hashlib
 import hmac
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    get_remote_address,  # use the remote address of the client as the key to track
+    default_limits=["10 per second"]  # set the limit
+)
 
 def token_required(route_function):
 
@@ -37,14 +44,17 @@ def token_required(route_function):
         if not token or not decoded_token:
             return jsonify({"message": "Invalid token"}), 401
 
-        print(decoded_token['uid'], flush=True)
         try:
             current_app.config['user'] = current_app.config['db'].get("users", where=('uid', '==', decoded_token['uid']))[0]
-            print(current_app.config['user'], flush=True)
-            current_app.config['db'].set_user(current_app.config['user'])
         except Exception as e:
-            print(e, flush=True)
-            current_app.config['user'] = None
+            firebase_user = auth.get_user(decoded_token['uid']).__dict__['_data']
+            firebase_user['uid'] = firebase_user['localId']
+            keys = ['email', 'displayName', 'photoUrl', 'uid']
+            user = {key: firebase_user[key] for key in keys if key in firebase_user}
+            current_app.config['db'].add("users", user, doc_id=user['uid'])
+            current_app.config['user'] = user
+
+        current_app.config['db'].set_user(current_app.config['user'])
 
 
         return route_function(*args, **kwargs)
