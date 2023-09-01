@@ -20,8 +20,6 @@ def migrate_users(source_db, target_db):
             user2 = {'uid': data['localId']}
             if('email' in data):
                 user2['email'] = data['email']
-            if('emailVerified' in data):
-                user2['emailVerified'] = data['emailVerified']
             if('displayName' in data):
                 user2['displayName'] = data['displayName']
             if('photoUrl' in data):

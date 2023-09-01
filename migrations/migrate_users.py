@@ -29,7 +29,6 @@ def init_destination(name):
                 email=user.email,
                 display_name=user.display_name,
                 photo_url=user.photo_url,
-                email_verified=user.email_verified,
                 app=destination
         )
         except Exception as e:
