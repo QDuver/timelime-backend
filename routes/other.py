@@ -6,10 +6,11 @@ from utils.events import get_google_images
 other_bp = Blueprint('other', __name__)
 
 def get_error_reporting_client():
-    try:
-        client = error_reporting.Client()
-    except:
-        client = error_reporting.Client.from_service_account_json('secrets/timelime-dev-sa.json')
+    # try:
+    #     client = error_reporting.Client()
+    # except:
+    print('RECOMMENT THIS')
+    client = error_reporting.Client.from_service_account_json('secrets/timelime-dev-sa.json')
     return client
 
 @other_bp.route("/report_error", endpoint="report_error", methods=['POST'])

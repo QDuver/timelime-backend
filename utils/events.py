@@ -2,6 +2,7 @@ from functools import cmp_to_key
 from flask import current_app as app
 import time 
 from googleapiclient.discovery import build
+import time
 
 def create_or_edit_event(event):
     event['uid'] = app.config['user']['uid']
@@ -30,12 +31,14 @@ def set_to_highlight(events):
             event['toHighlight'] = ((time.time() - event['lastUsed']) < 10)
     return events
 
-def get_events(timeline_id):    
-    events = app.config['db'].get('events', where=('tid', '==', timeline_id))
+def get_events(db, timeline_id):    
+    start = time.time()
+    events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
+    print(events, flush=True)
     if(len(events) < 1):
         return {'events': [], 'categories': []}
-    categories = app.config['db'].get('categories', where=('tid', '==', timeline_id))
+    categories = db.get('categories', where=('tid', '==', timeline_id))
     categories = [category for category in categories if 'name' in category and category['name']]
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
@@ -43,14 +46,35 @@ def get_events(timeline_id):
     events = set_to_highlight(events)
     events = create_step_dates(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
+    events = set_scaling(events)
     return {'events': events, 'categories': categories}
 
 
+def set_scaling(events):
+    if(len(events) < 3):
+        return events
+    for event in events:
+        event['dateInDays'] = date_to_days(split_date(event['startDate'], 1))
+    totalDiffs = 0
+    for i, event in enumerate(events):
+        event['previousEventDiff'] = 0
+        if(i > 0):
+            diff = event['dateInDays'] - events[i-1]['dateInDays']
+            totalDiffs += diff
+            event['previousEventDiff'] = diff
+
+    maxHeight = len(events) * 25 * 3
+    for event in events:
+        ratio = event['previousEventDiff'] / totalDiffs
+        event['previousEventDistance'] = int(ratio * maxHeight)
+
+    return events
+
 def create_step_dates(events):
-    possible_gaps = [10000, 5000, 2500, 1000, 500, 250, 100, 50, 25, 10, 5, 2, 1]
-    unique_event_years = list(set([splitDate(event['startDate'])['year'] for event in events]))
-    first_year = splitDate(events[0]['startDate'])['year']
-    last_year = splitDate(events[-1]['startDate'])['year']
+    possible_gaps = [10000000000, 1000000000, 10000000, 1000000, 100000, 10000, 5000, 2500, 1000, 500, 250, 100, 50, 25, 10, 5, 2, 1]
+    unique_event_years = list(set([split_date(event['startDate'])['year'] for event in events]))
+    first_year = split_date(events[0]['startDate'])['year']
+    last_year = split_date(events[-1]['startDate'])['year']
     absolute_gap = last_year - first_year
     gap_to_events = absolute_gap / (len(events) / 4)
     step = min(possible_gaps, key=lambda x:abs(x-gap_to_events))
@@ -100,12 +124,12 @@ def create_end_events(events):
 def custom_sort(a, b):
     date1 = a['startDate']
     date2 = b['startDate']
-    year1 = splitDate(date1)['year']
-    month1 = splitDate(date1)['month']
-    day1 = splitDate(date1)['day']
-    year2 = splitDate(date2)['year']
-    month2 = splitDate(date2)['month']
-    day2 = splitDate(date2)['day']
+    year1 = split_date(date1)['year']
+    month1 = split_date(date1)['month']
+    day1 = split_date(date1)['day']
+    year2 = split_date(date2)['year']
+    month2 = split_date(date2)['month']
+    day2 = split_date(date2)['day']
 
     if (year1 < year2): return -1
     if (year1 > year2): return 1
@@ -121,7 +145,12 @@ def custom_sort(a, b):
     return 0
 
 
-def  splitDate(date):
+def date_to_days(date):
+    return date['year'] * 365 + date['month'] * 30 + date['day']
+
+
+def  split_date(date, default=None):
+
     date = str(date)
     isNegative = False
     if (date[0] == '-'):
@@ -130,8 +159,8 @@ def  splitDate(date):
     
     rv = {
       'year': int(date.split('-')[0]) if not isNegative else int(date.split('-')[0]) * -1,
-      'month': int(date.split('-')[1]) if len(date.split('-')) > 1 else None,
-      'day': int(date.split('-')[2]) if len(date.split('-')) > 2 else None
+      'month': int(date.split('-')[1]) if len(date.split('-')) > 1 else default,
+      'day': int(date.split('-')[2]) if len(date.split('-')) > 2 else default
     }
     return rv
 

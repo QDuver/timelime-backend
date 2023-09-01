@@ -10,7 +10,7 @@ events_bp = Blueprint('events', __name__)
 @token_required
 # @generic_error_handler
 def get_events(timeline_id):
-    ev = events.get_events(timeline_id)
+    ev = events.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
 
 @events_bp.route("/events", endpoint="post_event", methods=['POST'])
