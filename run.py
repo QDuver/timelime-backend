@@ -4,9 +4,14 @@ from firestore.firestore_db import FirestoreDB
 import firestore.firestore_init as firestore_init
 from utils import events as events
 from routes import timeline_bp, events_bp, auth_bp, other_bp
+from decorators.decorators import limiter
 
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+limiter.init_app(app)
+
+
+
 app.register_blueprint(timeline_bp)
 app.register_blueprint(events_bp)
 app.register_blueprint(auth_bp)

@@ -1,7 +1,7 @@
 import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
-from decorators import token_required, generic_error_handler
+from decorators.decorators import token_required, generic_error_handler
 import utils.events as events
 from utils import utils
 

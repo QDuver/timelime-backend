@@ -1,6 +1,5 @@
 from firebase_admin import firestore
-
-
+from decorators.decorators import limiter
 class FirestoreDB: 
 
     authedUser = None
@@ -32,17 +31,20 @@ class FirestoreDB:
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).delete()
     
+    @limiter.limit("30/minute")
     def edit(self, collection, doc, data):
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).update(data)
 
+    @limiter.limit("20/minute")
     def add(self, collection, data, doc_id=None):
         self.forbid_if_too_many_entries(collection)
         if(doc_id):
             return self.db.collection(collection).document(doc_id).set(data)
         else:
             return self.db.collection(collection).add(data)[1].id
-
+        
+    @limiter.limit("10/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
         if doc:
@@ -58,6 +60,7 @@ class FirestoreDB:
             if(doc):
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
+            print(e, flush=True)
             return None
 
 

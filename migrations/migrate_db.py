@@ -65,5 +65,19 @@ def migrate_example_timelines(source_db, target_db):
     target_db.collection('timelines').document('bAIsSOGstg4ySzHAKV59').set(source_timeline.to_dict())
 
 
+def change_timeline_uid(db, old, new):
+    events = db.collection('events').where('uid', '==', old).get()
+    categories = db.collection('categories').where('uid', '==', old).get()
+    timelines = db.collection('timelines').where('uid', '==', old).get()
+    for event in events:
+        db.collection('events').document(event.id).update({'uid': new})
+    for category in categories:
+        db.collection('categories').document(category.id).update({'uid': new})
+    for timeline in timelines:
+        db.collection('timelines').document(timeline.id).update({'uid': new})
+    
+
+
+
 source_db, target_db = init_projects()
-migrate_example_timelines(source_db, target_db)
+change_timeline_uid(target_db, 'FVg4I6uvlqY4P8wjvFNdIQcb6Tt1', 'ZhPpeqGHXVRZ73ohiwzhYtFFZ7O2')

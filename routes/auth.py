@@ -1,7 +1,7 @@
 
 import json
 from flask import Blueprint, request, jsonify, current_app as app
-from decorators import token_required, generic_error_handler
+from decorators.decorators import token_required, generic_error_handler
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email
 auth_bp = Blueprint('auth', __name__)
@@ -9,27 +9,10 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route("/auth", endpoint="get_auth")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_auth():
-    print(app.config['user'], flush=True)
-    if(app.config['user']):
-        return app.config['user']
-    else:
-        return jsonify({"message": "User not found"})
+    return app.config['user']
 
-@auth_bp.route("/user", methods=['POST'], endpoint="add_user")
-@token_required
-# @generic_error_handler
-def add_user():
-    existing_user = app.config['db'].get("users", where=('uid', '==', request.json['uid']))
-    if(len(existing_user) > 0):
-        return json.dumps(existing_user[0])
-
-
-    keys = ['email', 'displayName', 'photoURL', 'uid']
-    user = {key: request.json[key] for key in keys if key in request.json}
-    app.config['db'].add("users", user, doc_id=request.json['uid'])
-    return json.dumps(user)
 
 @auth_bp.route("/user", methods=['PUT'], endpoint="edit_user")
 @token_required
