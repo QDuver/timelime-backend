@@ -21,7 +21,7 @@ def create_or_edit_event(event):
         app.config['db'].add('events', event)
 
 def set_to_highlight(events):
-    filtered = [e for e in events if "lastUsed" in e]
+    filtered = [e for e in events if "lastUsed" in e and not e['isDefault']]
     if(len(filtered) < 1):
         return events
     lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
