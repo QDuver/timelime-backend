@@ -1,0 +1,33 @@
+from utils.utils import get_secret
+from firestore.firestore_db import UnprotectedFirestoreDB
+import openai
+import pandas as pd
+
+def main(timeline_id):
+    secret = get_secret('OpenAPI')
+    openai.api_key = secret
+    db = UnprotectedFirestoreDB()
+    events = db.get('events', where=('tid', '==', timeline_id))
+    events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
+    events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
+    # print(events)
+
+    resp = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+          {"role": "system", "content": "Provide response in JSON format with keys :question, options, answer."},
+          {"role": "user", "content": f'''
+          Given the following events, generate a historical quiz with 10 questions, with multiple choice answers.
+          Anwers have to vary by sometimes being the name of the event, sometimes being the date of the event, and sometimes being the description of the event.
+            {events}
+             '''},
+      ]
+    )
+
+    resp = resp['choices'][0]['message']['content']
+    print(resp)
+    obj = eval(resp)
+    if(type(obj) == dict):
+        obj = obj[list(obj.keys())[0]]
+    df = pd.DataFrame(obj)
+    df.to_csv(f'ai/generated/quiz-{timeline_id}.csv', index=False)

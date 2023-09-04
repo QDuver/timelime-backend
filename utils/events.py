@@ -35,7 +35,6 @@ def get_events(db, timeline_id):
     start = time.time()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
-    print(events, flush=True)
     if(len(events) < 1):
         return {'events': [], 'categories': []}
     categories = db.get('categories', where=('tid', '==', timeline_id))

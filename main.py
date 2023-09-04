@@ -4,9 +4,12 @@ from firestore.firestore_db import UnprotectedFirestoreDB
 from utils.events import split_date, date_to_days, get_events
 firestore_init.init()
 db = UnprotectedFirestoreDB()
+import os
+from ai import generate_quiz, upload_quiz
 
+# generate_quiz.main('9L4uPocMUPJUtuv797vn')
+upload_quiz.main('9L4uPocMUPJUtuv797vn')
 
-    # print(event['previousEventDistance'])
 
 # from ai import upload, generate
 # name = 'year 2022'

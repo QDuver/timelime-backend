@@ -72,8 +72,6 @@ def process_timeline(db, timeline):
     except: 
         pass
 
-    print(timeline, flush=True)
-
     if(db.authedUser['uid'] != timeline['uid']):
         if(db.is_anonymous_user() and len(timeline['uid']) < 12):
             raise Exception('This timeline has expired. Login to save your progress')
