@@ -6,6 +6,7 @@ from datetime import datetime
 from utils import events as events
 import numpy as np
 import re
+from flask import current_app as app
 
 pd.set_option('display.max_columns', None)
 
@@ -84,24 +85,18 @@ def validate_dates(startDate, endDate):
     if(startDate > endDate):
         raise Exception('startDate is after endDate')
 
-def upload(name, title):
+def main(timeline, name):
+    db = app.config['db']
     df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = process(df)
 
-    db = UnprotectedFirestoreDB()
-    user = auth.get_user_by_email('quentin.duverge@gmail.com').__dict__['_data']
-    user['uid'] = user['localId']
-
-    timeline = {'uid': user['uid'], 'name': title, 'isPublic': False, 'lastUsed': int(time.time())}
-    timeline['id'] = db.add("timelines", timeline)
-    print('created', timeline['id'])
     for i, row in df.iterrows():
         try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
-            event = {'uid': user['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+            event = {'uid': db.authedUser['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             event['imageURL'] = events.get_google_images(row['name'])[0]
             db.add('events', event)
         except Exception as e:

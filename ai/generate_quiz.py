@@ -13,11 +13,12 @@ def main(timeline_id):
     # print(events)
 
     resp = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
+    model="gpt-4",
     messages=[
           {"role": "system", "content": "Provide response in JSON format with keys :question, options, answer."},
           {"role": "user", "content": f'''
-          Given the following events, generate a historical quiz with 10 questions, with multiple choice answers.
+          Given the following events, generate a historical quiz with 10 questions, with multiple choice answers (4 options).
+          Be as creative as possible, and make sure the questions are not too easy.
           Anwers have to vary by sometimes being the name of the event, sometimes being the date of the event, and sometimes being the description of the event.
             {events}
              '''},
@@ -30,4 +31,4 @@ def main(timeline_id):
     if(type(obj) == dict):
         obj = obj[list(obj.keys())[0]]
     df = pd.DataFrame(obj)
-    df.to_csv(f'ai/generated/quiz-{timeline_id}.csv', index=False)
+    df.to_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv', index=False)

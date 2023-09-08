@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
 from utils.events import get_google_images
+from ai import generate_quiz, upload_quiz
 
 other_bp = Blueprint('other', __name__)
 
@@ -36,18 +37,95 @@ def google_images():
     return jsonify({"links": links}), 200
 
 
-@other_bp.route("/create_quiz/<timeline_id>", endpoint="create_quiz", methods=['GET'])
+@other_bp.route("/create-quiz/<timeline_id>", endpoint="create_quiz", methods=['GET'])
 @token_required
 @generic_error_handler
 def create_quiz(timeline_id):
-    print(timeline_id)
-    return jsonify({"timeline_id": timeline_id}), 200
+    db = app.config['db']
+    existing_quizzes = db.get("quizzes", where=('tid', '==', timeline_id))
+    if(len(existing_quizzes) > 3):
+        return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
+    db.edit('timelines', timeline_id, {'generatingQuiz': True})
+    try:
+        generate_quiz.main(timeline_id)
+        upload_quiz.main(timeline_id)
+    except Exception as e:
+        print(e, flush=True)
+        return jsonify({"message": "Error generating quiz"}), 400
+    db.edit('timelines', timeline_id, {'generatingQuiz': False})
+    return jsonify({"message": 'Succes generating quiz'}), 200
 
 
-@other_bp.route("/get_quizzes/<timeline_id>", endpoint="get_quizzes", methods=['GET'])
+@other_bp.route("/get-quizzes/<timeline_id>", endpoint="get_quizzes", methods=['GET'])
 @token_required
 @generic_error_handler
 def get_quizzes(timeline_id):
     db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', timeline_id), order_by=('created_on', 'ASCENDING'))
+    for quiz in quizzes:
+        del quiz['answer']
+        quiz['questions'] = quiz['questions'][0:3]
+        map_with_user_existing_results(quiz)
     return jsonify({"quizzes": quizzes}), 200
+
+@other_bp.route("/submit-quiz/", endpoint="submit_quiz", methods=['POST'])
+@token_required
+@generic_error_handler
+def submit_quiz():
+    db = app.config['db']
+    print(request.json, flush=True)
+    recap = compute_quiz_results(request.json)
+    update_user_quiz_results(recap)
+    return jsonify(recap), 200
+
+
+@other_bp.route("/delete-quiz/<quiz_id>", endpoint="delete_quiz", methods=['DELETE'])
+@token_required
+@generic_error_handler
+def delete_quiz(quiz_id):
+    db = app.config['db']
+    db.delete("quizzes", quiz_id)
+    return jsonify({"message": "Quiz deleted"}), 200
+
+def map_with_user_existing_results(quiz):
+    db = app.config['db']
+    try:
+        quiz['user_results'] = db.get("users", app.config['user']['uid'])['quiz_results'][quiz['id']]
+    except:
+        quiz['user_results'] = None
+
+
+def update_user_quiz_results(recap):
+    db = app.config['db']
+    try:
+        results = db.get("users", app.config['user']['uid'])['quiz_results']
+    except:
+        results = {}
+    results[request.json['quizId']] = {'correct': recap['correct'], 'total': recap['total']}
+    db.edit("users", app.config['user']['uid'], {'quiz_results': results})
+
+
+def compute_quiz_results(data):
+    db = app.config['db']
+    quiz = db.get("quizzes", data['quizId'])
+    results = []
+    answers = quiz['answer']
+    userAnswers = data['userAnswers']
+    for i in range(len(userAnswers)):
+        results.append(answers[i] == userAnswers[i])
+
+    score = results.count(True) / len(results)
+    correct =  results.count(True)
+    total = len(results)
+    message = ''
+    if(score == 1):
+        message = 'Great work! You got them all right!'
+    elif(score > 0.79):
+        message = 'Great work! You almost got them all right!'
+    elif(score > 0.59):
+        message = 'Good job! You got more than half of them right!'
+    elif(score > 0.39):
+        message = 'Nice try! You got some of them right!'
+    else:
+        message = 'You can do better! Study the timeline and try again!'
+    return {'score': score, 'correct': correct, 'total': total, 'message': message, 'errorIndexes': [i for i, x in enumerate(results) if not x]}
