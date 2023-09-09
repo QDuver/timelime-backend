@@ -3,8 +3,8 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
-# gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=82528465111
-# gcloud scheduler jobs create http clean-schedule --schedule "0 4,16 * * *" --uri=https://europe-west2-timelime-dev.cloudfunctions.net/clean-schedule --location europe-west2
+# gcloud functions deploy clean-schedule --runtime python38 --project timelime-prod --entry-point clean_schedule --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=260031091728
+# gcloud scheduler jobs create http clean-schedule --project timelime-prod --schedule "0 4,16 * * *" --uri=https://europe-west2-timelime-prod.cloudfunctions.net/clean-schedule --location europe-west2
 
 class UnprotectedFirestoreDB:
 
