@@ -5,7 +5,7 @@ from utils.events import split_date, date_to_days, get_events
 firestore_init.init()
 db = UnprotectedFirestoreDB()
 import os
-from ai import generate_quiz, upload_quiz, upload_timeline
+from ai import generate_quiz, process_quiz, upload_timeline
 
 # timeline = db.get('timelines', 'DM0eAFajelFwxXCZnajK')
 # upload_timeline.main(timeline, 'henry-viii')

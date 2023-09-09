@@ -12,15 +12,16 @@ def main(timeline_id):
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
+    n_events = len(events) if len(events) < 10 else 10
 
     resp = openai.ChatCompletion.create(
     model="gpt-4",
     messages=[
           {"role": "system", "content": "Provide response in JSON format with keys :question, options, answer."},
           {"role": "user", "content": f'''
-          Given the following events, generate a historical quiz with 10 questions, with multiple choice answers (4 options).
+          Given the following events, generate a historical quiz with {n_events} questions, with multiple choice answers (4 options).
           Be as creative as possible, and make sure the questions are not too easy.
-          Anwers have to vary by sometimes being the name of the event, sometimes being the date of the event, and sometimes being the description of the event.
+          Questions and answers have to leverage all the information provided in the events, in as much fields as possible (name, description, start date, end date).
             {events}
              '''},
       ]
