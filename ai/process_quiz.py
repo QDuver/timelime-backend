@@ -27,4 +27,4 @@ def main(timeline_id):
     except:
         db = UnprotectedFirestoreDB()
         quiz['uid'] = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
-    db.add('quizzes', quiz)
+    return quiz

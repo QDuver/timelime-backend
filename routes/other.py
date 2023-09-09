@@ -1,8 +1,9 @@
+import time
 from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
 from utils.events import get_google_images
-from ai import generate_quiz, upload_quiz
+from ai import generate_quiz, process_quiz
 
 other_bp = Blueprint('other', __name__)
 
@@ -37,29 +38,39 @@ def google_images():
     return jsonify({"links": links}), 200
 
 
-@other_bp.route("/create-quiz/<tid>", endpoint="create_quiz", methods=['GET'])
+@other_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
 @token_required
-@generic_error_handler
-def create_quiz(tid):
+# @generic_error_handler
+def create_quiz():
     db = app.config['db']
+    tid = request.json['tid']
+    estimated_time = request.json['estimatedTime']
+    start_time = time.time()
     existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
-    db.edit('timelines', tid, {'generatingQuiz': True})
+    
+    db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': True, 'estimatedTime': -1 }}})
     try:
-        generate_quiz.main(tid)
-        upload_quiz.main(tid)
+        quiz = _generate_quiz(tid)
+        quiz['estimated_time'] = estimated_time
+        quiz['generation_time'] = time.time() - start_time
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': False, 'estimatedTime': None }}})
+        db.add('quizzes', quiz)
     except Exception as e:
         print(e, flush=True)
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': False, 'estimatedTime': None }}})
         return jsonify({"message": "Error generating quiz"}), 400
-    db.edit('timelines', tid, {'generatingQuiz': False})
+    
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
-    print(quiz)
-    quiz = process_quiz(quiz)
-    print(quiz)
+    quiz = process(quiz)
     return jsonify(quiz), 200
 
 
+def _generate_quiz(tid):
+    generate_quiz.main(tid)
+    quiz = process_quiz.main(tid)
+    return quiz
 
 @other_bp.route("/get-quizzes/<tid>", endpoint="get_quizzes", methods=['GET'])
 @token_required
@@ -68,7 +79,7 @@ def get_quizzes(tid):
     db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
     for quiz in quizzes:
-        quiz = process_quiz(quiz)
+        quiz = process(quiz)
     return jsonify({"quizzes": quizzes}), 200
 
 @other_bp.route("/submit-quiz/", endpoint="submit_quiz", methods=['POST'])
@@ -91,7 +102,7 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted"}), 200
 
 
-def process_quiz(quiz):
+def process(quiz):
     del quiz['answer']
     quiz['questions'] = quiz['questions'][0:3]
     quiz['options'] = [list(option.values()) for option in quiz['options']]

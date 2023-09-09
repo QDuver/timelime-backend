@@ -45,7 +45,7 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    timeline = create_new_timeline(generate_timeline_name())
+    timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(today)
@@ -55,21 +55,25 @@ def create_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def create_ai_timeline():
     db = app.config['db']
-    req = request.json #for some reason if I remove this, won't work
-    db.edit('users', db.authedUser['uid'], {'generatingTimeline': True})
+    estimated_time = request.json['estimatedTime']
+    start_time = time.time()
+    db.edit('users', db.authedUser['uid'], {'generating': {'timeline' : {'value': True, 'estimatedTime': -1 }}})
     try:
         theme = request.json['theme']
-        timeline = create_new_timeline(theme)
         name = theme.lower().replace(' ', '-')
         generate_timeline.main(theme, name, request.json['nEvents'])
+        timeline = create_new_timeline(theme, 'ai')
         upload_timeline.main(timeline, name, request.json['imageAssociation'])
+        generation_time = time.time() - start_time
+        db.edit('timelines', timeline['id'], {'generationTime': generation_time, 'estimatedTime': estimated_time})
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'value': False, 'estimatedTime': None }}})
     except Exception as e:
         print(e, flush=True)
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'value': False, 'estimatedTime': None }}})
         return jsonify({"message": "Error generating timeline"}), 400
-    db.edit('users', db.authedUser['id'], {'generatingTimeline': False})
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -86,9 +90,9 @@ def generate_timeline_name():
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
 
-def create_new_timeline(name):
+def create_new_timeline(name, source):
     db = app.config['db']
-    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time())}
+    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
     timeline['id'] = db.add("timelines", timeline)
     return timeline
 
