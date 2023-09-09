@@ -35,7 +35,6 @@ def get_events(db, timeline_id):
     start = time.time()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
-    print(events, flush=True)
     if(len(events) < 1):
         return {'events': [], 'categories': []}
     categories = db.get('categories', where=('tid', '==', timeline_id))
@@ -170,6 +169,6 @@ def get_google_images(eventName):
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image").execute()
+    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
