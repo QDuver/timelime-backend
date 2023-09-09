@@ -3,6 +3,7 @@ from flask import current_app as app
 import time 
 from googleapiclient.discovery import build
 import time
+from utils.utils import get_secret
 
 def create_or_edit_event(event):
     event['uid'] = app.config['user']['uid']
@@ -164,11 +165,12 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName):
-    API_KEY = "AIzaSyBl9-P8iSKJ_VXNAFnaaFPqb1XNaWVeluI"
+def get_google_images(eventName, timelineName):
+    API_KEY = get_secret('SEARCH_ENGINE')
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links

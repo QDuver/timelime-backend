@@ -30,12 +30,3 @@ def main(theme, name, n_events):
   df = pd.DataFrame(obj)
   df.to_csv(f'ai/generated/{name}.csv', index=False)
   print('time to generate', n_events, 'events', time.time() - start)
-
-# time to generate 5 events 35.14564371109009
-# time to generate 10 events 60.15999913215637
-# time to generate 10 events 57.04464268684387
-# time to generate 25 events 147.50703859329224
-# time to generate 75 events 443.57299995422363
-# time to generate 1 events 14.509999990463257
-# time to generate 10 events 46.63903737068176
-# time to generate 10 events 55.96537947654724

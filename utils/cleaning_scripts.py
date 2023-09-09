@@ -50,7 +50,7 @@ def delete_empty_timelines():
 def delete_all_first_timelines():
     timelines = db.get('timelines')
     for timeline in timelines:
-        if('name' in timeline and (timeline['name'] == 'My first timeline' or timeline['name'] == 'New timeline' )):
+        if('name' in timeline and (timeline['name'] == 'My first timeline' or 'new timeline' in timeline['name'].lower() )):
             db.delete('timelines', timeline['id'])
 
 def assign_uid_to_categories():

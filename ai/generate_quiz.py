@@ -12,7 +12,6 @@ def main(timeline_id):
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
-    # print(events)
 
     resp = openai.ChatCompletion.create(
     model="gpt-4",

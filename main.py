@@ -7,11 +7,11 @@ db = UnprotectedFirestoreDB()
 import os
 from ai import generate_quiz, upload_quiz, upload_timeline
 
-timeline = db.get('timelines', 'DM0eAFajelFwxXCZnajK')
-upload_timeline.main(timeline, 'henry-viii')
+# timeline = db.get('timelines', 'DM0eAFajelFwxXCZnajK')
+# upload_timeline.main(timeline, 'henry-viii')
 
 # generate_quiz.main('9L4uPocMUPJUtuv797vn')
 # upload_quiz.main('BQLUIloYtTsqBUwKwt8W')
 
-# import utils.cleaning_scripts as cleaning_scripts
-# cleaning_scripts.delete_all('users')
+import utils.cleaning_scripts as cleaning_scripts
+cleaning_scripts.delete_all_first_timelines()

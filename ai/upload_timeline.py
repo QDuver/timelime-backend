@@ -106,7 +106,7 @@ def main(timeline, name, image_association):
             event = {'uid': db.authedUser['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == 'google'):
                 print('start to load image', time.time() - start)
-                event['imageURL'] = events.get_google_images(row['name'] + timeline['name'])[0]
+                event['imageURL'] = events.get_google_images(row['name'], timeline['name'])[0]
                 print('end to load image', time.time() - start)
             db.add('events', event)
         except Exception as e:

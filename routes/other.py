@@ -9,9 +9,8 @@ other_bp = Blueprint('other', __name__)
 def get_error_reporting_client():
     try:
         client = error_reporting.Client()
-        print(client.service_account_email, flush=True)
     except:
-        client = error_reporting.Client.from_service_account_json('secrets/timelime-dev-sa.json')
+        client = error_reporting.Client.from_service_account_json('secrets/GCP_CREDENTIALS.json')
     return client
 
 @other_bp.route("/report_error", endpoint="report_error", methods=['POST'])
@@ -33,7 +32,7 @@ def report_error():
 @token_required
 @generic_error_handler
 def google_images():
-    links = get_google_images(request.json['query'])
+    links = get_google_images(request.json['eventName'], request.json['timelineName'])
     return jsonify({"links": links}), 200
 
 
@@ -54,9 +53,7 @@ def create_quiz(tid):
         return jsonify({"message": "Error generating quiz"}), 400
     db.edit('timelines', tid, {'generatingQuiz': False})
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
-    print(quiz)
     quiz = process_quiz(quiz)
-    print(quiz)
     return jsonify(quiz), 200
 
 
@@ -76,7 +73,6 @@ def get_quizzes(tid):
 @generic_error_handler
 def submit_quiz():
     db = app.config['db']
-    print(request.json, flush=True)
     recap = compute_quiz_results(request.json)
     update_user_quiz_results(recap)
     return jsonify(recap), 200
