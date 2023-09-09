@@ -2,8 +2,10 @@ from utils.utils import get_secret
 from firestore.firestore_db import UnprotectedFirestoreDB
 import openai
 import pandas as pd
+import time
 
 def main(timeline_id):
+    start = time.time()
     secret = get_secret('OpenAPI')
     openai.api_key = secret
     db = UnprotectedFirestoreDB()
@@ -26,9 +28,12 @@ def main(timeline_id):
     )
 
     resp = resp['choices'][0]['message']['content']
-    print(resp)
+    print('finished generatin quiz', start - time.time())
     obj = eval(resp)
     if(type(obj) == dict):
         obj = obj[list(obj.keys())[0]]
     df = pd.DataFrame(obj)
     df.to_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv', index=False)
+
+# finished quiz -37.88711762428284
+# finished generatin quiz -35.313483476638794

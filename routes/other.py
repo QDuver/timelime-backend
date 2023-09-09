@@ -37,35 +37,38 @@ def google_images():
     return jsonify({"links": links}), 200
 
 
-@other_bp.route("/create-quiz/<timeline_id>", endpoint="create_quiz", methods=['GET'])
+@other_bp.route("/create-quiz/<tid>", endpoint="create_quiz", methods=['GET'])
 @token_required
 @generic_error_handler
-def create_quiz(timeline_id):
+def create_quiz(tid):
     db = app.config['db']
-    existing_quizzes = db.get("quizzes", where=('tid', '==', timeline_id))
+    existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
-    db.edit('timelines', timeline_id, {'generatingQuiz': True})
+    db.edit('timelines', tid, {'generatingQuiz': True})
     try:
-        generate_quiz.main(timeline_id)
-        upload_quiz.main(timeline_id)
+        generate_quiz.main(tid)
+        upload_quiz.main(tid)
     except Exception as e:
         print(e, flush=True)
         return jsonify({"message": "Error generating quiz"}), 400
-    db.edit('timelines', timeline_id, {'generatingQuiz': False})
-    return jsonify({"message": 'Succes generating quiz'}), 200
+    db.edit('timelines', tid, {'generatingQuiz': False})
+    quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
+    print(quiz)
+    quiz = process_quiz(quiz)
+    print(quiz)
+    return jsonify(quiz), 200
 
 
-@other_bp.route("/get-quizzes/<timeline_id>", endpoint="get_quizzes", methods=['GET'])
+
+@other_bp.route("/get-quizzes/<tid>", endpoint="get_quizzes", methods=['GET'])
 @token_required
 @generic_error_handler
-def get_quizzes(timeline_id):
+def get_quizzes(tid):
     db = app.config['db']
-    quizzes = db.get("quizzes", where=('tid', '==', timeline_id), order_by=('created_on', 'ASCENDING'))
+    quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
     for quiz in quizzes:
-        del quiz['answer']
-        quiz['questions'] = quiz['questions'][0:3]
-        map_with_user_existing_results(quiz)
+        quiz = process_quiz(quiz)
     return jsonify({"quizzes": quizzes}), 200
 
 @other_bp.route("/submit-quiz/", endpoint="submit_quiz", methods=['POST'])
@@ -86,6 +89,14 @@ def delete_quiz(quiz_id):
     db = app.config['db']
     db.delete("quizzes", quiz_id)
     return jsonify({"message": "Quiz deleted"}), 200
+
+
+def process_quiz(quiz):
+    del quiz['answer']
+    quiz['questions'] = quiz['questions'][0:3]
+    quiz['options'] = [list(option.values()) for option in quiz['options']]
+    map_with_user_existing_results(quiz)
+    return quiz
 
 def map_with_user_existing_results(quiz):
     db = app.config['db']

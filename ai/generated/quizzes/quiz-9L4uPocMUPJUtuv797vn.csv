@@ -1,11 +1,11 @@
 question,options,answer
-What event marked the first successful human heart transplant?,"['First Human Heart Transplant', 'Discovery of Neptune', 'Development of Quantum Mechanics', 'Discovery of Neutron']",First Human Heart Transplant
-In which year was the discovery of Neptune made?,"['1967', '1846', '1900', '1932']",1846
-Who proposed the theory of plate tectonics?,"['Christiaan Barnard', 'Max Planck', 'Albert Einstein', 'Scientists']",Scientists
-In which year did Google's quantum computer achieve quantum supremacy?,"['1960', '2019', '1965', '1687']",2019
-Which event provided evidence for the Big Bang theory?,"['Quantum Supremacy', 'Discovery of Cosmic Microwave Background', 'Law of Universal Gravitation', 'Invention of the Airplane']",Discovery of Cosmic Microwave Background
-Who formulated the law of universal gravitation?,"['Edward Jenner', 'Isaac Newton', 'Dmitri Mendeleev', 'Antonie van Leeuwenhoek']",Isaac Newton
-Which event marked the invention of the airplane?,"['Invention of the Airplane', 'Discovery of Dark Energy', 'Development of the Periodic Table', 'Invention of the Microscope']",Invention of the Airplane
-When was the discovery of dark energy made?,"['1998', '1869', '1670', '1895']",1998
-Who developed the periodic table?,"['Louis Daguerre', 'Samuel Morse', 'Dmitri Mendeleev', 'Henri Becquerel']",Dmitri Mendeleev
-Who invented the microscope?,"['James Watt', 'Edward Jenner', 'Antonie van Leeuwenhoek', 'William Lassell']",Antonie van Leeuwenhoek
+Who performed the first successful human heart transplant?,"['Dr. James Watson', 'Dr. Christiaan Barnard', 'Dr. Joseph Lister', 'Dr. Charles Darwin']",Dr. Christiaan Barnard
+What planet was discovered by Urbain Le Verrier and John Couch Adams in 1846?,"['Pluto', 'Mercury', 'Neptune', 'Venus']",Neptune
+"When was the first electronic programmable computer, ENIAC, completed?","['1950', '1945', '1947', '1938']",1945
+"Who invented the microscope, pioneering the exploration of microorganisms and cells?","['Antonie van Leeuwenhoek', 'James Watt', 'Thomas Edison', 'Nikola Tesla']",Antonie van Leeuwenhoek
+What did Charles Darwin propose in 1859?,"['Theory of Universal Gravitation', 'Heliocentric Model of the Solar System', 'Theory of Evolution', 'Theory of Electromagnetism']",Theory of Evolution
+In which year did scientists at CERN announce the discovery of the Higgs Boson?,"['2010', '2015', '2012', '2011']",2012
+What scientific development in 1960-1970 explained the movement of Earth's lithospheric plates and the formation of continents and ocean basins?,"['Discovery of Nuclear Fusion', 'Development of Quantum Mechanics', 'Development of the Theory of Plate Tectonics', 'Discovery of Quantum Entanglement']",Development of the Theory of Plate Tectonics
+What fundamental subatomic particle did J.J. Thomson discover in 1897?,"['Proton', 'Neutron', 'Electron', 'Quark']",Electron
+Scientists developed a revolutionary gene-editing tool in 2012. What is it called?,"['CRISPR-Case12', 'CRISPR-Cas9', 'CRISPR-Cas8', 'CRISPR-Base64']",CRISPR-Cas9
+What invention in 1879 revolutionized indoor lighting?,"['Candle', 'Lantern', 'Fluorescent lamp', 'Incandescent light bulb']",Incandescent light bulb

@@ -17,11 +17,7 @@ def main(timeline_id):
         options = ast.literal_eval(option)
         for i, option in enumerate(options):
             d[f'q{i}'] = option
-        print(d)
         quiz['options'].append(d)
-        # print(i ,option)
-        # d[i] = option
-    print(quiz['options'])
     quiz['answer'] = df['answer'].tolist()
     quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     quiz['tid'] = timeline_id

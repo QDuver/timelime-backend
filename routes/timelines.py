@@ -45,7 +45,7 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    timeline = create_timeline(generate_timeline_name())
+    timeline = create_new_timeline(generate_timeline_name())
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     events.create_or_edit_event(today)
@@ -55,17 +55,17 @@ def create_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def create_ai_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    db.edit('users', db.authedUser['id'], {'generatingTimeline': True})
+    db.edit('users', db.authedUser['uid'], {'generatingTimeline': True})
     try:
-        theme = create_timeline(request.json['theme'])
-        timeline = create_timeline(theme)
+        theme = request.json['theme']
+        timeline = create_new_timeline(theme)
         name = theme.lower().replace(' ', '-')
-        generate_timeline(theme, name, request.json['nEvents'])
-        upload_timeline(timeline, name)
+        generate_timeline.main(theme, name, request.json['nEvents'])
+        upload_timeline.main(timeline, name, request.json['imageAssociation'])
     except Exception as e:
         print(e, flush=True)
         return jsonify({"message": "Error generating timeline"}), 400

@@ -169,6 +169,6 @@ def get_google_images(eventName):
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image").execute()
+    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
