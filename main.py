@@ -4,15 +4,14 @@ from firestore.firestore_db import UnprotectedFirestoreDB
 from utils.events import split_date, date_to_days, get_events
 firestore_init.init()
 db = UnprotectedFirestoreDB()
+import os
+from ai import generate_quiz, upload_quiz, upload_timeline
 
+# timeline = db.get('timelines', 'DM0eAFajelFwxXCZnajK')
+# upload_timeline.main(timeline, 'henry-viii')
 
-    # print(event['previousEventDistance'])
+# generate_quiz.main('9L4uPocMUPJUtuv797vn')
+# upload_quiz.main('BQLUIloYtTsqBUwKwt8W')
 
-# from ai import upload, generate
-# name = 'year 2022'
-# title = 'of year 2022'
-# generate.generate(name, title)
-# upload.upload(name, title)
-
-# import utils.cleaning_scripts as cleaning_scripts
-# cleaning_scripts.delete_all('users')
+import utils.cleaning_scripts as cleaning_scripts
+cleaning_scripts.delete_all_first_timelines()

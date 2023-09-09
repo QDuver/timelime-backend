@@ -1,20 +1,23 @@
 import openai
 import pandas as pd
+import time
 
-def generate(name, theme):
+def main(theme, name, n_events):
+
+  start = time.time()
+  
 
   openai.api_key = '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'
 
   response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
+    model="gpt-4",
     messages=[
-          {"role": "system", "content": "You are a historian."},
+          {"role": "system", "content": f'''Response has to be an array of dictionnaries (JSON), each representing an event, with the following format: name, description, startDate, endDate, endDate being optional.
+          Dates can be in YYYY-MM-DD or YYYY-MM or YYYY format.
+          '''},
           {"role": "user", "content": f'''
           Generate a historic timeline of {theme},.
-          It has to be in array of dictionnaries (JSON), each representing an event, with the following format: name, description, startDate, endDate. 
-          endDate is optional, but make sure you include at least 3 events which contain both startDate and endDate. 
-          Dates have to be in either YYYY-MM-DD or YYYY-MM or YYYY format.
-          Create about 50 events.
+          Create about {n_events} events.
            If possible, all periods of time should be equally represented
              '''},
       ]
@@ -26,3 +29,4 @@ def generate(name, theme):
     obj = obj[list(obj.keys())[0]]
   df = pd.DataFrame(obj)
   df.to_csv(f'ai/generated/{name}.csv', index=False)
+  print('time to generate', n_events, 'events', time.time() - start)

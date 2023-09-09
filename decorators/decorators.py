@@ -17,8 +17,6 @@ def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
 
-        print('token_required', flush=True)
-
         if('X-Allow-Unauthorized' in request.headers):  
 
             secret_key = 'j8qxnvu7crbtc54dyi98'

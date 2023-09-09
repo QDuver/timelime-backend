@@ -6,6 +6,8 @@ from datetime import datetime
 from utils import events as events
 import numpy as np
 import re
+from flask import current_app as app
+import time
 
 pd.set_option('display.max_columns', None)
 
@@ -76,33 +78,36 @@ def process(df):
 def vaildate_date(date):
     if(date == None): return
     split_date = events.split_date(date)
-    if(split_date['year'] < -271822 or split_date['year'] > 271822):
+    if(split_date['year'] < -4600000000 or split_date['year'] > 4600000000):
         raise Exception('year is out of range')
 
 def validate_dates(startDate, endDate):
     if(startDate == None or endDate == None): return
     if(startDate > endDate):
-        raise Exception('startDate is after endDate')
+        endDate = None
 
-def upload(name, title):
+def main(timeline, name, image_association):
+    start = time.time()
+    try:
+        db = app.config['db']
+    except:
+        db = UnprotectedFirestoreDB()
     df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = process(df)
+    print('time to process', time.time() - start)
 
-    db = UnprotectedFirestoreDB()
-    user = auth.get_user_by_email('quentin.duverge@gmail.com').__dict__['_data']
-    user['uid'] = user['localId']
-
-    timeline = {'uid': user['uid'], 'name': title, 'isPublic': False, 'lastUsed': int(time.time())}
-    timeline['id'] = db.add("timelines", timeline)
-    print('created', timeline['id'])
     for i, row in df.iterrows():
         try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
-            event = {'uid': user['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
-            event['imageURL'] = events.get_google_images(row['name'])[0]
+            validate_dates(row['startDate'], row['endDate'])
+            event = {'uid': db.authedUser['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+            if(image_association == 'google'):
+                print('start to load image', time.time() - start)
+                event['imageURL'] = events.get_google_images(row['name'], timeline['name'])[0]
+                print('end to load image', time.time() - start)
             db.add('events', event)
         except Exception as e:
             print('error', e, 'could not load event', row.to_dict())
