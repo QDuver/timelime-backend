@@ -22,6 +22,7 @@ def main(theme, n_events):
           Response has to be a JSON parsable by python's eval method. Each object represents an event, with the following format: name, description, startDate, endDate, endDate being optional.
           Dates can be in YYYY-MM-DD or YYYY-MM or YYYY format.
           Never write the dates with BC, AD, CE, BCE, ABY, BBY, etc. If they are negative, just put a minus sign before the year.
+          Escape all double quotes with a backslash.
           '''},
           {"role": "user", "content": f'''
           Generate a historic timeline of {theme}.
