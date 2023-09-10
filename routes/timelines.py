@@ -5,8 +5,15 @@ from decorators.decorators import token_required, generic_error_handler
 import utils.events as events
 from ai import generate_timeline, process_timeline
 from utils import utils
+from flask_socketio import SocketIO
 
 timeline_bp = Blueprint('timeline', __name__)
+socketio = SocketIO()
+
+@socketio.on('message1')
+def handle_message(message):
+    print('Received message:', message, flush=True)
+    socketio.emit('my_response', {'data': 'Hello1!'})
 
 @timeline_bp.route("/timelines", endpoint="get_timelines")
 @token_required
@@ -70,13 +77,13 @@ def create_ai_timeline():
         timeline = create_new_timeline(theme, 'ai')
         generation_time = time.time() - start_time
         db.edit('timelines', timeline['id'], {'generationTime': generation_time, 'estimatedTime': estimated_time})
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None, 'generated': timeline }}})
         for event in events:
             event['tid'] = timeline['id']
         db.add_batch('events', events)        
     except Exception as e:
         print(e, flush=True)
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None, 'generated': None }}})
         return jsonify({"message": "Error generating timeline"}), 400
     return json.dumps(timeline)
 

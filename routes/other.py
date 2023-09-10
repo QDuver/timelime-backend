@@ -54,11 +54,11 @@ def create_quiz():
         quiz = _generate_quiz(tid)
         quiz['estimated_time'] = estimated_time
         quiz['generation_time'] = time.time() - start_time
-        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None, 'generated': quiz }}})
         db.add('quizzes', quiz)
     except Exception as e:
         print(e, flush=True)
-        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None, 'generated': None }}})
         return jsonify({"message": "Error generating quiz"}), 400
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]

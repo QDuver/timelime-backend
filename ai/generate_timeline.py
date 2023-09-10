@@ -8,7 +8,7 @@ def main(theme, n_events):
   name = theme.lower().replace(' ', '-')
 
   # try:
-  #   df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
+  #   df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
   #   return
   # except:
   #   pass
@@ -40,8 +40,8 @@ def main(theme, n_events):
     if(type(obj) == dict):
       obj = obj[list(obj.keys())[0]]
     df = pd.DataFrame(obj)
-    df.to_csv(f'ai/generated/{name}.csv', index=False)
+    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
   except:
-    with open(f'ai/generated/{name}.txt', 'w') as f:
+    with open(f'ai/generated/timelines/{name}.txt', 'w') as f:
       f.write(resp)
       raise Exception('Could not parse response')

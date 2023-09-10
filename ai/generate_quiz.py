@@ -32,8 +32,14 @@ def main(timeline_id):
     resp = resp['choices'][0]['message']['content']
     print(f'finished generatin quiz for {len(events)} events', start - time.time())
     print(resp)
-    obj = eval(resp)
-    if(type(obj) == dict):
-        obj = obj[list(obj.keys())[0]]
-    df = pd.DataFrame(obj)
-    df.to_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv', index=False)
+    try:
+      obj = eval(resp)
+      if(type(obj) == dict):
+          obj = obj[list(obj.keys())[0]]
+      df = pd.DataFrame(obj)
+      df.to_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv', index=False)
+    except Exception as e:
+      print(e)
+      with open(f'ai/generated/quizzes/quiz-{timeline_id}.txt', 'w') as f:
+        f.write(resp)
+      raise Exception('Could not parse response')

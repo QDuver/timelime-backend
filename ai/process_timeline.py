@@ -94,7 +94,7 @@ def generate_events(theme, image_association):
         db = UnprotectedFirestoreDB()
     
     name = theme.lower().replace(' ', '-')
-    df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
+    df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     if not ('endDate' in df.columns):
