@@ -1,11 +1,15 @@
-name,description,startDate,endDate
-Birth of Henry VIII,Henry VIII was born at Greenwich Palace. He was the third child of Henry VII and Elizabeth of York.,1491-06-28,
-Ascension to the Throne,"After the death of his father Henry VII, Henry VIII ascends to the throne.",1509-04-21,
-Marriage to Catherine of Aragon,"Henry VIII marries his brother's widow, Catherine of Aragon.",1509-06-11,
-Birth of Mary,"Henry VIII and Catherine of Aragon's only surviving child, Mary, later Mary I of England, is born.",1516-02-18,
-Affair with Anne Boleyn,"Henry VIII begins an affair with Anne Boleyn, starting the chain of events leading to the English Reformation.",1525,1533
-Break from the Catholic Church,Henry VIII breaks from the Catholic Church and establishes the Church of England in order to annul his marriage to Catherine of Aragon.,1533,1534
-Marriage to Anne Boleyn,Henry VIII marries Anne Boleyn who soon gives birth to Elizabeth I.,1533-01-25,1536-05-19
-Marriage to Jane Seymour,"Henry VIII marries Jane Seymour who gives birth to his only legitimate son, Edward VI.",1536-05-30,1537-10-24
-Last three marriages,"Henry VIII goes on to marry three more times, to Anne of Cleves, Catherine Howard, and Catherine Parr.",1540,1547
-Death of Henry VIII,"Henry VIII dies at the age of 55, likely from poor health due to obesity and possibly other conditions. His son Edward VI succeeds him.",1547-01-28,
+name,description,startDate
+Birth of Henry VIII,"Henry VIII was born in Greenwich, London, England. He was the third child and second son of Henry VII and Elizabeth of York.",1491-06-28
+Henry becomes Duke of York,"Henry was granted the title, Duke of York. His older brother Arthur was the Prince of Wales at that time.",1494
+"Death of Arthur, Prince of Wales","Arthur, Prince of Wales, dies unexpectedly. Henry becomes heir apparent to the throne of England.",1502-04-02
+Marriage to Catherine of Aragon,"Henry VIII marries his brother's widow, Catherine of Aragon.",1509-06-11
+Accession of Henry VIII,"Upon the death of his father, Henry VIII becomes the King of England.",1509-04-21
+Birth of Mary I,"Mary I, also known as Mary Tudor, the only child of Henry VIII and Catherine of Aragon who survived infancy, was born.",1516-02-18
+Begin of Reformation in England,Henry VIII starts the English Reformation by separating the Church of England from the Roman Catholic Church.,1527
+Marriage to Anne Boleyn,Henry VIII marries Anne Boleyn after his marriage to Catherine of Aragon was annulled.,1533-01-25
+Birth of Elizabeth I,"Elizabeth I, the daughter of Henry VIII and Anne Boleyn, was born.",1533-09-07
+Execution of Anne Boleyn,"Anne Boleyn was executed on charges of adultery, incest, and treason.",1536-05-19
+Marriage to Jane Seymour,"Henry VIII marries Jane Seymour, his third wife.",1536-05-30
+Birth of Edward VI,"Edward VI, son of Henry VIII and Jane Seymour, was born. He is the only legitimate son of Henry VIII.",1537-10-12
+Death of Jane Seymour,"Jane Seymour died of postnatal complications, and Henry VIII was genuinely distraught at her death.",1537-10-24
+Death of Henry VIII,"Henry VIII dies at the age of 55, possibly due to obesity-related health issues. His son Edward VI succeeds him.",1547-01-28

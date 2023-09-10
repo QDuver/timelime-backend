@@ -1,0 +1,11 @@
+question,options,answer
+When was Henry VI born?,"['1421-12-06', '1422-08-31', '1437', '1470-10']",1421-12-06
+"At what age did Henry VI assume power, ending the regency rule?","['15', '16', '17', '18']",16
+"Who regained power, leading to the final deposition of Henry VI?","['Edward I', 'Edward II', 'Edward III', 'Edward IV']",Edward IV
+In which year was Henry VI restored to the throne briefly before his final deposition?,"['1453', '1431', '1429', '1470']",1470
+Why did Henry VI marry Margaret of Anjou?,"['For love', 'For political gain within England', 'To secure peace with France', ""To strengthen Catholic Church's influence""]",To secure peace with France
+What was the consequence of Henry VI's mental breakdown?,"['It led to his death', 'It caused power struggles in the kingdom', 'It led to his marriage to Margaret of Anjou', 'He lost all his territories in France']",It caused power struggles in the kingdom
+What happened under Henry VI's rule in 1453?,"['He became the King of France', 'He was deposed for the first time', 'England lost many of its territories in France', 'The Wars of the Roses began']",England lost many of its territories in France
+Where was Henry VI killed?,"['In combat on the battlefield', 'In the Tower of London', 'In Westminster Abbey', 'In Windsor Castle']",In the Tower of London
+What started in 1455 during the reign of Henry VI?,"[""The Hundred Years' War"", 'The Great Fire of London', 'The Wars of the Roses', 'The Black Plague']",The Wars of the Roses
+Who was declared king after Henry VI's first deposition?,"['Edward III', 'Edward IV', 'Henry V', 'Charles VI']",Edward IV

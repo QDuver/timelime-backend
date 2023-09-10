@@ -49,16 +49,16 @@ def create_quiz():
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
     
-    db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': True, 'estimatedTime': -1 }}})
+    db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': True, 'estimatedTime': -1 }}})
     try:
         quiz = _generate_quiz(tid)
         quiz['estimated_time'] = estimated_time
         quiz['generation_time'] = time.time() - start_time
-        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None }}})
         db.add('quizzes', quiz)
     except Exception as e:
         print(e, flush=True)
-        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'value': False, 'estimatedTime': None }}})
+        db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None }}})
         return jsonify({"message": "Error generating quiz"}), 400
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]

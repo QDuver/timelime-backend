@@ -3,7 +3,7 @@ from firestore.firestore_db import UnprotectedFirestoreDB
 from firebase_admin import auth
 import time
 from datetime import datetime
-from utils import events as events
+from utils import events as events_utils
 import numpy as np
 import re
 from flask import current_app as app
@@ -77,7 +77,7 @@ def process(df):
 
 def vaildate_date(date):
     if(date == None): return
-    split_date = events.split_date(date)
+    split_date = events_utils.split_date(date)
     if(split_date['year'] < -4600000000 or split_date['year'] > 4600000000):
         raise Exception('year is out of range')
 
@@ -86,28 +86,35 @@ def validate_dates(startDate, endDate):
     if(startDate > endDate):
         endDate = None
 
-def main(timeline, name, image_association):
+def generate_events(theme, image_association):
     start = time.time()
     try:
         db = app.config['db']
     except:
         db = UnprotectedFirestoreDB()
+    
+    name = theme.lower().replace(' ', '-')
     df = pd.read_csv('ai/generated/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
+    if not ('endDate' in df.columns):
+        df['endDate'] = None
     df = process(df)
     print('time to process', time.time() - start)
 
+    events = []
     for i, row in df.iterrows():
         try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
             validate_dates(row['startDate'], row['endDate'])
-            event = {'uid': db.authedUser['uid'], 'tid': timeline['id'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+            event = {'uid': db.authedUser['uid'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == 'google'):
                 print('start to load image', time.time() - start)
-                event['imageURL'] = events.get_google_images(row['name'], timeline['name'])[0]
+                event['imageURL'] = events_utils.get_google_images(row['name'], theme)[0]
                 print('end to load image', time.time() - start)
-            db.add('events', event)
+            events.append(event)
         except Exception as e:
             print('error', e, 'could not load event', row.to_dict())
+    
+    return events

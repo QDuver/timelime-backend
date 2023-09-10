@@ -46,6 +46,14 @@ class FirestoreDB:
         else:
             return self.db.collection(collection).add(data)[1].id
         
+    @limiter.limit("5/minute")
+    def add_batch(self, collection, data):
+        batch = self.db.batch()
+        for doc in data:
+            ref = self.db.collection(collection).document()
+            batch.set(ref, doc)
+        return batch.commit()
+
     @limiter.limit("10/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
@@ -84,6 +92,13 @@ class UnprotectedFirestoreDB:
             return self.db.collection(collection).document(doc_id).set(data)
         else:
             return self.db.collection(collection).add(data)[1].id
+
+    def add_batch(self, collection, data):
+        batch = self.db.batch()
+        for doc in data:
+            ref = self.db.collection(collection).document()
+            batch.set(ref, doc)
+        return batch.commit()
 
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
