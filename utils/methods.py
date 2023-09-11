@@ -15,6 +15,12 @@ def create_or_edit_event(event):
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
+
+    if('endDate' not in event):
+        event['endDate'] = None
+    if('description' not in event):
+        event['description'] = None
+
     if('id' in event and event['id']):
         app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     else:
@@ -198,7 +204,7 @@ def create_ai_timeline_(timelineName, nEvents, imageAssociation):
         db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline }}})
         return timeline
     except Exception as e:
-        print_full_exception()
+        print_full_exception(e)
         db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': None }}})
         raise Exception("Error generating timeline")
 

@@ -1,0 +1,11 @@
+name,description,startDate,endDate
+Big Bang,The universe is formed.,13.8 billion years ago,
+Rise of the Sith,The Sith Order emerges as a powerful faction in the galaxy.,"-1,000 BBY",-19 BBY
+The Phantom Menace,"The Sith Lord Darth Sidious orchestrates a political crisis, leading to the rise of the Galactic Empire.",32 BBY,19 BBY
+Clone Wars,The galaxy-wide conflict between the Galactic Republic and the Separatist Alliance.,22 BBY,19 BBY
+Rise of the Galactic Empire,Supreme Chancellor Palpatine declares himself Emperor and transforms the Republic into the Galactic Empire.,19 BBY,
+The Rebellion Begins,The Rebel Alliance forms to resist the rule of the Galactic Empire.,2 BBY,0 BBY
+A New Hope,"The Rebel Alliance destroys the Death Star, giving hope to the galaxy.",0 BBY,0 ABY
+The Empire Strikes Back,The Galactic Empire strikes back against the Rebel Alliance.,3 ABY,4 ABY
+Return of the Jedi,The Rebel Alliance defeats the Emperor and the Galactic Empire.,4 ABY,
+The Force Awakens,"A new threat, the First Order, rises to power.",34 ABY,

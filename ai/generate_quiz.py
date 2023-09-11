@@ -1,13 +1,11 @@
 from utils.utils import get_secret, print_full_exception
-from firestore.firestore_db import UnprotectedFirestoreDB
 import openai
 import pandas as pd
 import time
 
 def main(timelineName, events):
     start = time.time()
-    secret = get_secret('OpenAPI')
-    openai.api_key = secret
+    openai.api_key = get_secret('OpenAPI')
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
     n_events = len(events) if len(events) < 10 else 10
@@ -16,7 +14,7 @@ def main(timelineName, events):
     model="gpt-3.5-turbo-16k-0613",
     messages=[
           {"role": "system", "content": f'''
-          Response has to be a JSON parsable by python's eval method. Each object representing a question, with the following format: question, options, answer.
+          Response has to be in JSON format. Each object represents a question, with the following format: question, options, answer.
           '''},
           {"role": "user", "content": f'''
           Given the events provided at the end of the prompt, generate a historical quiz with {n_events} questions, with multiple choice answers (4 options).
@@ -27,6 +25,9 @@ def main(timelineName, events):
       ]
     )
 
+    print(resp)
+    print('-----------')
+    print(resp['choices'][0])
     resp = resp['choices'][0]['message']['content']
     print('quiz - time to generate', n_events, 'questions', time.time() - start)
     name = timelineName.lower().replace(' ', '-')

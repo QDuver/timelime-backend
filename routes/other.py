@@ -4,7 +4,7 @@ from decorators.decorators import token_required, generic_error_handler
 from google.cloud import error_reporting
 from utils.methods import get_google_images
 from ai import generate_quiz, process_quiz
-from utils.utils import print_full_exception
+import utils.utils as utils
 
 other_bp = Blueprint('other', __name__)
 
@@ -43,6 +43,7 @@ def google_images():
 # @generic_error_handler
 def create_quiz():
     db = app.config['db']
+    utils.abort_if_already_ai_generating()
     tid = request.json['tid']
     estimated_time = request.json['estimatedTime']
     start_time = time.time()
@@ -52,18 +53,17 @@ def create_quiz():
     
     db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': True, 'estimatedTime': -1 }}})
     try:
-        print(tid, flush=True)
         timelineName = db.get('timelines', doc=tid)['name']
         events = db.get('events', where=('tid', '==', tid))
         generate_quiz.main(timelineName, events)
-        quiz = process_quiz.main(tid, timelineName)
+        quiz = process_quiz.main( timelineName)
         quiz['tid'] = tid
         quiz['estimated_time'] = estimated_time
         quiz['generation_time'] = time.time() - start_time
         db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None, 'generated': quiz }}})
         db.add('quizzes', quiz)
     except Exception as e:
-        print_full_exception(e)
+        utils.print_full_exception(e)
         db.edit('users', db.authedUser['uid'], {'generating': {'quiz': {'loading': False, 'estimatedTime': None, 'generated': None }}})
         return jsonify({"message": "Error generating quiz"}), 400
     

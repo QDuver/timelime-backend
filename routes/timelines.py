@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators.decorators import token_required, generic_error_handler
 import utils.methods as methods
+import utils.utils as utils
 from utils.methods import create_new_timeline, create_ai_timeline_
 
 timeline_bp = Blueprint('timeline', __name__)
@@ -54,8 +55,9 @@ def create_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def create_ai_timeline():
+    utils.abort_if_already_ai_generating()
     timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
     return json.dumps(timeline)
 

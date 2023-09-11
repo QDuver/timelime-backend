@@ -45,6 +45,10 @@ def process_date(date):
         newDate = '-'+newDate.replace('bc', '')
     if('ad' in newDate):
         newDate = newDate.replace('ad', '')
+    if('aby' in newDate):
+        newDate = newDate.replace('aby', '')
+    if('bby' in newDate):
+        newDate = '-'+newDate.replace('bby', '')
 
     if(any(month in newDate for month in months)):
         newDate = month_to_num(newDate)
