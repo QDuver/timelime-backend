@@ -72,7 +72,6 @@ def create_quiz():
     return jsonify(quiz), 200
 
 
-
 @other_bp.route("/get-quizzes/<tid>", endpoint="get_quizzes", methods=['GET'])
 @token_required
 @generic_error_handler
@@ -89,7 +88,8 @@ def get_quizzes(tid):
 def submit_quiz():
     db = app.config['db']
     recap = compute_quiz_results(request.json)
-    update_user_quiz_results(recap)
+    if not (db.is_anonymous_user()):
+        update_user_quiz_results(recap)
     return jsonify(recap), 200
 
 
@@ -104,7 +104,7 @@ def delete_quiz(quiz_id):
 
 def process(quiz):
     del quiz['answer']
-    quiz['questions'] = quiz['questions'][0:3]
+    quiz['questions'] = quiz['questions']
     quiz['options'] = [list(option.values()) for option in quiz['options']]
     map_with_user_existing_results(quiz)
     return quiz

@@ -86,9 +86,23 @@ def vaildate_date(date):
         raise Exception('year is out of range')
 
 def validate_dates(startDate, endDate):
-    if(startDate == None or endDate == None): return
-    if(startDate > endDate):
-        endDate = None
+    print('validate_dates', startDate, endDate)
+    if(startDate == None or endDate == None): 
+        return endDate
+    start_date = events_utils.split_date(startDate)
+    end_date = events_utils.split_date(endDate)
+    if(start_date['year'] > end_date['year']):
+        return None
+    try:
+        if(start_date['year'] == end_date['year'] and start_date['month'] > end_date['month']):
+            return None
+    except KeyError:
+        pass
+    try:
+        if(start_date['year'] == end_date['year'] and start_date['month'] == end_date['month'] and start_date['day'] > end_date['day']):
+            return None
+    except KeyError:
+        pass
 
 def generate_events(timelineName, image_association):
     try:
@@ -109,7 +123,7 @@ def generate_events(timelineName, image_association):
         try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
-            validate_dates(row['startDate'], row['endDate'])
+            row['endDate'] = validate_dates(row['startDate'], row['endDate'])
             event = {'uid': db.authedUser['uid'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == 'google'):
                 event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
