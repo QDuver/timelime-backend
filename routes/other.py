@@ -6,7 +6,8 @@ from utils.methods import get_google_images
 from ai import generate_quiz, process_quiz
 import utils.utils as utils
 import logging
-logger = logging.getLogger('my_logger')
+
+logging.basicConfig(level=logging.INFO)
 
 other_bp = Blueprint('other', __name__)
 
@@ -79,6 +80,8 @@ def create_quiz():
 @generic_error_handler
 def get_quizzes(tid):
     logging.debug('coucou')
+    logging.alert('This will get logged')
+
     db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
     for quiz in quizzes:
