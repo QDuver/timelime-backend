@@ -7,6 +7,7 @@ import hashlib
 import hmac
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from utils.utils import print_full_exception
 
 limiter = Limiter(
     get_remote_address,  # use the remote address of the client as the key to track
@@ -64,10 +65,6 @@ def generic_error_handler(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            print(e, flush=True)
-            response = {
-                'error': True,
-                'message': str(e),
-            }
-            return jsonify(response), 500  # Return a 500 Internal Server Error
+            print_full_exception(e)
+            return jsonify('Something went wrong, please try again later'), 500  # Return a 500 Internal Server Error
     return decorator

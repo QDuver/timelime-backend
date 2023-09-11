@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, current_app as app
 from decorators.decorators import token_required, generic_error_handler
-import utils.events as events
+import utils.methods as methods
 
 events_bp = Blueprint('events', __name__)
 
@@ -10,7 +10,7 @@ events_bp = Blueprint('events', __name__)
 @token_required
 # @generic_error_handler
 def get_events(timeline_id):
-    ev = events.get_events(app.config['db'] ,timeline_id)
+    ev = methods.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
 
 @events_bp.route("/events", endpoint="post_event", methods=['POST'])
@@ -18,7 +18,7 @@ def get_events(timeline_id):
 @generic_error_handler
 def post_event():
     event = request.json
-    events.create_or_edit_event(event)
+    methods.create_or_edit_event(event)
     return json.dumps(event)
 
 

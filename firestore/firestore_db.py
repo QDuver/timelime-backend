@@ -1,5 +1,6 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
+from utils.utils import print_full_exception
 class FirestoreDB: 
 
     authedUser = None
@@ -46,6 +47,14 @@ class FirestoreDB:
         else:
             return self.db.collection(collection).add(data)[1].id
         
+    @limiter.limit("5/minute")
+    def add_batch(self, collection, data):
+        batch = self.db.batch()
+        for doc in data:
+            ref = self.db.collection(collection).document()
+            batch.set(ref, doc)
+        return batch.commit()
+
     @limiter.limit("10/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
@@ -62,7 +71,7 @@ class FirestoreDB:
             if(doc):
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
-            print(e, flush=True)
+            print_full_exception(e)
             return None
 
 
@@ -84,6 +93,13 @@ class UnprotectedFirestoreDB:
             return self.db.collection(collection).document(doc_id).set(data)
         else:
             return self.db.collection(collection).add(data)[1].id
+
+    def add_batch(self, collection, data):
+        batch = self.db.batch()
+        for doc in data:
+            ref = self.db.collection(collection).document()
+            batch.set(ref, doc)
+        return batch.commit()
 
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)

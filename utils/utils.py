@@ -1,7 +1,7 @@
 from google.cloud import secretmanager
 import os
 import json
-
+from flask import jsonify, current_app as app
 
 def get_secret(secret_name):
     try:
@@ -24,3 +24,18 @@ def get_secret_core(secret_name):
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
+
+def print_full_exception(e):
+    print("An exception occurred:", e)
+    print("File:", e.__traceback__.tb_frame.f_code.co_filename)
+    print("Line:", e.__traceback__.tb_lineno)
+
+
+def abort_if_already_ai_generating():
+    db = app.config['db']
+    user = db.authedUser
+    try:
+        if(user['generating']['quiz']['loading'] or user['generating']['timeline']['loading']):
+            return jsonify({"message": "You already have a quiz or timeline being generated"}), 400
+    except KeyError:
+        pass

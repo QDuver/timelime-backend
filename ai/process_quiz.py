@@ -7,8 +7,9 @@ from flask import current_app as app
 
 pd.set_option('display.max_columns', None)
 import ast
-def main(timeline_id):
-    df = pd.read_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv')
+def main(timelineName):
+    name = timelineName.lower().replace(' ', '-')
+    df = pd.read_csv(f'ai/generated/quizzes/quiz-{name}.csv')
     quiz = {}
     quiz['questions'] = df['question'].tolist()
     quiz['options'] = []
@@ -20,11 +21,10 @@ def main(timeline_id):
         quiz['options'].append(d)
     quiz['answer'] = df['answer'].tolist()
     quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    quiz['tid'] = timeline_id
     try:
         db = app.config['db']
         quiz['uid'] = db.authedUser['uid']
     except:
         db = UnprotectedFirestoreDB()
         quiz['uid'] = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
-    db.add('quizzes', quiz)
+    return quiz
