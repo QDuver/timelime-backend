@@ -3,7 +3,8 @@ from flask import current_app as app
 import time 
 from googleapiclient.discovery import build
 import time
-from utils.utils import get_secret
+from utils.utils import get_secret, print_full_exception
+from ai import generate_timeline, process_timeline
 
 def create_or_edit_event(event):
     event['uid'] = app.config['user']['uid']
@@ -14,6 +15,12 @@ def create_or_edit_event(event):
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
+
+    if('endDate' not in event):
+        event['endDate'] = None
+    if('description' not in event):
+        event['description'] = None
+
     if('id' in event and event['id']):
         app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     else:
@@ -174,3 +181,30 @@ def get_google_images(eventName, timelineName):
     result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
+
+
+def create_new_timeline(name, source):
+    db = app.config['db']
+    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
+    timeline['id'] = db.add("timelines", timeline)
+    return timeline
+
+def create_ai_timeline_(timelineName, nEvents, imageAssociation):
+    db = app.config['db']
+    db.edit('users', db.authedUser['uid'], {'generating': {'timeline' : {'loading': True}}})
+    try:
+        generate_timeline.main(timelineName, nEvents)
+        events = process_timeline.generate_events(timelineName, imageAssociation)
+        if(len(events) < 1):
+            raise Exception("No events generated")
+        timeline = create_new_timeline(timelineName, 'ai')
+        for event in events:
+            event['tid'] = timeline['id']
+        db.add_batch('events', events)        
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline }}})
+        return timeline
+    except Exception as e:
+        print_full_exception(e)
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': None }}})
+        raise Exception("Error generating timeline")
+

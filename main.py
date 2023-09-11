@@ -1,17 +1,31 @@
 
 import firestore.firestore_init as firestore_init
 from firestore.firestore_db import UnprotectedFirestoreDB
-from utils.events import split_date, date_to_days, get_events
 firestore_init.init()
 db = UnprotectedFirestoreDB()
-import os
-from ai import generate_quiz, upload_quiz, upload_timeline
+from ai import generate_timeline, process_timeline, generate_quiz, process_quiz
+from utils.utils import print_full_exception
 
-# timeline = db.get('timelines', 'DM0eAFajelFwxXCZnajK')
-# upload_timeline.main(timeline, 'henry-viii')
 
-# generate_quiz.main('9L4uPocMUPJUtuv797vn')
-# upload_quiz.main('BQLUIloYtTsqBUwKwt8W')
+# timelineNames = ['napoleon', 'fencing', 'cinema', 'the life of sigourney weaver', 'basketball', 'clothing', 'the internet', 'the rendez-vous"']
+# for timelineName in timelineNames:
+#     print(timelineName)
+#     try:
+#         generate_timeline.main(timelineName, 30)
+#         events = process_timeline.generate_events(timelineName, 'noimage')
+#         generate_quiz.main(timelineName, events)
+#         process_quiz.main(timelineName)
+#     except Exception as e:
+#         print('Error: ' + timelineName)
+#         print_full_exception(e)
 
-import utils.cleaning_scripts as cleaning_scripts
-cleaning_scripts.delete_all_first_timelines()
+# events = process_timeline.generate_events('game of thrones', 'noimage')
+# for event in events:
+#     print(event)
+
+# timelineName = 'Star Wars Universe'
+# events = db.get('events', where=('tid', '==', 'ebtJw1QttkF87UwTFouF'))
+# generate_quiz.main(timelineName, events)
+# process_quiz.main(timelineName)
+# from utils.cleaning_scripts import delete_all_users_timeline
+# delete_all_users_timeline('BaxP33wjGCV5iUTKxiPs5b0Bx4c2')
