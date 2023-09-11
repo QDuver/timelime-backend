@@ -24,3 +24,8 @@ def get_secret_core(secret_name):
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
+
+def print_full_exception(e):
+    print("An exception occurred:", e)
+    print("File:", e.__traceback__.tb_frame.f_code.co_filename)
+    print("Line:", e.__traceback__.tb_lineno)

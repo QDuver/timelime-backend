@@ -2,18 +2,10 @@ import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators.decorators import token_required, generic_error_handler
-import utils.events as events
-from ai import generate_timeline, process_timeline
-from utils import utils
-from flask_socketio import SocketIO
+import utils.methods as methods
+from utils.methods import create_new_timeline, create_ai_timeline_
 
 timeline_bp = Blueprint('timeline', __name__)
-socketio = SocketIO()
-
-@socketio.on('message1')
-def handle_message(message):
-    print('Received message:', message, flush=True)
-    socketio.emit('my_response', {'data': 'Hello1!'})
 
 @timeline_bp.route("/timelines", endpoint="get_timelines")
 @token_required
@@ -55,8 +47,8 @@ def create_timeline():
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    events.create_or_edit_event(today)
-    events.create_or_edit_event(yesterday)
+    methods.create_or_edit_event(today)
+    methods.create_or_edit_event(yesterday)
     return json.dumps(timeline)
 
 
@@ -64,27 +56,7 @@ def create_timeline():
 @token_required
 @generic_error_handler
 def create_ai_timeline():
-    db = app.config['db']
-    estimated_time = request.json['estimatedTime']
-    start_time = time.time()
-    db.edit('users', db.authedUser['uid'], {'generating': {'timeline' : {'loading': True, 'estimatedTime': -1 }}})
-    try:
-        theme = request.json['theme']
-        generate_timeline.main(theme, request.json['nEvents'])
-        events = process_timeline.generate_events(theme, request.json['imageAssociation'])
-        if(len(events) < 1):
-            raise Exception("No events generated")
-        timeline = create_new_timeline(theme, 'ai')
-        generation_time = time.time() - start_time
-        db.edit('timelines', timeline['id'], {'generationTime': generation_time, 'estimatedTime': estimated_time})
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None, 'generated': timeline }}})
-        for event in events:
-            event['tid'] = timeline['id']
-        db.add_batch('events', events)        
-    except Exception as e:
-        print(e, flush=True)
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'estimatedTime': None, 'generated': None }}})
-        return jsonify({"message": "Error generating timeline"}), 400
+    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -100,12 +72,6 @@ def generate_timeline_name():
     n_timelines = len(db.get("timelines", where=('uid', '==', app.config['user']['uid'])))
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
-
-def create_new_timeline(name, source):
-    db = app.config['db']
-    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
-    timeline['id'] = db.add("timelines", timeline)
-    return timeline
 
 def _process_timeline(db, timeline):
     timeline['lastUsed'] = int(time.time())

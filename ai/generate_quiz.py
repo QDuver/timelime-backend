@@ -1,15 +1,13 @@
-from utils.utils import get_secret
+from utils.utils import get_secret, print_full_exception
 from firestore.firestore_db import UnprotectedFirestoreDB
 import openai
 import pandas as pd
 import time
 
-def main(timeline_id):
+def main(timelineName, events):
     start = time.time()
     secret = get_secret('OpenAPI')
     openai.api_key = secret
-    db = UnprotectedFirestoreDB()
-    events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
     n_events = len(events) if len(events) < 10 else 10
@@ -30,16 +28,16 @@ def main(timeline_id):
     )
 
     resp = resp['choices'][0]['message']['content']
-    print(f'finished generatin quiz for {len(events)} events', start - time.time())
-    print(resp)
+    print('quiz - time to generate', n_events, 'questions', time.time() - start)
+    name = timelineName.lower().replace(' ', '-')
     try:
       obj = eval(resp)
       if(type(obj) == dict):
           obj = obj[list(obj.keys())[0]]
       df = pd.DataFrame(obj)
-      df.to_csv(f'ai/generated/quizzes/quiz-{timeline_id}.csv', index=False)
+      df.to_csv(f'ai/generated/quizzes/quiz-{name}.csv', index=False)
     except Exception as e:
-      print(e)
-      with open(f'ai/generated/quizzes/quiz-{timeline_id}.txt', 'w') as f:
+      print_full_exception(e)
+      with open(f'ai/generated/quizzes/quiz-{name}.txt', 'w') as f:
         f.write(resp)
       raise Exception('Could not parse response')

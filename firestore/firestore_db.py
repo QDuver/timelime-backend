@@ -1,5 +1,6 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
+from utils.utils import print_full_exception
 class FirestoreDB: 
 
     authedUser = None
@@ -70,7 +71,7 @@ class FirestoreDB:
             if(doc):
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
-            print(e, flush=True)
+            print_full_exception(e)
             return None
 
 

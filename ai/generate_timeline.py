@@ -2,10 +2,10 @@ import openai
 import pandas as pd
 import time
 
-def main(theme, n_events):
+def main(timelineName, n_events):
 
   start = time.time()
-  name = theme.lower().replace(' ', '-')
+  name = timelineName.lower().replace(' ', '-')
 
   # try:
   #   df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
@@ -25,7 +25,7 @@ def main(theme, n_events):
           Escape all double quotes with a backslash.
           '''},
           {"role": "user", "content": f'''
-          Generate a historic timeline of {theme}.
+          Generate a historic timeline of {timelineName}.
           Create about {n_events} events.
            If possible, all periods of time should be equally represented
              '''},

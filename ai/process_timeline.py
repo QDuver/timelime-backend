@@ -3,7 +3,7 @@ from firestore.firestore_db import UnprotectedFirestoreDB
 from firebase_admin import auth
 import time
 from datetime import datetime
-from utils import events as events_utils
+from utils import methods as events_utils
 import numpy as np
 import re
 from flask import current_app as app
@@ -86,21 +86,19 @@ def validate_dates(startDate, endDate):
     if(startDate > endDate):
         endDate = None
 
-def generate_events(theme, image_association):
-    start = time.time()
+def generate_events(timelineName, image_association):
     try:
         db = app.config['db']
     except:
         db = UnprotectedFirestoreDB()
     
-    name = theme.lower().replace(' ', '-')
+    name = timelineName.lower().replace(' ', '-')
     df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     if not ('endDate' in df.columns):
         df['endDate'] = None
     df = process(df)
-    print('time to process', time.time() - start)
 
     events = []
     for i, row in df.iterrows():
@@ -110,9 +108,7 @@ def generate_events(theme, image_association):
             validate_dates(row['startDate'], row['endDate'])
             event = {'uid': db.authedUser['uid'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == 'google'):
-                print('start to load image', time.time() - start)
-                event['imageURL'] = events_utils.get_google_images(row['name'], theme)[0]
-                print('end to load image', time.time() - start)
+                event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
             events.append(event)
         except Exception as e:
             print('error', e, 'could not load event', row.to_dict())
