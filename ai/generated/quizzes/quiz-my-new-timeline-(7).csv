@@ -1,3 +1,0 @@
-question,options,answer
-"Which event is described as ""Yesterday""?","['Today', 'Tomorrow', 'Next Week', 'Yesterday']",Yesterday
-"On which date did the event ""Today"" occur?","['2023-09-10', '2023-09-09', '2023-09-12', '2023-09-11']",2023-09-11
