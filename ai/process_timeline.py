@@ -34,21 +34,29 @@ def month_to_num(newDate):
             newDate = to_dd_mm_yyyy(newDate.strip())
     return newDate
 
+def process_negative_literals(date):
+    newDate = re.sub(r'[a-zA-Z]', '', date).strip()
+    if('-' not in newDate):
+        newDate = '-'+newDate
+    return newDate
+
 def process_date(date):
     if(date == None): return None
     newDate = date.lower().strip()
+    newDate = newDate.replace(', ', '')
+    newDate = newDate.replace(',', '')
     if('ac' in newDate): 
-        newDate = '-'+newDate.replace('ac', '')
+        newDate = process_negative_literals(newDate)
     if('bce' in newDate):
-        newDate = '-'+newDate.replace('bce', '')
+        newDate = process_negative_literals(newDate)
     if('bc' in newDate): 
-        newDate = '-'+newDate.replace('bc', '')
+        newDate = process_negative_literals(newDate)
+    if('bby' in newDate):
+        newDate = process_negative_literals(newDate)
     if('ad' in newDate):
         newDate = newDate.replace('ad', '')
     if('aby' in newDate):
         newDate = newDate.replace('aby', '')
-    if('bby' in newDate):
-        newDate = '-'+newDate.replace('bby', '')
 
     if(any(month in newDate for month in months)):
         newDate = month_to_num(newDate)
@@ -86,12 +94,11 @@ def vaildate_date(date):
         raise Exception('year is out of range')
 
 def validate_dates(startDate, endDate):
-    print('validate_dates', startDate, endDate)
     if(startDate == None or endDate == None): 
         return endDate
     start_date = events_utils.split_date(startDate)
     end_date = events_utils.split_date(endDate)
-    if(start_date['year'] > end_date['year']):
+    if(start_date['year'] >= end_date['year']):
         return None
     try:
         if(start_date['year'] == end_date['year'] and start_date['month'] > end_date['month']):

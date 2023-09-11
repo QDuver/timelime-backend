@@ -25,11 +25,7 @@ def main(timelineName, events):
       ]
     )
 
-    print(resp)
-    print('-----------')
-    print(resp['choices'][0])
     resp = resp['choices'][0]['message']['content']
-    print('quiz - time to generate', n_events, 'questions', time.time() - start)
     name = timelineName.lower().replace(' ', '-')
     try:
       obj = eval(resp)

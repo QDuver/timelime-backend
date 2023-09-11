@@ -27,5 +27,5 @@ from utils.utils import print_full_exception
 # events = db.get('events', where=('tid', '==', 'ebtJw1QttkF87UwTFouF'))
 # generate_quiz.main(timelineName, events)
 # process_quiz.main(timelineName)
-# from utils.cleaning_scripts import delete_all_users_timeline
-# delete_all_users_timeline('BaxP33wjGCV5iUTKxiPs5b0Bx4c2')
+from utils.cleaning_scripts import delete_all_users_timeline
+delete_all_users_timeline('BaxP33wjGCV5iUTKxiPs5b0Bx4c2')
