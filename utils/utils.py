@@ -31,11 +31,8 @@ def set_env_variables():
 
 def print_full_exception(e):
     logger.error('This is an warning message')
-    logger.error("File:", e.__traceback__.tb_frame.f_code.co_filename)
-    logger.error("Line:", e.__traceback__.tb_lineno)
-    logger.warning('This is an warning message')
-    logger.warning("File:", e.__traceback__.tb_frame.f_code.co_filename)
-    logger.warning("Line:", e.__traceback__.tb_lineno)
+    logger.error(e.__traceback__.tb_frame.f_code.co_filename)
+    logger.error(e.__traceback__.tb_lineno)
     print("An exception occurred:", e)
     print("File:", e.__traceback__.tb_frame.f_code.co_filename)
     print("Line:", e.__traceback__.tb_lineno)
