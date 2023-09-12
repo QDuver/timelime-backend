@@ -1,14 +1,27 @@
 
 import json
-from flask import Blueprint, request, current_app as app
+from flask import Blueprint, request, current_app as app, Response, send_file
 from decorators.decorators import token_required, generic_error_handler
 import utils.methods as methods
-
+import pandas as pd
+import io
 events_bp = Blueprint('events', __name__)
+
+@events_bp.route("/download/<timeline_id>", endpoint="download_events")
+@token_required
+# @generic_error_handler
+def download_events(timeline_id):
+    ev = methods.get_events(app.config['db'] ,timeline_id)
+    print(ev['events'], flush=True)
+    csv_data = "\n".join([f"{record['name']},{record['startDate']}" for record in ev['events']])
+    response = Response(csv_data, content_type='text/csv')
+    response.headers['Content-Disposition'] = 'attachment; filename=data.csv'
+    return response
+
 
 @events_bp.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_events(timeline_id):
     ev = methods.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
@@ -24,7 +37,7 @@ def post_event():
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def delete_event(event_id):
     app.config['db'].delete("events", event_id)
     return json.dumps({})

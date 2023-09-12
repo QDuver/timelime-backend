@@ -40,7 +40,7 @@ def google_images():
 
 @other_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def create_quiz():
     db = app.config['db']
     utils.abort_if_already_ai_generating()

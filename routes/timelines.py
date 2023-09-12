@@ -55,7 +55,7 @@ def create_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def create_ai_timeline():
     utils.abort_if_already_ai_generating()
     timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
