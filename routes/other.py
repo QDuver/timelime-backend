@@ -7,7 +7,8 @@ from ai import generate_quiz, process_quiz
 import utils.utils as utils
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('my_logger')
+logger.setLevel(logging.DEBUG)
 
 other_bp = Blueprint('other', __name__)
 
@@ -79,7 +80,11 @@ def create_quiz():
 @token_required
 @generic_error_handler
 def get_quizzes(tid):
-    logging.debug('coucou')
+    logger.debug('This is a debug message')
+    logger.info('This is an info message')
+    logger.warning('This is a warning message')
+    logger.error('This is an error message')
+    logger.critical('This is a critical message')
     logging.alert('This will get logged')
 
     db = app.config['db']
