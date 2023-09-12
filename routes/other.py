@@ -19,9 +19,7 @@ def get_error_reporting_client():
 @token_required
 @generic_error_handler
 def report_error():
-
     client = get_error_reporting_client()
-
     try:
         raise Exception(request.json['data']['message'] + "\n " + request.json['data']['stack'])
     except Exception as e:
