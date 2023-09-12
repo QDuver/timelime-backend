@@ -5,7 +5,7 @@ from flask import jsonify, current_app as app
 import logging
 
 logger = logging.getLogger('my_logger')
-logger.setLevel(logging.ALERT)
+logger.setLevel(logging.WARNING)
 
 def get_secret(secret_name):
     try:
