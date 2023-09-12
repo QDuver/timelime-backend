@@ -6,12 +6,22 @@ import time
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 
-def create_or_edit_event(event):
-    event['uid'] = app.config['user']['uid']
-    if('categoryId' in event and event['categoryId']):
+
+def create_or_edit_preprocessing(event):
+
+    if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
         app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
-    else:
-        event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
+
+    elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
+        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
+        foundCategory = False
+        for category in categories:
+            if(category['name'] == event['categoryName'] and category['color'] == event['categoryColor']):
+                event['categoryId'] = category['id']
+                foundCategory = True
+                break
+        if(not foundCategory):
+            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': app.config['user']['uid']})
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
@@ -20,23 +30,39 @@ def create_or_edit_event(event):
         event['endDate'] = None
     if('description' not in event):
         event['description'] = None
+    
+    event['lastUsed'] = int(time.time())
+    return event
+    
 
-    if('id' in event and event['id']):
-        app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    else:
-        event.pop('id', None)
-        event['lastUsed'] = int(time.time())
-        app.config['db'].add('events', event)
+def create_event(event):
+    event['uid'] = app.config['user']['uid']
+    event = create_or_edit_preprocessing(event)
+    return event
+
+
+def edit_event(event):
+    return create_or_edit_preprocessing(event)
 
 def set_to_highlight(events):
-    filtered = [e for e in events if "lastUsed" in e and not e['isDefault']]
+    filtered = [e for e in events if "lastUsed" in e]
     if(len(filtered) < 1):
         return events
     lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
     for event in events:
         event['toHighlight'] = False
         if(event == lastUsedEvent):
+            if('isDefault' in event and event['isDefault']):
+                break
             event['toHighlight'] = ((time.time() - event['lastUsed']) < 10)
+    return events
+
+def assign_none_to_empty(events):
+    optional_cols = ['endDate', 'description', 'imageURL', 'categoryName', 'categoryColor']
+    for event in events:
+        for col in optional_cols:
+            if(col not in event):
+                event[col] = ''
     return events
 
 def get_events(db, timeline_id):    
@@ -54,6 +80,7 @@ def get_events(db, timeline_id):
     events = create_step_dates(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
     events = set_scaling(events)
+    events = assign_none_to_empty(events)
     return {'events': events, 'categories': categories}
 
 

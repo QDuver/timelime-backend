@@ -48,8 +48,8 @@ def create_timeline():
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    methods.create_or_edit_event(today)
-    methods.create_or_edit_event(yesterday)
+    methods.create_event(today)
+    methods.create_event(yesterday)
     return json.dumps(timeline)
 
 
