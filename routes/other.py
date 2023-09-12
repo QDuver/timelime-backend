@@ -5,10 +5,6 @@ from google.cloud import error_reporting
 from utils.methods import get_google_images
 from ai import generate_quiz, process_quiz
 import utils.utils as utils
-import logging
-
-logger = logging.getLogger('my_logger')
-logger.setLevel(logging.DEBUG)
 
 other_bp = Blueprint('other', __name__)
 
@@ -80,13 +76,6 @@ def create_quiz():
 @token_required
 @generic_error_handler
 def get_quizzes(tid):
-    logger.debug('This is a debug message')
-    logger.info('This is an info message')
-    logger.warning('This is a warning message')
-    logger.error('This is an error message')
-    logger.critical('This is a critical message')
-    logging.alert('This will get logged')
-
     db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
     for quiz in quizzes:
