@@ -50,8 +50,19 @@ def delete_empty_timelines():
 def delete_all_first_timelines():
     timelines = db.get('timelines')
     for timeline in timelines:
-        if('name' in timeline and (timeline['name'] == 'My first timeline' or timeline['name'] == 'New timeline' )):
+        if('name' in timeline and (timeline['name'] == 'My first timeline' or 'new timeline' in timeline['name'].lower() )):
             db.delete('timelines', timeline['id'])
+
+def delete_all_users_timeline(userId):
+    timelines = db.get('timelines', where=('uid', '==', userId))
+    for timeline in timelines:
+        db.delete('timelines', timeline['id'])
+    events = db.get('events', where=('uid', '==', userId))
+    for event in events:
+        db.delete('events', event['id'])
+    categories = db.get('categories', where=('uid', '==', userId))
+    for category in categories:
+        db.delete('categories', category['id'])
 
 def assign_uid_to_categories():
     categories = db.get('categories')

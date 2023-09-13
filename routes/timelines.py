@@ -2,8 +2,9 @@ import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators.decorators import token_required, generic_error_handler
-import utils.events as events
-from utils import utils
+import utils.methods as methods
+import utils.utils as utils
+from utils.methods import create_new_timeline, create_ai_timeline_
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -23,7 +24,7 @@ def get_timeline(timeline_id):
     timeline = db.get("timelines", doc=timeline_id)
     if(not timeline):
         return jsonify({"message": "Timeline not found"}), 404
-    timeline = process_timeline(db, timeline)
+    timeline = _process_timeline(db, timeline)
     return json.dumps(timeline)
 
 
@@ -35,7 +36,7 @@ def edit_timeline():
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
     timeline = db.get("timelines", doc=timeline['id'])
-    timeline = process_timeline(db, timeline)
+    timeline = _process_timeline(db, timeline)
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline", endpoint="create_timeline", methods=['POST'])
@@ -44,16 +45,21 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    n_timelines = len(db.get("timelines", where=('uid', '==', app.config['user']['uid'])))
-    timeline_name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
-    timeline = {'uid': app.config['user']['uid'], 'name': timeline_name, 'isPublic': False, 'lastUsed': int(time.time())}
-    timeline['id'] = db.add("timelines", timeline)
+    timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    events.create_or_edit_event(today)
-    events.create_or_edit_event(yesterday)
+    methods.create_event(today)
+    methods.create_event(yesterday)
     return json.dumps(timeline)
 
+
+@timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
+@token_required
+@generic_error_handler
+def create_ai_timeline():
+    utils.abort_if_already_ai_generating()
+    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
+    return json.dumps(timeline)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
 @token_required
@@ -63,16 +69,19 @@ def delete_timeline(timeline_id):
     db.delete("timelines", timeline_id)
     return json.dumps({})
 
+def generate_timeline_name():
+    db = app.config['db']
+    n_timelines = len(db.get("timelines", where=('uid', '==', app.config['user']['uid'])))
+    name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
+    return name
 
-def process_timeline(db, timeline):
+def _process_timeline(db, timeline):
     timeline['lastUsed'] = int(time.time())
     timeline['isEditable'] = True
     try:
         db.edit("timelines", timeline.id, timeline)
     except: 
         pass
-
-    print(timeline, flush=True)
 
     if(db.authedUser['uid'] != timeline['uid']):
         if(db.is_anonymous_user() and len(timeline['uid']) < 12):

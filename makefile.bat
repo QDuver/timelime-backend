@@ -10,6 +10,7 @@ gcloud endpoints services deploy openapi-run.yaml --project timelime-dev
 
 gcloud config get-value account
 gcloud config set account main-641@timelime-dev.iam.gserviceaccount.com
+gcloud config set account main-641@timelime-dev.iam.gserviceaccount.com
 gcloud auth print-identity-token main-641@timelime-dev.iam.gserviceaccount.com
 gcloud auth print-identity-token xxxx@xxx.iam.gserviceaccount.com
 

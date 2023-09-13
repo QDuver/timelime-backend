@@ -1,3 +1,6 @@
 secrets/
 venv/
 __pycache__/
+ai/generated/quizzes/*
+ai/generated/timelines/*
+*.pyc

@@ -3,39 +3,72 @@ from flask import current_app as app
 import time 
 from googleapiclient.discovery import build
 import time
+from utils.utils import get_secret, print_full_exception
+from ai import generate_timeline, process_timeline
 
-def create_or_edit_event(event):
-    event['uid'] = app.config['user']['uid']
-    if('categoryId' in event and event['categoryId']):
+
+def create_or_edit_preprocessing(event):
+
+    if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
         app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
-    else:
-        event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': event['uid']})
+
+    elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
+        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
+        foundCategory = False
+        for category in categories:
+            if(category['name'] == event['categoryName'] and category['color'] == event['categoryColor']):
+                event['categoryId'] = category['id']
+                foundCategory = True
+                break
+        if(not foundCategory):
+            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': app.config['user']['uid']})
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
-    if('id' in event and event['id']):
-        app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    else:
-        event.pop('id', None)
-        event['lastUsed'] = int(time.time())
-        app.config['db'].add('events', event)
+
+    if('endDate' not in event):
+        event['endDate'] = None
+    if('description' not in event):
+        event['description'] = None
+    
+    event['lastUsed'] = int(time.time())
+    return event
+    
+
+def create_event(event):
+    event['uid'] = app.config['user']['uid']
+    event = create_or_edit_preprocessing(event)
+    return event
+
+
+def edit_event(event):
+    return create_or_edit_preprocessing(event)
 
 def set_to_highlight(events):
-    filtered = [e for e in events if "lastUsed" in e and not e['isDefault']]
+    filtered = [e for e in events if "lastUsed" in e]
     if(len(filtered) < 1):
         return events
     lastUsedEvent = max(filtered, key=lambda x: x["lastUsed"])
     for event in events:
         event['toHighlight'] = False
         if(event == lastUsedEvent):
+            if('isDefault' in event and event['isDefault']):
+                break
             event['toHighlight'] = ((time.time() - event['lastUsed']) < 10)
+    return events
+
+def assign_none_to_empty(events):
+    optional_cols = ['endDate', 'description', 'imageURL', 'categoryName', 'categoryColor']
+    for event in events:
+        for col in optional_cols:
+            if(col not in event):
+                event[col] = ''
     return events
 
 def get_events(db, timeline_id):    
     start = time.time()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
-    print(events, flush=True)
     if(len(events) < 1):
         return {'events': [], 'categories': []}
     categories = db.get('categories', where=('tid', '==', timeline_id))
@@ -47,6 +80,7 @@ def get_events(db, timeline_id):
     events = create_step_dates(events)
     events = sorted(events, key=cmp_to_key(custom_sort))
     events = set_scaling(events)
+    events = assign_none_to_empty(events)
     return {'events': events, 'categories': categories}
 
 
@@ -165,11 +199,39 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName):
-    API_KEY = "AIzaSyBl9-P8iSKJ_VXNAFnaaFPqb1XNaWVeluI"
+def get_google_images(eventName, timelineName):
+    API_KEY = get_secret('SEARCH_ENGINE')
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=eventName, cx=SEARCH_ENGINE_ID, searchType="image").execute()
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
+
+
+def create_new_timeline(name, source):
+    db = app.config['db']
+    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
+    timeline['id'] = db.add("timelines", timeline)
+    return timeline
+
+def create_ai_timeline_(timelineName, nEvents, imageAssociation):
+    db = app.config['db']
+    db.edit('users', db.authedUser['uid'], {'generating': {'timeline' : {'loading': True}}})
+    try:
+        generate_timeline.main(timelineName, nEvents)
+        events = process_timeline.generate_events(timelineName, imageAssociation)
+        if(len(events) < 1):
+            raise Exception("No events generated")
+        timeline = create_new_timeline(timelineName, 'ai')
+        for event in events:
+            event['tid'] = timeline['id']
+        db.add_batch('events', events)        
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline }}})
+        return timeline
+    except Exception as e:
+        print_full_exception(e)
+        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': None }}})
+        raise Exception("Error generating timeline")
+

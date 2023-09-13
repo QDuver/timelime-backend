@@ -36,21 +36,17 @@ def migrate_categories(source_db, target_db):
     cats = source_db.collection('categories').get()
     for cat in cats:
         cat_dict = cat.to_dict()
-        print(cat_dict)
         if('user' in cat_dict):
             cat_dict['uid'] = cat_dict['user']
             del cat_dict['user']
-        print(cat_dict)
         target_db.collection('categories').document(cat.id).set(cat_dict)
 
 def migrate_timelines(source_db, target_db):
     timelines = source_db.collection('timelines').get()
     for timeline in timelines:
         timeline_dict = timeline.to_dict()
-        print(timeline_dict)
         if('uid' not in timeline_dict):
             raise Exception('Timeline has no uid')
-        print(timeline_dict)
         # target_db.collection('timelines').document(timeline.id).set(timeline_dict)
 
 
