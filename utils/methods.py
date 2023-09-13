@@ -3,17 +3,35 @@ from flask import current_app as app
 import time 
 from googleapiclient.discovery import build
 import time
+from ai.dalle import generate_image
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
+from google.cloud import storage
+
+def handle_image(request, event):
+    db = app.config['db']
+    if('file' in request.files):
+        file = request.files['file']
+        gcs = storage.Client()
+        bucket = gcs.get_bucket('user-event-images')
+        blob = bucket.blob(event['id'])
+        blob.upload_from_string( file.read(), content_type=file.content_type )
+        event['imageName'] = event['imageURL']
+        event['imageURL'] = f'https://storage.cloud.google.com/user-event-images/{event["id"]}'
+        db.edit('events', event['id'], event)
+    if('An AI image will start' in event['imageURL']):
+        event['imageGenerating'] = True
+        db.edit('events', event['id'], event)
 
 
-def create_or_edit_preprocessing(event):
+def create_or_edit_preprocessing(event, categories = None):
+    if not (categories):
+        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
         app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
 
     elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
-        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
         foundCategory = False
         for category in categories:
             if(category['name'] == event['categoryName'] and category['color'] == event['categoryColor']):
@@ -26,6 +44,10 @@ def create_or_edit_preprocessing(event):
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
 
+    event['startDate'] = event['startDate'].lstrip('0')
+    if('endDate' in event and event['endDate']):
+        event['endDate'] = event['endDate'].lstrip('0')
+
     if('endDate' not in event):
         event['endDate'] = None
     if('description' not in event):
@@ -35,10 +57,19 @@ def create_or_edit_preprocessing(event):
     return event
     
 
-def create_event(event):
-    event['uid'] = app.config['user']['uid']
-    event = create_or_edit_preprocessing(event)
-    return event
+def create_events(events):
+    for event in events:
+        for key in list(event.keys()):
+            if ' (optional)' in key:
+                event[key.replace(' (optional)', '')] = event.pop(key)
+
+    categories = app.config['db'].get('categories', where=('tid', '==', events[0]['tid']))
+    processed_events = []
+    for event in events:
+        event['uid'] = app.config['user']['uid']
+        event = create_or_edit_preprocessing(event, categories)
+        processed_events.append(event)
+    return processed_events
 
 
 def edit_event(event):
@@ -199,13 +230,13 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName, timelineName):
+def get_google_images(eventName, timelineName, num=1):
     API_KEY = get_secret('SEARCH_ENGINE')
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
     query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
 

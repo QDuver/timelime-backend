@@ -35,30 +35,47 @@ def download_events(timeline_id):
 
 @events_bp.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def get_events(timeline_id):
     ev = methods.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
 
+@events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
+@token_required
+@generic_error_handler
+def create_event():
+    event = json.loads(request.form.get('event'))
+    event = methods.create_events([event])[0]
+    event_id = app.config['db'].add('events', event)
+    event['id'] = event_id
+    methods.handle_image(request, event)
+    return json.dumps(event)
+
+
 @events_bp.route("/create-events", endpoint="create_events", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def create_events():
     db = app.config['db']
-    processed_events = []
-    for event in request.json:
-        processed_events.append(methods.create_event(event))
-    print(processed_events, flush=True)
-    events = db.add_batch('events', processed_events)
+    processed_events = methods.create_events(request.json)
+    db.add_batch('events', processed_events)
     return jsonify('success')
 
 @events_bp.route("/event", endpoint="edit_event", methods=['PUT'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def edit_event():
-    event = request.json
+    event = json.loads(request.form.get('event'))
     event = methods.edit_event(event)
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
+    methods.handle_image(request, event)
+    return json.dumps(event)
+
+@events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
+@token_required
+# @generic_error_handler
+def generate_image():
+    event = methods.generate_image(request.json)
     return json.dumps(event)
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
@@ -76,14 +93,13 @@ def get_categories(timeline_id):
     categories = app.config['db'].get("categories", where=('tid', '==', timeline_id))
     return json.dumps(categories)
 
-@events_bp.route("/categories/<catgory_id>", endpoint="delete_category", methods=['DELETE'])
+@events_bp.route("/categories/<category_id>", endpoint="delete_category", methods=['DELETE'])
 @token_required
 @generic_error_handler
-def delete_category(catgory_id):
-    app.config['db'].delete("categories", catgory_id)
-    events = app.config['db'].get("events", where=('category', '==', catgory_id))
+def delete_category(category_id):
+    app.config['db'].delete("categories", category_id)
+    events = app.config['db'].get("events", where=('category', '==', category_id))
     for event in events:
         event['categoryId'] = None
         events.edit_event(event)
-
     return json.dumps({})

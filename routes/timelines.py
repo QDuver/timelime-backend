@@ -23,10 +23,30 @@ def get_timeline(timeline_id):
     db = app.config['db']
     timeline = db.get("timelines", doc=timeline_id)
     if(not timeline):
-        return jsonify({"message": "Timeline not found"}), 404
-    timeline = _process_timeline(db, timeline)
+        return jsonify({"message": "Timeline not found"}), 403
+    try:
+        timeline = _process_timeline(db, timeline)
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
     return json.dumps(timeline)
 
+def _process_timeline(db, timeline):
+    timeline['lastUsed'] = int(time.time())
+    timeline['isEditable'] = True
+    try:
+        db.edit("timelines", timeline.id, timeline)
+    except: 
+        pass
+
+    if(db.authedUser['uid'] != timeline['uid']):
+        if(db.is_anonymous_user() and len(timeline['uid']) < 12):
+            raise PermissionError('This timeline has expired. Login to save your progress')
+        if(not timeline['isPublic']):
+            raise PermissionError('This timeline is private')
+        else:
+            timeline['isEditable'] = False
+    
+    return timeline
 
 @timeline_bp.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
 @token_required
@@ -39,6 +59,8 @@ def edit_timeline():
     timeline = _process_timeline(db, timeline)
     return json.dumps(timeline)
 
+
+
 @timeline_bp.route("/timeline", endpoint="create_timeline", methods=['POST'])
 @token_required
 @generic_error_handler
@@ -48,8 +70,8 @@ def create_timeline():
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': app.config['user']['uid'], 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    methods.create_event(today)
-    methods.create_event(yesterday)
+    default_events = methods.create_events([today, yesterday])
+    db.add_batch('events', default_events)
     return json.dumps(timeline)
 
 
@@ -75,20 +97,3 @@ def generate_timeline_name():
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
 
-def _process_timeline(db, timeline):
-    timeline['lastUsed'] = int(time.time())
-    timeline['isEditable'] = True
-    try:
-        db.edit("timelines", timeline.id, timeline)
-    except: 
-        pass
-
-    if(db.authedUser['uid'] != timeline['uid']):
-        if(db.is_anonymous_user() and len(timeline['uid']) < 12):
-            raise Exception('This timeline has expired. Login to save your progress')
-        if(not timeline['isPublic']):
-            raise Exception('This timeline is private')
-        else:
-            timeline['isEditable'] = False
-    
-    return timeline
