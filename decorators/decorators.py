@@ -1,4 +1,5 @@
 
+import time
 import flask
 from flask import jsonify, request, current_app
 import firebase_admin
@@ -48,6 +49,7 @@ def token_required(route_function):
         except Exception as e:
             firebase_user = auth.get_user(decoded_token['uid']).__dict__['_data']
             firebase_user['uid'] = firebase_user['localId']
+            firebase_user['joined_on'] = time.time()
             keys = ['email', 'displayName', 'photoUrl', 'uid']
             user = {key: firebase_user[key] for key in keys if key in firebase_user}
             current_app.config['db'].add("users", user, doc_id=user['uid'])

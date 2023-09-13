@@ -32,7 +32,7 @@ def report_error():
 @token_required
 @generic_error_handler
 def google_images():
-    links = get_google_images(request.json['eventName'], request.json['timelineName'])
+    links = get_google_images(request.json['eventName'], request.json['timelineName'], 10)
     return jsonify({"links": links}), 200
 
 
@@ -104,7 +104,7 @@ def delete_quiz(quiz_id):
 def process(quiz):
     quiz['answers'] = quiz['answer']
     quiz['options'] = [list(option.values()) for option in quiz['options']]
-    quiz['questions'] = quiz['questions'][0:3]
+    # quiz['questions'] = quiz['questions'][0:3]
     map_with_user_existing_results(quiz)
     return quiz
 

@@ -5,6 +5,21 @@ from googleapiclient.discovery import build
 import time
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
+from google.cloud import storage
+
+
+def handle_image(request, event, event_id):
+    if('file' in request.files):
+        db = app.config['db']r
+        print('upload_image')
+        file = request.files['file']
+        gcs = storage.Client()
+        bucket = gcs.get_bucket('user-event-images')
+        blob = bucket.blob(event_id)
+        blob.upload_from_string( file.read(), content_type=file.content_type )
+        event['imageName'] = event['imageURL']
+        event['imageURL'] = f'https://storage.cloud.google.com/user-event-images/{event_id}'
+        db.edit('events', event_id, event)
 
 
 def create_or_edit_preprocessing(event, categories = None):
@@ -27,6 +42,10 @@ def create_or_edit_preprocessing(event, categories = None):
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
 
+    event['startDate'] = event['startDate'].lstrip('0')
+    if('endDate' in event and event['endDate']):
+        event['endDate'] = event['endDate'].lstrip('0')
+
     if('endDate' not in event):
         event['endDate'] = None
     if('description' not in event):
@@ -37,6 +56,11 @@ def create_or_edit_preprocessing(event, categories = None):
     
 
 def create_events(events):
+    for event in events:
+        for key in list(event.keys()):
+            if ' (optional)' in key:
+                event[key.replace(' (optional)', '')] = event.pop(key)
+
     categories = app.config['db'].get('categories', where=('tid', '==', events[0]['tid']))
     processed_events = []
     for event in events:
@@ -204,13 +228,13 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName, timelineName):
+def get_google_images(eventName, timelineName, num=1):
     API_KEY = get_secret('SEARCH_ENGINE')
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
     query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
     service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=1).execute()
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
     links = [link['link'] for link in result.get("items", [])]
     return links
 
