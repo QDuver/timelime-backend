@@ -47,8 +47,9 @@ def create_event():
     event = json.loads(request.form.get('event'))
     event = methods.create_events([event])[0]
     event_id = app.config['db'].add('events', event)
-    methods.handle_image(request, event, event_id)
-    return jsonify('success')
+    event['id'] = event_id
+    methods.handle_image(request, event)
+    return json.dumps(event)
 
 
 @events_bp.route("/create-events", endpoint="create_events", methods=['POST'])
@@ -67,7 +68,14 @@ def edit_event():
     event = json.loads(request.form.get('event'))
     event = methods.edit_event(event)
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    methods.upload_image(request, event, event['id'])
+    methods.handle_image(request, event)
+    return json.dumps(event)
+
+@events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
+@token_required
+# @generic_error_handler
+def generate_image():
+    event = methods.generate_image(request.json)
     return json.dumps(event)
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
