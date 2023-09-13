@@ -102,9 +102,9 @@ def delete_quiz(quiz_id):
 
 
 def process(quiz):
-    del quiz['answer']
-    quiz['questions'] = quiz['questions']
+    quiz['answers'] = quiz['answer']
     quiz['options'] = [list(option.values()) for option in quiz['options']]
+    quiz['questions'] = quiz['questions'][0:3]
     map_with_user_existing_results(quiz)
     return quiz
 

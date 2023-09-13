@@ -7,13 +7,14 @@ from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 
 
-def create_or_edit_preprocessing(event):
+def create_or_edit_preprocessing(event, categories = None):
+    if not (categories):
+        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
         app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
 
     elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
-        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
         foundCategory = False
         for category in categories:
             if(category['name'] == event['categoryName'] and category['color'] == event['categoryColor']):
@@ -35,10 +36,14 @@ def create_or_edit_preprocessing(event):
     return event
     
 
-def create_event(event):
-    event['uid'] = app.config['user']['uid']
-    event = create_or_edit_preprocessing(event)
-    return event
+def create_events(events):
+    categories = app.config['db'].get('categories', where=('tid', '==', events[0]['tid']))
+    processed_events = []
+    for event in events:
+        event['uid'] = app.config['user']['uid']
+        event = create_or_edit_preprocessing(event, categories)
+        processed_events.append(event)
+    return processed_events
 
 
 def edit_event(event):

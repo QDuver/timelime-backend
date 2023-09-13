@@ -45,11 +45,9 @@ def get_events(timeline_id):
 # @generic_error_handler
 def create_events():
     db = app.config['db']
-    processed_events = []
-    for event in request.json:
-        processed_events.append(methods.create_event(event))
+    processed_events = methods.create_events(request.json)
     print(processed_events, flush=True)
-    events = db.add_batch('events', processed_events)
+    db.add_batch('events', processed_events)
     return jsonify('success')
 
 @events_bp.route("/event", endpoint="edit_event", methods=['PUT'])
