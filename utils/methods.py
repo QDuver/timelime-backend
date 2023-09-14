@@ -21,7 +21,7 @@ def handle_image(request, event):
         event['imageName'] = event['imageURL']
         event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/{event["id"]}'
         db.edit('events', event['id'], event)
-    if('An AI image will start' in event['imageURL']):
+    if('imageURL' in event and 'An AI image will start' in event['imageURL']):
         event['imageGenerating'] = True
         db.edit('events', event['id'], event)
 
