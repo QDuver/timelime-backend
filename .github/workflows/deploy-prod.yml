@@ -11,6 +11,7 @@ jobs:
       GCP_PROJECT_ID: timelime-prod
       GCP_EMAIL: main-219@timelime-prod.iam.gserviceaccount.com
       GCP_PROJECT_NUMBER: 260031091728
+      TIMELIME_USER_IMAGES_BUCKET: timelime-user-images-bucket
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -41,4 +42,4 @@ jobs:
       run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --allow-unauthenticated --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
 
     - name: Deploy Clean Schedule Cloud Function
-      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
+      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}} --set-env-vars TIMELIME_USER_IMAGES_BUCKET=${{env.TIMELIME_USER_IMAGES_BUCKET}}
