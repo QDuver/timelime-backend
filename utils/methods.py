@@ -7,19 +7,21 @@ from ai.dalle import generate_image
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 from google.cloud import storage
+import os
 
 def handle_image(request, event):
     db = app.config['db']
     if('file' in request.files):
+        bucket_name = os.environ.get('TIMELIME_USER_IMAGES_BUCKET', 'timelime-dev-user-images-bucket')
         file = request.files['file']
         gcs = storage.Client()
-        bucket = gcs.get_bucket('user-event-images')
+        bucket = gcs.get_bucket(bucket_name)
         blob = bucket.blob(event['id'])
         blob.upload_from_string( file.read(), content_type=file.content_type )
         event['imageName'] = event['imageURL']
-        event['imageURL'] = f'https://storage.cloud.google.com/user-event-images/{event["id"]}'
+        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/{event["id"]}'
         db.edit('events', event['id'], event)
-    if('An AI image will start' in event['imageURL']):
+    if('imageURL' in event and 'An AI image will start' in event['imageURL']):
         event['imageGenerating'] = True
         db.edit('events', event['id'], event)
 

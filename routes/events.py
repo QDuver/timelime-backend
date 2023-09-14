@@ -42,7 +42,7 @@ def get_events(timeline_id):
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
 @token_required
-@generic_error_handler
+# @generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
     event = methods.create_events([event])[0]
