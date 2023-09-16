@@ -2,7 +2,7 @@ import time
 from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from google.cloud import error_reporting
-from utils.constants import DEFAULT_QUOTAS
+from clean_schedule.constants import DEFAULT_QUOTAS
 from utils.methods import get_google_images
 from ai import generate_quiz, process_quiz
 import utils.utils as utils
@@ -92,7 +92,7 @@ def get_quizzes(tid):
 def submit_quiz():
     db = app.config['db']
     recap = compute_quiz_results(request.json)
-    if not (db.is_anonymous_user()):
+    if not (db.user.isAnonymous):
         update_user_quiz_results(recap)
     return jsonify(recap), 200
 
@@ -134,7 +134,7 @@ def compute_quiz_results(data):
     db = app.config['db']
     quiz = db.get("quizzes", data['quizId'])
     results = []
-    answers = quiz['answer']
+    answers = quiz['answers']
     userAnswers = data['userAnswers']
     for i in range(len(userAnswers)):
         results.append(answers[i] == userAnswers[i])
