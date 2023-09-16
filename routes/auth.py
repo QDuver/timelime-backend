@@ -13,7 +13,8 @@ auth_bp = Blueprint('auth', __name__)
 @token_required
 @generic_error_handler
 def get_auth():
-    return  json.dumps(app.config['user'].to_dict())
+    db = app.config['db']
+    return  json.dumps(db.user.to_dict())
 
 
 @auth_bp.route("/user", methods=['PUT'], endpoint="edit_user")

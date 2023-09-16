@@ -1,3 +1,4 @@
+import time
 from google.cloud import secretmanager
 import json
 import firebase_admin
@@ -56,6 +57,10 @@ def clean_schedule(request):
     for category in db.get('categories'):
         if(category['tid'] in unique_tids):
             db.delete('categories', category['id'])
+
+    for user in db.get('users'):
+        if('isAnonymous' in user and user['isAnonymous'] and time.time() - user['joinedOn'] > 500):
+            db.delete('users', user['uid'])
 
     for timeline in anonymous_timelines:
         db.delete('timelines', timeline['id'])

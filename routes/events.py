@@ -2,6 +2,7 @@
 import json
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
 from decorators.decorators import premium_required, token_required, generic_error_handler
+from utils.constants import DEFAULT_QUOTAS
 import utils.methods as methods
 import pandas as pd
 import io
@@ -45,6 +46,8 @@ def get_events(timeline_id):
 @generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
+    if(methods.event_quotas_exceeded(event)):
+        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['events']} events per timeline with the Free plan - Handle FE"}), 403
     event = methods.create_events([event])[0]
     event_id = app.config['db'].add('events', event)
     event['id'] = event_id

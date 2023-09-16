@@ -1,4 +1,6 @@
 
+import time
+from clean_schedule.main import clean_schedule
 import firestore.firestore_init as firestore_init
 from firestore.firestore_db import UnprotectedFirestoreDB
 firestore_init.init()
@@ -28,4 +30,4 @@ def read_txt_file():
 #     print(df)
 
 # read_txt_file()
-_process_timeline()
+# _process_timeline()

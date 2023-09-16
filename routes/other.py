@@ -2,7 +2,7 @@ import time
 from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from google.cloud import error_reporting
-from utils.constants import QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 from utils.methods import get_google_images
 from ai import generate_quiz, process_quiz
 import utils.utils as utils
@@ -19,7 +19,7 @@ def get_error_reporting_client():
 @other_bp.route("/quotas", endpoint="get_quotas", methods=['GET'])
 @generic_error_handler
 def get_quotas():
-    quotas = QUOTAS
+    quotas = DEFAULT_QUOTAS
     return jsonify(quotas), 200
 
 @other_bp.route("/report_error", endpoint="report_error", methods=['POST'])
@@ -56,18 +56,18 @@ def create_quiz():
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
     
-    db.edit('users', db.uid, {'generating': {'quiz': {'loading': True, 'started': time.time() }}})
+    db.user.update_ai_tracking_status('quiz', True)
     try:
         timelineName = db.get('timelines', doc=tid)['name']
         events = db.get('events', where=('tid', '==', tid))
         generate_quiz.main(timelineName, events)
         quiz = process_quiz.main( timelineName)
         quiz['tid'] = tid
-        db.edit('users', db.uid, {'generating': {'quiz': {'loading': False, 'generated': quiz, 'started': None }}})
+        db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)
     except Exception as e:
         utils.print_full_exception(e)
-        db.edit('users', db.uid, {'generating': {'quiz': {'loading': False, 'generated': None, 'started': None }}})
+        db.user.update_ai_tracking_status('quiz', False, quiz)
         return jsonify({"message": "Error generating quiz"}), 400
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]

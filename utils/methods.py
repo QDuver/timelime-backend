@@ -4,17 +4,41 @@ import time
 from googleapiclient.discovery import build
 import time
 from ai.dalle import generate_image
+from utils.constants import DEFAULT_QUOTAS
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 from google.cloud import storage
 import os
 import re
+import datetime
+
+
+def event_quotas_exceeded(event):
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
+    if(n_events >= DEFAULT_QUOTAS['events_free']):
+        return True
+
+def timeline_quotas_exceeded():
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
+    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
+        return True
 
 def strip_leading_zeros(event):
 
-    event['startDate'] = re.sub(r'(?<!-)(0*)(?!-)', '', event['startDate'])
+    def handle_if_dash_as_first(date):
+        if(not date):
+            return '0'
+        return date if date[0] != '-' else '0'+date
+
+    event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
     try:
-        event['endDate'] = re.sub(r'(?<!-)(0*)(?!-)', '', event['endDate'])
+        event['endDate'] = handle_if_dash_as_first(event['endDate'].lstrip('0'))
     except:
         pass
     return event
@@ -267,7 +291,7 @@ def create_new_timeline(name, source):
 
 def create_ai_timeline_(timelineName, nEvents, imageAssociation):
     db = app.config['db']
-    db.edit('users', db.uid, {'generating': {'timeline' : {'loading': True, 'started': int(time.time())}}})
+    db.user.update_ai_tracking_status('timeline', True)
     try:
         generate_timeline.main(timelineName, nEvents)
         events = process_timeline.main(timelineName, imageAssociation)
@@ -277,10 +301,10 @@ def create_ai_timeline_(timelineName, nEvents, imageAssociation):
         for event in events:
             event['tid'] = timeline['id']
         db.add_batch('events', events)        
-        db.edit('users', db.user['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline, 'started':None }}})
+        db.user.update_ai_tracking_status('timeline', False, timeline)
         return timeline
     except Exception as e:
         print_full_exception(e)
-        db.edit('users', db.user['id'], {'generating': {'timeline' : {'loading': False, 'generated': None, 'started':None }}})
+        db.user.update_ai_tracking_status('timeline', False)
         raise Exception("Error generating timeline")
 

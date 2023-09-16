@@ -3,9 +3,10 @@ from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from models.user import User
+from utils.constants import DEFAULT_QUOTAS
 import utils.methods as methods
 import utils.utils as utils
-from utils.methods import create_new_timeline, create_ai_timeline_
+from utils.methods import create_new_timeline, create_ai_timeline_, timeline_quotas_exceeded
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -14,7 +15,7 @@ timeline_bp = Blueprint('timeline', __name__)
 @token_required
 def get_timelines():
     db = app.config['db']
-    user = app.config['user']
+    user = db.user
     timelines = db.get("timelines", where=('uid', '==', user.uid), order_by=('lastUsed', 'DESCENDING'))
     return json.dumps(timelines)
 
@@ -35,7 +36,7 @@ def get_timeline(timeline_id):
 
 def _process_timeline(timeline):
     db = app.config['db']
-    user = app.config['user']
+    user = db.user
     timeline['lastUsed'] = int(time.time())
     timeline['isEditable'] = True
     try:
@@ -45,7 +46,7 @@ def _process_timeline(timeline):
 
     if(user.uid != timeline['uid']):
         if(user.isAnonymous and len(timeline['uid']) < 12):
-            raise PermissionError('This timeline has expired. Login to save your progress')
+            raise PermissionError('This timeline has expired. Login to save your progress - Handle FE')
         if(not timeline['isPublic']):
             raise PermissionError('This timeline is private')
         else:
@@ -72,6 +73,8 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
+    if(timeline_quotas_exceeded()):
+        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines']} timelines with the Free plan - Handle FE"}), 403
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}

@@ -17,7 +17,6 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(other_bp)
 firestore_init.init()
 app.config['db'] = FirestoreDB()
-app.config['user'] = None
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

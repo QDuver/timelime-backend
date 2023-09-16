@@ -3,7 +3,8 @@ from flask import current_app as app, jsonify
 from firebase_admin import auth
 
 from models.exceptions import TokenExpired
-from utils.constants import QUOTAS
+from utils.constants import DEFAULT_QUOTAS
+from utils.utils import first_day_of_next_month, print_full_exception
 
 class User:
     DEFAULT_USER_SETTINGS = {
@@ -12,30 +13,37 @@ class User:
         'isDarkMode': False,
         'isScaled': False,
         'lastLongPressHint': None,
-        'quotas': QUOTAS,
+        'quotas': DEFAULT_QUOTAS,
         'generating': {},
         'quizResults': [], 
-        'joinedOn': time.time(),
-        'lastLogin': time.time(),
+        'joinedOn': None,
+        'lastLogin': None,
         'displayName': None,
         'email': None,
         'photoUrl': None,
-        'isAnonymous': False
+        'isAnonymous': False,
+        'exp': None,
+        'expiresIn': None,
+        'nextQuotaRefresh': None,
     }
-    firebaseUser = None
+
 
     def __init__(self, request):
 
         self.db = app.config['db']
         self.request = request
         self.set_token()
+        self.populate_user_data()
+        self.remove_loading_if_too_long()
+
 
     def populate_user_data(self):
-        try:
-            user = self.db.get("users", where=('uid', '==', self.firebaseId))[0]
-            user = self.fill_in_missing_attributes(user)
-        except:
+        query = self.db.get("users", where=('uid', '==', self.uid))
+        if(len(query) == 0):
             user = self.create_new_user()
+        else:
+            user = query[0]
+            user = self.fill_in_missing_attributes(user)
 
         self.name = user.get('displayName', None)
         self.email = user.get('email', None)
@@ -49,20 +57,18 @@ class User:
         self.isDarkMode = user.get('isDarkMode', False)
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
-        self.isPremium = user.get('isPremium', False)
-        app.config['user'] = self
-
-    # remove_loading_if_too_long(user)
+        self.nextQuotaRefresh = first_day_of_next_month()
+        self.db.user = self
     
     def create_new_user(self):
         user = self.DEFAULT_USER_SETTINGS
         user['uid'] = self.uid
         user['isAnonymous'] = self.isAnonymous
+        user['joinedOn'] = time.time()
         if not(self.isAnonymous):
             user['email'] = self.firebaseUser['email']
             user['displayName'] = self.firebaseUser['displayName']
             user['photoUrl'] = self.firebaseUser['photoUrl']
-            self.db.add("users", user, doc_id=user['uid'])
         self.db.add("users", user, doc_id=user['uid'])            
         return user
 
@@ -74,16 +80,16 @@ class User:
             self.uid = tempId
             self.db.uid = self.uid
             self.isAnonymous = True
-            self.populate_user_data()
             return
         try:
             token = self.request.headers.get("Authorization").split(" ")[1]
-            self.firebaseId = auth.verify_id_token(token)['uid']
-            self.uid = self.firebaseId
+            firebaseResp = auth.verify_id_token(token)
+            self.exp = firebaseResp['exp']
+            self.expiresIn = firebaseResp['exp'] - time.time()
+            self.uid = firebaseResp['uid']
             self.db.uid = self.uid
-            self.isAnonymous = True
-            self.firebaseUser = auth.get_user(self.firebaseId).__dict__['_data']
-            self.populate_user_data()
+            self.isAnonymous = False
+            self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
         except Exception as e:
             if('Token expired' in str(e)):
                 raise TokenExpired('Token expired')
@@ -105,18 +111,31 @@ class User:
                 user[attr] = getattr(self, attr)
         self.db.edit("users", user['uid'], user)
         return user
+    
+    def update_ai_tracking_status(self, type_, loading, generated=None):
+        self.generating[type_] = {
+            'loading': loading,
+            'started': time.time() if loading else None,
+            'generated': generated
+        }
 
-    # def is_anonymous_user(self):
-    #     return len(self.user['uid']) < 12
+        if(generated):
+            self.quotas[type_] = self.quotas[type_] - 1
+        
 
-# def remove_loading_if_too_long(user):
-#     trackers = ['image', 'quiz', 'timeline']
-#     for tracker in trackers:
-#         try:
-#             if(user['generating'][tracker]['loading'] and time.time() - user['generating'][tracker]['started'] > 360):
-#                 user['generating'][tracker]['loading'] = False
-#                 user['generating'][tracker]['started'] = None
-#                 user['generating'][tracker]['generated'] = None
-#                 app.config['db'].edit('users', user['uid'], user)
-#         except:
-#             pass
+        self.update_user()
+
+    def remove_loading_if_too_long(self):
+        trackers = ['image', 'quiz', 'timeline']
+        for tracker in trackers:
+            try:
+                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 360):
+                    self.generating[tracker]['loading'] = False
+                    self.generating[tracker]['started'] = None
+                    self.generating[tracker]['generated'] = None
+                    self.update_user()
+            except:
+                pass
+
+    def update_user(self):
+        self.db.edit("users", self.uid, self.to_dict())
