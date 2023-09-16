@@ -1,6 +1,11 @@
 # import openai
 # import pandas as pd
-
+from clean_schedule.main import clean_schedule
+import firestore.firestore_init as firestore_init
+from firestore.firestore_db import UnprotectedFirestoreDB
+from utils.constants import DEFAULT_QUOTAS
+firestore_init.init()
+db = UnprotectedFirestoreDB()
 # from utils.utils import get_secret
 
 # openai.api_key = get_secret('OpenAPI')
@@ -25,10 +30,8 @@
 # print(response['choices'][0]['message']['content'])
 
 
-import re
+import time
+print(time.localtime().tm_mday)
 
 
-# Test the custom_strip method
-input_str = "000-0034-007-00056"
-stripped_str = input_str.lstrip("0")
-print(stripped_str)  # Output: "0-0034-007-00056"
+        

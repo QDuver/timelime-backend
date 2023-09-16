@@ -38,7 +38,7 @@ def report_error():
 @other_bp.route("/google-imgs", endpoint="google_images", methods=['POST'])
 @token_required
 @generic_error_handler
-@premium_required
+@premium_required('search')
 def google_images():
     links = get_google_images(request.json['eventName'], request.json['timelineName'], 10)
     return jsonify({"links": links}), 200
@@ -47,7 +47,7 @@ def google_images():
 @other_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
 @token_required
 @generic_error_handler
-@premium_required
+@premium_required('quiz')
 def create_quiz():
     db = app.config['db']
     utils.abort_if_already_ai_generating()

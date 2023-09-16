@@ -80,7 +80,7 @@ def edit_event():
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
 @token_required
 @generic_error_handler
-@premium_required
+@premium_required('image')
 def generate_image():
     event = methods.generate_image(request.json)
     return json.dumps(event)

@@ -1,7 +1,7 @@
 import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
-from decorators.decorators import premium_required, token_required, generic_error_handler
+from decorators.decorators import  premium_required, token_required, generic_error_handler
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 import utils.methods as methods
@@ -87,7 +87,7 @@ def create_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
-@premium_required
+@premium_required('timeline')
 @generic_error_handler
 def create_ai_timeline():
     utils.abort_if_already_ai_generating()

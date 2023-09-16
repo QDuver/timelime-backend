@@ -4,6 +4,8 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+
+from utils.constants import DEFAULT_QUOTAS
 # gcloud functions deploy clean-schedule --runtime python38 --project timelime-prod --entry-point clean_schedule --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=260031091728
 # gcloud scheduler jobs create http clean-schedule --project timelime-prod --schedule "0 4,16 * * *" --uri=https://europe-west2-timelime-prod.cloudfunctions.net/clean-schedule --location europe-west2
 
@@ -42,7 +44,7 @@ def clean_schedule(request):
 
     cred = credentials.Certificate(secret)
     firebase_admin.initialize_app(cred)
-
+    print(DEFAULT_QUOTAS, flush=True)
 
     db = UnprotectedFirestoreDB()
     timelines = db.get('timelines')
@@ -64,5 +66,10 @@ def clean_schedule(request):
 
     for timeline in anonymous_timelines:
         db.delete('timelines', timeline['id'])
+
+    # Refresh quotas each end of month
+    if(time.localtime().tm_mday == 1):
+        for user in db.get('users'):
+            db.edit('users', user['uid'], {'quotas': DEFAULT_QUOTAS})
 
     return 'ok'
