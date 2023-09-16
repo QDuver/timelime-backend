@@ -1,10 +1,10 @@
+import ai
 from utils.utils import get_secret, print_full_exception
 import openai
 import pandas as pd
 import time
 
 def main(timelineName, events):
-    start = time.time()
     openai.api_key = get_secret('OpenAPI')
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
@@ -32,9 +32,7 @@ def main(timelineName, events):
       if(type(obj) == dict):
           obj = obj[list(obj.keys())[0]]
       df = pd.DataFrame(obj)
-      df.to_csv(f'ai/generated/quizzes/quiz-{name}.csv', index=False)
+      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)
     except Exception as e:
-      print_full_exception(e)
-      with open(f'ai/generated/quizzes/quiz-{name}.txt', 'w') as f:
-        f.write(resp)
-      raise Exception('Could not parse response')
+      df = ai.reprocess.main(name, resp, 'quizzes')
+      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)

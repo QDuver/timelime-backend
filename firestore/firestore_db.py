@@ -1,33 +1,28 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
 from utils.utils import print_full_exception
+from flask import current_app as app
 class FirestoreDB: 
 
-    authedUser = None
+    uid = None
     def __init__(self):
         self.db = firestore.client()
 
-    def set_user(self, user):
-        self.authedUser = user
-
-    def is_anonymous_user(self):
-        return len(self.authedUser['uid']) < 12
-
     def forbid_if_too_many_entries(self, collection):
-        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.authedUser['uid']))) > 100):
+        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
             raise Exception("You've reached the maximum quota of timelines")
 
-        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.authedUser['uid']))) > 1000):
+        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.uid))) > 1000):
             raise Exception("You've reached the maximum quota of categories")
         
-        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.authedUser['uid']))) > 1000):
+        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
             raise Exception("You've reached the maximum quota of events")
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
-        if(self.authedUser['uid'] == 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'):
+        if(self.uid == 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'):
             return
-        if(doc['uid'] != self.authedUser['uid']):
+        if(doc['uid'] != self.uid):
             raise Exception('You are not the owner of this timeline')
 
     def delete(self, collection, doc):
@@ -77,7 +72,7 @@ class FirestoreDB:
 
 class UnprotectedFirestoreDB:
 
-    authedUser = {'uid': 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'}
+    uid = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
 
     def __init__(self):
         self.db = firestore.client()

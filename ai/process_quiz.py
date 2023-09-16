@@ -4,12 +4,13 @@ import pandas as pd
 import datetime
 from firestore.firestore_db import UnprotectedFirestoreDB
 from flask import current_app as app
+import re
 
 pd.set_option('display.max_columns', None)
 import ast
 def main(timelineName):
     name = timelineName.lower().replace(' ', '-')
-    df = pd.read_csv(f'ai/generated/quizzes/quiz-{name}.csv')
+    df = pd.read_csv(f'ai/generated/quizzes/{name}.csv')
     quiz = {}
     quiz['questions'] = df['question'].tolist()
     quiz['options'] = []
@@ -17,13 +18,16 @@ def main(timelineName):
         d = {}
         options = ast.literal_eval(option)
         for i, option in enumerate(options):
-            d[f'q{i}'] = option
+            d[f'q{i}'] = re.sub(r'^[a-zA-Z]\)\s+', '', option)
         quiz['options'].append(d)
-    quiz['answer'] = df['answer'].tolist()
+    answers = df['answer'].tolist()
+    answers = [re.sub(r'^[a-zA-Z]\)\s+', '', answer) for answer in answers]
+    quiz['answers'] = answers
+
     quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         db = app.config['db']
-        quiz['uid'] = db.authedUser['uid']
+        quiz['uid'] = db.uid
     except:
         db = UnprotectedFirestoreDB()
         quiz['uid'] = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
