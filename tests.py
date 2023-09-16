@@ -3,7 +3,7 @@
 from clean_schedule.main import clean_schedule
 import firestore.firestore_init as firestore_init
 from firestore.firestore_db import UnprotectedFirestoreDB
-from clean_schedule.constants import DEFAULT_QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 firestore_init.init()
 db = UnprotectedFirestoreDB()
 # from utils.utils import get_secret
