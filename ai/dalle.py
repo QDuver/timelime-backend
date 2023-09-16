@@ -3,9 +3,16 @@ from utils.utils import get_secret, print_full_exception
 import time
 from flask import current_app as app
 
+def stop_loading(event):
+    db = app.config['db']
+    event["imageGenerating"] = False
+    db.edit('events', event["id"], event)
+    db.edit('users', db.user['id'], {'generating': {'image' : {'loading': False, 'generated': event, 'started': None } }})
+
 def generate_image(event):
+    db = app.config['db']
+    db.edit('users', db.user['id'], {'generating': {'image' : {'loading': True, 'started': time.time()}}})
     try:
-        db = app.config['db']
         timelineName = db.get('timelines', event['tid'])['name']
         if('timeline' in timelineName.lower()):
             timelineName = ''
@@ -17,12 +24,9 @@ def generate_image(event):
         openai.api_key = get_secret('OpenAPI')
         response = openai.Image.create( prompt=prompt, n=1, size='1024x1024')
         event["imageURL"] = response["data"][0]["url"]
-        event["imageGenerating"] = False
-        db.edit('events', event["id"], event)
+        stop_loading(event)
     except Exception as e:
-        event['imageGenerating'] = False
-        db.edit('events', event["id"], event)
-        db.edit('users', db.authedUser['id'], {'generating': {'image' : {'loading': False, 'generated': event['id'] } }})
+        stop_loading(event)
         print_full_exception(e)
         raise Exception('Could not generate image')
 

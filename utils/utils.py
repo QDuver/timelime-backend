@@ -3,6 +3,7 @@ import os
 import json
 from flask import jsonify, current_app as app
 import logging
+import traceback
 
 logger = logging.getLogger('my_logger')
 logger.setLevel(logging.WARNING)
@@ -31,17 +32,13 @@ def set_env_variables():
 
 def print_full_exception(e):
     logger.error('This is an warning message')
-    logger.error(e)
-    logger.error(e.__traceback__.tb_frame.f_code.co_filename)
-    logger.error(e.__traceback__.tb_lineno)
-    print("An exception occurred:", e)
-    print("File:", e.__traceback__.tb_frame.f_code.co_filename)
-    print("Line:", e.__traceback__.tb_lineno)
+    logger.error(traceback.print_tb(e.__traceback__))
+    # logger.error(e.__traceback__.tb_lineno)
 
 
 def abort_if_already_ai_generating():
     db = app.config['db']
-    user = db.authedUser
+    user = db.user
     try:
         if(user['generating']['quiz']['loading'] or user['generating']['timeline']['loading']):
             return jsonify({"message": "You already have a quiz or timeline being generated"}), 400

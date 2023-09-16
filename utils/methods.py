@@ -8,6 +8,16 @@ from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 from google.cloud import storage
 import os
+import re
+
+def strip_leading_zeros(event):
+
+    event['startDate'] = re.sub(r'(?<!-)(0*)(?!-)', '', event['startDate'])
+    try:
+        event['endDate'] = re.sub(r'(?<!-)(0*)(?!-)', '', event['endDate'])
+    except:
+        pass
+    return event
 
 def handle_image(request, event):
     db = app.config['db']
@@ -41,14 +51,11 @@ def create_or_edit_preprocessing(event, categories = None):
                 foundCategory = True
                 break
         if(not foundCategory):
-            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': app.config['user']['uid']})
+            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
-
-    event['startDate'] = event['startDate'].lstrip('0')
-    if('endDate' in event and event['endDate']):
-        event['endDate'] = event['endDate'].lstrip('0')
+    event = strip_leading_zeros(event)
 
     if('endDate' not in event):
         event['endDate'] = None
@@ -60,15 +67,16 @@ def create_or_edit_preprocessing(event, categories = None):
     
 
 def create_events(events):
+    db = app.config['db']
     for event in events:
         for key in list(event.keys()):
             if ' (optional)' in key:
                 event[key.replace(' (optional)', '')] = event.pop(key)
 
-    categories = app.config['db'].get('categories', where=('tid', '==', events[0]['tid']))
+    categories = db.get('categories', where=('tid', '==', events[0]['tid']))
     processed_events = []
     for event in events:
-        event['uid'] = app.config['user']['uid']
+        event['uid'] = db.uid
         event = create_or_edit_preprocessing(event, categories)
         processed_events.append(event)
     return processed_events
@@ -114,7 +122,15 @@ def get_events(db, timeline_id):
     events = sorted(events, key=cmp_to_key(custom_sort))
     events = set_scaling(events)
     events = assign_none_to_empty(events)
+    events = process_image(events)
     return {'events': events, 'categories': categories}
+
+
+def process_image(events):
+    for event in events:
+        if('imageURL' in event and event['imageURL'] and 'An AI image will start' in event['imageURL']):
+            event['imageURL'] = ''
+    return events
 
 
 def set_scaling(events):
@@ -245,26 +261,26 @@ def get_google_images(eventName, timelineName, num=1):
 
 def create_new_timeline(name, source):
     db = app.config['db']
-    timeline = {'uid': app.config['user']['uid'], 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
+    timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
     timeline['id'] = db.add("timelines", timeline)
     return timeline
 
 def create_ai_timeline_(timelineName, nEvents, imageAssociation):
     db = app.config['db']
-    db.edit('users', db.authedUser['uid'], {'generating': {'timeline' : {'loading': True}}})
+    db.edit('users', db.uid, {'generating': {'timeline' : {'loading': True, 'started': int(time.time())}}})
     try:
         generate_timeline.main(timelineName, nEvents)
-        events = process_timeline.generate_events(timelineName, imageAssociation)
+        events = process_timeline.main(timelineName, imageAssociation)
         if(len(events) < 1):
             raise Exception("No events generated")
         timeline = create_new_timeline(timelineName, 'ai')
         for event in events:
             event['tid'] = timeline['id']
         db.add_batch('events', events)        
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline }}})
+        db.edit('users', db.user['id'], {'generating': {'timeline' : {'loading': False, 'generated': timeline, 'started':None }}})
         return timeline
     except Exception as e:
         print_full_exception(e)
-        db.edit('users', db.authedUser['id'], {'generating': {'timeline' : {'loading': False, 'generated': None }}})
+        db.edit('users', db.user['id'], {'generating': {'timeline' : {'loading': False, 'generated': None, 'started':None }}})
         raise Exception("Error generating timeline")
 

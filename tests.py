@@ -15,9 +15,7 @@ messages=[
     It works, but once in a while, navigating to the domain will render the old application that used to be in Firebase.
     What could be the issue?
     
-    Domain Mappings in Cloud Run is giving me 4 Type A and 4 Type AAAA DNS records.
-        I've only mapped on Type A and one Type AAAA to the domain in Google Domains, under Custom Records section.
-
+    I've done the migration and mapping more than 48 hours ago.
 
 
             '''},

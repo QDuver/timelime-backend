@@ -1,6 +1,7 @@
 import openai
 import pandas as pd
 import time
+import ai
 
 from utils.utils import get_secret
 
@@ -44,6 +45,5 @@ def main(timelineName, n_events):
     df = pd.DataFrame(obj)
     df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
   except:
-    with open(f'ai/generated/timelines/{name}.txt', 'w') as f:
-      f.write(resp)
-      raise Exception('Could not parse response')
+    df = ai.reprocess.main(name, resp, 'timelines')
+    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)

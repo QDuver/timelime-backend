@@ -84,6 +84,7 @@ def process(df):
     df['endDate'] = df['endDate'].apply(lambda x: process_date(x))
     df  = df.apply(lambda x: handle_centuries(x), axis=1)
     df  = df.apply(lambda x: handle_decades(x), axis=1)
+    df = df.apply(lambda x: events_utils.strip_leading_zeros(x), axis=1)
     return df
 
 
@@ -111,7 +112,7 @@ def validate_dates(startDate, endDate):
     except KeyError:
         pass
 
-def generate_events(timelineName, image_association):
+def main(timelineName, image_association = None):
     try:
         db = app.config['db']
     except:
@@ -131,7 +132,7 @@ def generate_events(timelineName, image_association):
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
             row['endDate'] = validate_dates(row['startDate'], row['endDate'])
-            event = {'uid': db.authedUser['uid'], 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
+            event = {'uid': db.uid, 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == 'google'):
                 event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
             events.append(event)

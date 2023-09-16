@@ -1,3 +1,7 @@
 {
-    "workbench.colortimelineName": "Monokai Pro (Filter Octagon)"
+    "workbench.colortimelineName": "Monokai Pro (Filter Octagon)",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python"
+    },
+    "python.formatting.provider": "none"
 }

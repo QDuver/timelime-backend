@@ -1,7 +1,7 @@
 
 import json
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
-from decorators.decorators import token_required, generic_error_handler
+from decorators.decorators import premium_required, token_required, generic_error_handler
 import utils.methods as methods
 import pandas as pd
 import io
@@ -9,8 +9,8 @@ events_bp = Blueprint('events', __name__)
 HEADERS_MANDATORY = ['name', 'startDate']
 HEADERS_OPTIONAL = ['endDate', 'description', 'categoryName', 'categoryColor', 'imageURL',]
 
+
 @events_bp.route("/download-headers", endpoint="download_headers")
-@token_required
 @generic_error_handler
 def download_headers():
     return json.dumps({'mandatory': HEADERS_MANDATORY, 'optional': HEADERS_OPTIONAL})
@@ -42,7 +42,7 @@ def get_events(timeline_id):
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
     event = methods.create_events([event])[0]
@@ -52,13 +52,16 @@ def create_event():
     return json.dumps(event)
 
 
-@events_bp.route("/create-events", endpoint="create_events", methods=['POST'])
+@events_bp.route("/upload-events", endpoint="upload_events", methods=['POST'])
 @token_required
 @generic_error_handler
-def create_events():
+def upload_events():
     db = app.config['db']
-    processed_events = methods.create_events(request.json)
-    db.add_batch('events', processed_events)
+    try:
+        processed_events = methods.create_events(request.json)
+        db.add_batch('events', processed_events)
+    except:
+        return jsonify({"message": "Error uploading events - Handle FE"}), 400
     return jsonify('success')
 
 @events_bp.route("/event", endpoint="edit_event", methods=['PUT'])
@@ -73,7 +76,8 @@ def edit_event():
 
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
 @token_required
-# @generic_error_handler
+@generic_error_handler
+@premium_required
 def generate_image():
     event = methods.generate_image(request.json)
     return json.dumps(event)
