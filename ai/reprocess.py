@@ -28,7 +28,6 @@ def main(name, text, type_):
     )
 
     resp = response['choices'][0]['message']['content']
-    print(resp)
     try: 
         df = pd.read_json(resp)
         return df

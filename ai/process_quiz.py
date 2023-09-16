@@ -20,9 +20,9 @@ def main(timelineName):
         for i, option in enumerate(options):
             d[f'q{i}'] = re.sub(r'^[a-zA-Z]\)\s+', '', option)
         quiz['options'].append(d)
-    answers = df['answer'].tolist()
-    answers = [re.sub(r'^[a-zA-Z]\)\s+', '', answer) for answer in answers]
-    quiz['answers'] = answers
+    answer = df['answer'].tolist()
+    answer = [re.sub(r'^[a-zA-Z]\)\s+', '', str(a)) for a in answer]
+    quiz['answer'] = answer
 
     quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:

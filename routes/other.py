@@ -67,7 +67,7 @@ def create_quiz():
         db.add('quizzes', quiz)
     except Exception as e:
         utils.print_full_exception(e)
-        db.user.update_ai_tracking_status('quiz', False, quiz)
+        db.user.update_ai_tracking_status('quiz', False)
         return jsonify({"message": "Error generating quiz"}), 400
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
@@ -134,10 +134,10 @@ def compute_quiz_results(data):
     db = app.config['db']
     quiz = db.get("quizzes", data['quizId'])
     results = []
-    answers = quiz['answers']
+    answer = quiz['answer']
     userAnswers = data['userAnswers']
     for i in range(len(userAnswers)):
-        results.append(answers[i] == userAnswers[i])
+        results.append(answer[i] == userAnswers[i])
 
     score = results.count(True) / len(results)
     correct =  results.count(True)

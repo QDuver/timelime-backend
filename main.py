@@ -19,7 +19,7 @@ def _process_timeline():
 
 
 def _process_quiz():
-    process_quiz.main('portugal')
+    process_quiz.main('the-future')
 
 def read_txt_file():
     with open('ai/generated/quizzes/quiz-portugal.txt', 'r') as file:
@@ -29,5 +29,4 @@ def read_txt_file():
     df.to_csv(f'ai/generated/quizzes/portugal.csv', index=False)
 #     print(df)
 
-# read_txt_file()
-# _process_timeline()
+_process_quiz()
