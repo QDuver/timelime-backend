@@ -273,14 +273,20 @@ def  split_date(date, default=None):
 
 
 def get_google_images(eventName, timelineName, num=1):
-    API_KEY = get_secret('SEARCH_ENGINE')
-    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
+    db = app.config['db']
+    try:
+        API_KEY = get_secret('SEARCH_ENGINE')
+        SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+        query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
-    service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-    links = [link['link'] for link in result.get("items", [])]
-    return links
+        service = build("customsearch", "v1", developerKey=API_KEY)
+        result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
+        links = [link['link'] for link in result.get("items", [])]
+        db.user.update_ai_tracking_status('search', False, True)
+        return links
+    except Exception as e:
+        print_full_exception(e)
+        raise Exception("Error getting images")
 
 
 def create_new_timeline(name, source):
