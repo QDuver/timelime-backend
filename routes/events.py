@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
 from decorators.decorators import premium_required, token_required, generic_error_handler
-from utils.constants import DEFAULT_QUOTAS
+from clean_schedule.constants import DEFAULT_QUOTAS
 import utils.methods as methods
 import pandas as pd
 import io

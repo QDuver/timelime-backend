@@ -4,7 +4,7 @@ import time
 from googleapiclient.discovery import build
 import time
 from ai.dalle import generate_image
-from utils.constants import DEFAULT_QUOTAS
+from clean_schedule.constants import DEFAULT_QUOTAS
 from utils.utils import get_secret, print_full_exception
 from ai import generate_timeline, process_timeline
 from google.cloud import storage
