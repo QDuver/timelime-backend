@@ -62,7 +62,7 @@ def edit_timeline():
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
     timeline = db.get("timelines", doc=timeline['id'])
-    timeline = _process_timeline(db, timeline)
+    timeline = _process_timeline(timeline)
     return json.dumps(timeline)
 
 
