@@ -22,8 +22,11 @@ def get_auth():
 @generic_error_handler
 def edit_user():
     user = request.json
+    del user['isPremium']
+    del user['quotas']
     app.config['db'].edit("users", user['uid'], user)
-    return json.dumps(user)
+    user = app.config['db'].get("users", user['uid'])
+    return user
 
 @auth_bp.route("/contact", methods=['POST'], endpoint="contact")
 @token_required

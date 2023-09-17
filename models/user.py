@@ -108,7 +108,7 @@ class User:
     def fill_in_missing_attributes(self, user):
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
             if(attr not in user):
-                user[attr] = getattr(self, attr)
+                user[attr] = self.DEFAULT_USER_SETTINGS[attr]
         self.db.edit("users", user['uid'], user)
         return user
     
