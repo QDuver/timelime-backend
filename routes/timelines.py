@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
 from decorators.decorators import  premium_required, token_required, generic_error_handler
 from models.user import User
-from clean_schedule.constants import DEFAULT_QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 import utils.methods as methods
 import utils.utils as utils
 from utils.methods import create_new_timeline, create_ai_timeline_, timeline_quotas_exceeded
@@ -62,7 +62,7 @@ def edit_timeline():
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
     timeline = db.get("timelines", doc=timeline['id'])
-    timeline = _process_timeline(db, timeline)
+    timeline = _process_timeline(timeline)
     return json.dumps(timeline)
 
 

@@ -3,7 +3,7 @@ from flask import current_app as app, jsonify
 from firebase_admin import auth
 
 from models.exceptions import TokenExpired
-from clean_schedule.constants import DEFAULT_QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 from utils.utils import first_day_of_next_month, print_full_exception
 
 class User:
@@ -108,7 +108,7 @@ class User:
     def fill_in_missing_attributes(self, user):
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
             if(attr not in user):
-                user[attr] = getattr(self, attr)
+                user[attr] = self.DEFAULT_USER_SETTINGS[attr]
         self.db.edit("users", user['uid'], user)
         return user
     

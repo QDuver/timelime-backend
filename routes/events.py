@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
 from decorators.decorators import premium_required, token_required, generic_error_handler
-from clean_schedule.constants import DEFAULT_QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 import utils.methods as methods
 import pandas as pd
 import io
@@ -28,7 +28,7 @@ def download_events(timeline_id):
         df = df[df['isEndEvent'] != True]
     if('isStepDate' in df.columns):
         df = df[df['isStepDate'] != True]
-    csv_data = df[headers].to_csv(index=False)
+    csv_data = df[headers].to_csv(index=Falsess)
     response = Response(csv_data, content_type='text/csv')
     response.headers['Content-Disposition'] = 'attachment; filename=data.csv'
     return response
