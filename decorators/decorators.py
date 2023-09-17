@@ -7,7 +7,7 @@ import hmac
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from models.user import User
-from clean_schedule.constants import DEFAULT_QUOTAS
+from utils.constants import DEFAULT_QUOTAS
 from utils.utils import print_full_exception
 
 limiter = Limiter( get_remote_address, default_limits=["10 per second"] )
