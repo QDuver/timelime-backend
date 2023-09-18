@@ -20,7 +20,12 @@ message1 =f'''
 '''
 
 message2 = '''
-In Stripe, what's the difference between payment_intent.succeeded and checkout.session.completed?
+In Stripe / angular, I have a checkout session that I create with the following code:
+const stripe = Stripe('pk_live_xxx');
+stripe.redirectToCheckout({ sessionId: res.id});
+It doesn't work with the above key, but it work with the pk_test_xxx key.
+I've checked the key in the Stripe dashboard and it's the same as the one I'm using.
+What could be the issue?  
 '''
 
 response = openai.ChatCompletion.create(

@@ -73,7 +73,6 @@ class User:
         return user
 
     def set_token(self):
-        print('set_token', flush=True)
         if('X-Allow-Unauthorized' in self.request.headers):
             tempId = self.request.headers['X-Allow-Unauthorized']
             self.firebaseUser = {'uid': tempId, 'isAnonymous': True}

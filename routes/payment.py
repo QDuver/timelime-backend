@@ -5,10 +5,12 @@ from decorators.decorators import generic_error_handler, token_required
 from utils.utils import get_secret, print_full_exception
 from flask import Blueprint, jsonify, request, current_app as app
 
-stripe.api_key = get_secret('stripe-test')
+stripe.api_key = 'sk_test_51NrQJzLwxNX8eOtXEBGd8yONGcPQ50DswyrdhEqjdfN1S3oJSyoLiwWHr29WfBMvaby7lTCCH4LfV1F0aqrqmE2T00Q3crmVPR'
+# stripe.api_key = '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'
 payment_bp = Blueprint('payment', __name__)
 YOUR_DOMAIN = 'http://localhost:4200'
-endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
+
+# 
 
 @payment_bp.route('/create-checkout-session', endpoint="simple", methods=['POST'])
 @generic_error_handler
@@ -16,9 +18,9 @@ endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
 def simple():
     dummy = request.json
     prices = stripe.Price.list(
-    lookup_keys=['timelime-premium'],
     expand=['data.product']
 )
+    print(prices, flush=True)
     checkout_session = stripe.checkout.Session.create(
         line_items=[
             {
@@ -38,12 +40,15 @@ def simple():
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 # @generic_error_handler
 def webhook():
+    endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
     print(request.data, flush=True)
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
+    print('EVENT TYPE', event['type'], flush=True)
     if event['type'] == 'checkout.session.completed':
       uid = event['data']['object']['metadata']['uid']
+      print('UID', uid, flush=True)
       if uid:
         app.config['db'].user.update_premium_status(True)
         return jsonify(success=True)
