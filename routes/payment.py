@@ -30,13 +30,16 @@ def simple():
         success_url=YOUR_DOMAIN +
         '/payment-success?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=YOUR_DOMAIN + '/#?cancel-payment=t',
-        metadata={'uid': app.config['db'].user.uid}
+        customer_email=app.config['db'].user.email,
+        client_reference_id=app.config['db'].user.uid,
+
     )
     return jsonify({'id': checkout_session.id})
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 @generic_error_handler
 def webhook():
+    print(request.data, flush=True)
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
