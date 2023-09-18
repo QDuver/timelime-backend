@@ -36,7 +36,7 @@ def simple():
     return jsonify({'id': checkout_session.id})
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
-@generic_error_handler
+# @generic_error_handler
 def webhook():
     print(request.data, flush=True)
     event = stripe.Webhook.construct_event(
