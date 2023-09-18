@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request, current_app as app
 stripe.api_key = get_secret('stripe-test')
 payment_bp = Blueprint('payment', __name__)
 YOUR_DOMAIN = 'http://localhost:4200'
-endpoint_secret = 'whsec_5b8f41523018e2f382a2db9f8cf9899031c0613a1ac51f29e9133f8ec9d7d910'
+endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
 
 @payment_bp.route('/create-checkout-session', endpoint="simple", methods=['POST'])
 @generic_error_handler
@@ -34,7 +34,7 @@ def simple():
     )
     return jsonify({'id': checkout_session.id})
 
-@payment_bp.route('/webhook', endpoint="stripe-webhook", methods=['POST'])
+@payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 @generic_error_handler
 def webhook():
     event = stripe.Webhook.construct_event(
