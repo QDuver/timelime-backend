@@ -31,8 +31,7 @@ def simple():
         '/payment-success?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=YOUR_DOMAIN + '/#?cancel-payment=t',
         customer_email=app.config['db'].user.email,
-        client_reference_id=app.config['db'].user.uid,
-
+        metadata={'uid': app.config['db'].user.uid}
     )
     return jsonify({'id': checkout_session.id})
 
@@ -43,9 +42,8 @@ def webhook():
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
-    if event['type'] == 'payment_intent.succeeded':
-      payment_intent = event['data']['object']
-      uid = payment_intent.metadata.get('uid', None)
+    if event['type'] == 'checkout.session.completed':
+      uid = event['data']['object']['metadata']['uid']
       if uid:
         app.config['db'].user.update_premium_status(True)
         return jsonify(success=True)

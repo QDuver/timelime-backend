@@ -20,8 +20,7 @@ message1 =f'''
 '''
 
 message2 = '''
-I'm using Stripe to process payments on my website.
-Once I have a payment confirmation, how can I retrieve the relevant information from Stripe to then update my database?
+In Stripe, what's the difference between payment_intent.succeeded and checkout.session.completed?
 '''
 
 response = openai.ChatCompletion.create(
