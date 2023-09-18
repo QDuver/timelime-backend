@@ -139,3 +139,7 @@ class User:
 
     def update_user(self):
         self.db.edit("users", self.uid, self.to_dict())
+
+    def update_premium_status(self, isPremium):
+        self.isPremium = isPremium
+        self.update_user()
