@@ -12,7 +12,7 @@ DEFAULT_QUOTAS = {
     'timelines_free': 5,
     'events_free': 30,
     'image': 50,
-    'premium': 4.5
+    'premium': 4
 }
 
 # gcloud functions deploy clean-schedule --runtime python38 --project timelime-prod --entry-point clean_schedule --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=260031091728
