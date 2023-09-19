@@ -41,21 +41,14 @@ def simple():
 # @generic_error_handler
 def webhook():
     endpoint_secret = 'whsec_EDBhrbf7wUw56lGmB28yup6ZAR8e9jwX'
-    print('DATA', flush=True)
-    print(request.data, flush=True)
-
-    print('HEADERS', flush=True)
-    print(request.headers, flush=True)
-
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
-    print('EVENT TYPE', event['type'], flush=True)
     if event['type'] == 'checkout.session.completed':
       uid = event['data']['object']['metadata']['uid']
       print('UID', uid, flush=True)
       if uid:
-        app.config['db'].user.update_premium_status(True)
+        app.config['db'].edit('users', uid, {'isPremium': True})
         return jsonify(success=True)
 
 
