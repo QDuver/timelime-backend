@@ -40,7 +40,7 @@ def simple():
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 # @generic_error_handler
 def webhook():
-    endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
+    endpoint_secret = 'whsec_4WbJpm8q0TwuWuhu8nu2ki6h2jZDkv36'
     print('DATA', flush=True)
     print(request.data, flush=True)
 
