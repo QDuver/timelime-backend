@@ -1,8 +1,8 @@
 import json
 import os
 import stripe
-from clean_schedule.main import UnprotectedFirestoreDB
 from decorators.decorators import generic_error_handler, token_required
+from firestore.firestore_db import UnprotectedFirestoreDB
 from utils.utils import get_secret, print_full_exception
 from flask import Blueprint, jsonify, request, current_app as app
 

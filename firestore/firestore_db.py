@@ -72,8 +72,6 @@ class FirestoreDB:
 
 class UnprotectedFirestoreDB:
 
-    uid = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
-
     def __init__(self):
         self.db = firestore.client()
 
