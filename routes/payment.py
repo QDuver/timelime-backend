@@ -1,6 +1,7 @@
 import json
 import os
 import stripe
+from clean_schedule.main import UnprotectedFirestoreDB
 from decorators.decorators import generic_error_handler, token_required
 from utils.utils import get_secret, print_full_exception
 from flask import Blueprint, jsonify, request, current_app as app
@@ -48,7 +49,8 @@ def webhook():
       uid = event['data']['object']['metadata']['uid']
       print('UID', uid, flush=True)
       if uid:
-        app.config['db'].edit('users', uid, {'isPremium': True})
+        db = UnprotectedFirestoreDB()
+        db.edit('users', uid, {'isPremium': True})
         return jsonify(success=True)
 
 
