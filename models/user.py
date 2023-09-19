@@ -73,7 +73,6 @@ class User:
         return user
 
     def set_token(self):
-        print('set_token', flush=True)
         if('X-Allow-Unauthorized' in self.request.headers):
             tempId = self.request.headers['X-Allow-Unauthorized']
             self.firebaseUser = {'uid': tempId, 'isAnonymous': True}
@@ -139,3 +138,7 @@ class User:
 
     def update_user(self):
         self.db.edit("users", self.uid, self.to_dict())
+
+    def update_premium_status(self, isPremium):
+        self.isPremium = isPremium
+        self.update_user()

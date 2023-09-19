@@ -3,7 +3,7 @@ from flask_cors import CORS
 from firestore.firestore_db import FirestoreDB
 import firestore.firestore_init as firestore_init
 from utils import methods as methods
-from routes import timeline_bp, events_bp, auth_bp, other_bp
+from routes import timeline_bp, events_bp, auth_bp, other_bp, payment_bp
 from decorators.decorators import limiter
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -15,6 +15,7 @@ app.register_blueprint(timeline_bp)
 app.register_blueprint(events_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(other_bp)
+app.register_blueprint(payment_bp)
 firestore_init.init()
 app.config['db'] = FirestoreDB()
 

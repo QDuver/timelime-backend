@@ -28,7 +28,7 @@ def download_events(timeline_id):
         df = df[df['isEndEvent'] != True]
     if('isStepDate' in df.columns):
         df = df[df['isStepDate'] != True]
-    csv_data = df[headers].to_csv(index=Falsess)
+    csv_data = df[headers].to_csv(index=False)
     response = Response(csv_data, content_type='text/csv')
     response.headers['Content-Disposition'] = 'attachment; filename=data.csv'
     return response
