@@ -41,7 +41,12 @@ def simple():
 # @generic_error_handler
 def webhook():
     endpoint_secret = 'whsec_sU0WQCpTJfVKgzz6jzh4jOKZjZXMQKIt'
+    print('DATA', flush=True)
     print(request.data, flush=True)
+
+    print('HEADERS', flush=True)
+    print(request.headers, flush=True)
+
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
