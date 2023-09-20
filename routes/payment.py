@@ -23,6 +23,7 @@ def cancel_premium():
 @generic_error_handler
 @token_required
 def checkout():
+    print('stripe general endpoint_secret', get_secret('stripe'), flush=True)
     dummy = request.json
     prices = stripe.Price.list(
     expand=['data.product']
@@ -47,6 +48,7 @@ def checkout():
 # @generic_error_handler
 def webhook():
     endpoint_secret = get_secret('stripe-webhook')
+    print('webhook endpoint_secret', endpoint_secret, flush=True)
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
