@@ -9,6 +9,14 @@ import traceback
 logger = logging.getLogger('my_logger')
 logger.setLevel(logging.WARNING)
 
+
+def get_fe_url():
+    try:
+        return os.environ.get('FE_URL')
+    except:
+        set_env_variables()
+        return os.environ.get('FE_URL')
+
 def get_secret(secret_name):
     try:
         return get_secret_core(secret_name)
@@ -41,6 +49,7 @@ def first_day_of_next_month():
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
+    os.environ['FE_URL'] = 'https://localhost:4200'
 
 def print_full_exception(e):
     logger.error('This is an warning message')
