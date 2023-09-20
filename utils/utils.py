@@ -8,7 +8,28 @@ import traceback
 
 logger = logging.getLogger('my_logger')
 logger.setLevel(logging.WARNING)
+from google.cloud import storage
 
+def save_text_to_storage(text, name):
+    bucket_name = os.environ.get('BUCKET')
+    gcs = storage.Client()
+    bucket = gcs.get_bucket(bucket_name)
+    blob = bucket.blob(f'{name}.txt')
+    blob.upload_from_string(text)
+
+def save_df_to_storage(df, name):
+    bucket_name = os.environ.get('BUCKET')
+    gcs = storage.Client()
+    bucket = gcs.get_bucket(bucket_name)
+    blob = bucket.blob(f'{name}.csv')
+    blob.upload_from_string(df.to_csv(index=False), 'text/csv')
+
+def read_from_storage(name):
+    bucket_name = os.environ.get('BUCKET')
+    gcs = storage.Client()
+    bucket = gcs.get_bucket(bucket_name)
+    blob = bucket.blob(f'{name}.csv')
+    blob.download_to_filename(f'{name}.csv')
 
 def get_fe_url():
     try:

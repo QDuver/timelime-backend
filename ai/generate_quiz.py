@@ -1,5 +1,5 @@
 import ai
-from utils.utils import get_secret, print_full_exception
+from utils.utils import get_secret, print_full_exception, save_df_to_storage
 import openai
 import pandas as pd
 import time
@@ -32,7 +32,9 @@ def main(timelineName, events):
       if(type(obj) == dict):
           obj = obj[list(obj.keys())[0]]
       df = pd.DataFrame(obj)
-      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)
+      save_df_to_storage(df, f'ai-generated/timelines/{name}')
+      return df
     except Exception as e:
       df = ai.reprocess.main(name, resp, 'quizzes')
-      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)
+      save_df_to_storage(df, f'ai-generated/timelines/{name}')
+      return df

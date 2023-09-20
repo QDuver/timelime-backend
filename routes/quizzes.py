@@ -1,5 +1,6 @@
 
 from flask import Blueprint, jsonify, request, current_app as app
+import pandas as pd
 from decorators.decorators import  premium_required, token_required, generic_error_handler
 import utils.utils as utils
 from ai import generate_quiz, process_quiz
@@ -23,8 +24,10 @@ def create_quiz():
     try:
         timelineName = db.get('timelines', doc=tid)['name']
         events = db.get('events', where=('tid', '==', tid))
-        generate_quiz.main(timelineName, events)
-        quiz = process_quiz.main( timelineName)
+        df = generate_quiz.main(timelineName, events)
+        # df = pd.read_csv("C:/Users/Msi/Downloads/2023-09-20 19_34_11.csv")
+        print(df.head(), flush=True)
+        quiz = process_quiz.main(df)
         quiz['tid'] = tid
         db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)

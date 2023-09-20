@@ -15,7 +15,8 @@ FE_URL = get_fe_url()
 @token_required
 def cancel_premium():
     db = app.config['db']
-    db.edit('users', db.user.uid, {'isPremium': False})
+    stripe.Subscription.cancel(db.user.subscription)
+    db.edit('users', db.user.uid, {'isPremium': False, 'subscription': None})
     return jsonify(success=True)
 
 
@@ -23,7 +24,6 @@ def cancel_premium():
 @generic_error_handler
 @token_required
 def checkout():
-    print('stripe general endpoint_secret', get_secret('stripe'), flush=True)
     dummy = request.json
     prices = stripe.Price.list(
     expand=['data.product']
@@ -48,13 +48,11 @@ def checkout():
 # @generic_error_handler
 def webhook():
     endpoint_secret = get_secret('stripe-webhook')
-    print('webhook endpoint_secret', endpoint_secret, flush=True)
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
     if event['type'] == 'checkout.session.completed':
       uid = event['data']['object']['metadata']['uid']
-      print('UID', uid, flush=True)
       if uid:
         db = UnprotectedFirestoreDB()
         db.edit('users', uid, {'isPremium': True, 'subscription': event['data']['object']['subscription']})

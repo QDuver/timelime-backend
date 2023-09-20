@@ -19,7 +19,7 @@ def event_quotas_exceeded(event):
         return False
     n_events = len(db.get('events', where=('tid', '==', event['tid'])))
     if(n_events >= DEFAULT_QUOTAS['events_free']):
-        return Trues
+        return True
 
 def timeline_quotas_exceeded():
     db = app.config['db']
@@ -46,14 +46,14 @@ def strip_leading_zeros(event):
 def handle_image(request, event):
     db = app.config['db']
     if('file' in request.files):
-        bucket_name = os.environ.get('TIMELIME_USER_IMAGES_BUCKET', 'timelime-dev-user-images-bucket')
+        bucket_name = os.environ.get('BUCKET', 'timelime-dev-user-images-bucket')
         file = request.files['file']
         gcs = storage.Client()
-        bucket = gcs.get_bucket(bucket_name)
+        bucket = gcs.get_bucket(bucket_name+'/images')
         blob = bucket.blob(event['id'])
         blob.upload_from_string( file.read(), content_type=file.content_type )
         event['imageName'] = event['imageURL']
-        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/{event["id"]}'
+        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
         db.edit('events', event['id'], event)
     if('imageURL' in event and 'An AI image will start' in event['imageURL']):
         event['imageGenerating'] = True
@@ -299,8 +299,8 @@ def create_ai_timeline_(timelineName, nEvents, imageAssociation):
     db = app.config['db']
     db.user.update_ai_tracking_status('timeline', True)
     try:
-        generate_timeline.main(timelineName, nEvents)
-        events = process_timeline.main(timelineName, imageAssociation)
+        df = generate_timeline.main(timelineName, nEvents)
+        events = process_timeline.main(df, timelineName, imageAssociation)
         if(len(events) < 1):
             raise Exception("No events generated")
         timeline = create_new_timeline(timelineName, 'ai')

@@ -112,14 +112,12 @@ def validate_dates(startDate, endDate):
     except KeyError:
         pass
 
-def main(timelineName, image_association = None):
+def main(df, timelineName, image_association = None):
     try:
         db = app.config['db']
     except:
         db = UnprotectedFirestoreDB()
     
-    name = timelineName.lower().replace(' ', '-')
-    df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
     df = df.replace({np.nan: None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     if not ('endDate' in df.columns):

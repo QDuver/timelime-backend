@@ -3,7 +3,7 @@ import pandas as pd
 import time
 import ai
 
-from utils.utils import get_secret
+from utils.utils import get_secret, save_df_to_storage, save_text_to_storage
 
 def main(timelineName, n_events):
 
@@ -43,7 +43,7 @@ def main(timelineName, n_events):
     if(type(obj) == dict):
       obj = obj[list(obj.keys())[0]]
     df = pd.DataFrame(obj)
-    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
+    return df
   except:
     df = ai.reprocess.main(name, resp, 'timelines')
-    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
+    return df

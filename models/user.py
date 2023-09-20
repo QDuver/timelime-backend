@@ -25,6 +25,7 @@ class User:
         'exp': None,
         'expiresIn': None,
         'nextQuotaRefresh': None,
+        'subscription': None,
     }
 
 
@@ -58,6 +59,7 @@ class User:
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
+        self.subscription = user.get('subscription', None)
         self.db.user = self
     
     def create_new_user(self):

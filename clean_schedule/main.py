@@ -53,7 +53,6 @@ def clean_schedule(request):
 
     cred = credentials.Certificate(secret)
     firebase_admin.initialize_app(cred)
-    print(DEFAULT_QUOTAS, flush=True)
 
     db = UnprotectedFirestoreDB()
     timelines = db.get('timelines')

@@ -2,7 +2,7 @@ import openai
 import pandas as pd
 import time
 
-from utils.utils import get_secret
+from utils.utils import get_secret, save_df_to_storage, save_text_to_storage
 
 def main(name, text, type_):
 
@@ -43,8 +43,7 @@ def main(name, text, type_):
                 df = pd.DataFrame(obj)
                 return df
             except:
-                with open(f'ai/generated/{type_}/{name}.txt', 'w') as f:
-                    f.write(resp)
+                save_text_to_storage(resp, f'ai-generated/timelines/{name}')
                 raise Exception('Could not parse response')
 
 
