@@ -57,7 +57,7 @@ def webhook():
       print('UID', uid, flush=True)
       if uid:
         db = UnprotectedFirestoreDB()
-        db.edit('users', uid, {'isPremium': True})
+        db.edit('users', uid, {'isPremium': True, 'subscription': event['data']['object']['subscription']})
         return jsonify(success=True)
 
 

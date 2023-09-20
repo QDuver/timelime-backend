@@ -3,7 +3,7 @@ from flask_cors import CORS
 from firestore.firestore_db import FirestoreDB
 import firestore.firestore_init as firestore_init
 from utils import methods as methods
-from routes import timeline_bp, events_bp, auth_bp, other_bp, payment_bp
+from routes import timeline_bp, events_bp, auth_bp, other_bp, payment_bp, quizzes_bp
 from decorators.decorators import limiter
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
