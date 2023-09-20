@@ -49,8 +49,8 @@ def handle_image(request, event):
         bucket_name = os.environ.get('BUCKET', 'timelime-dev-user-images-bucket')
         file = request.files['file']
         gcs = storage.Client()
-        bucket = gcs.get_bucket(bucket_name+'/images')
-        blob = bucket.blob(event['id'])
+        bucket = gcs.get_bucket(bucket_name)
+        blob = bucket.blob('images/'+event['id'])
         blob.upload_from_string( file.read(), content_type=file.content_type )
         event['imageName'] = event['imageURL']
         event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
