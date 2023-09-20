@@ -16,6 +16,7 @@ app.register_blueprint(events_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(other_bp)
 app.register_blueprint(payment_bp)
+app.register_blueprint(quizzes_bp)
 firestore_init.init()
 app.config['db'] = FirestoreDB()
 
