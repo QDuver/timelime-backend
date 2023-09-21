@@ -2,9 +2,26 @@ import openai
 import pandas as pd
 import time
 
-from utils.utils import get_secret, save_df_to_storage, save_text_to_storage
+from utils.utils import get_secret, save_df_to_storage, save_raw_to_storage
 
-def main(name, text, type_):
+def interpret_response(resp, type_):
+    save_raw_to_storage(resp, type_)
+    try:
+        obj = eval(resp)
+        if(type(obj) == dict):
+            obj = obj[list(obj.keys())[0]]
+        df = pd.DataFrame(obj)
+        return df
+    except:
+        try:
+            df = add_ai_layer(resp, type_)
+            return df
+        except:
+            raise Exception('Could not parse response')
+
+
+
+def add_ai_layer(text, type_):
 
     if(type_ == 'quizzes'):
         format_ = '{question: string, options: string[], answer: string}'
@@ -37,13 +54,9 @@ def main(name, text, type_):
             df = pd.read_json(obj)
             return df
         except:
-            try:
-                obj = eval(resp)
-                obj = obj[list(obj.keys())[0]]
-                df = pd.DataFrame(obj)
-                return df
-            except:
-                save_text_to_storage(resp, f'ai-generated/timelines/{name}')
-                raise Exception('Could not parse response')
+            obj = eval(resp)
+            obj = obj[list(obj.keys())[0]]
+            df = pd.DataFrame(obj)
+            return df
 
 

@@ -2,6 +2,7 @@ import datetime
 from google.cloud import secretmanager
 import os
 import json
+from clean_schedule.main import DEFAULT_QUOTAS
 from flask import jsonify, current_app as app
 import logging
 import traceback
@@ -10,7 +11,7 @@ logger = logging.getLogger('my_logger')
 logger.setLevel(logging.WARNING)
 from google.cloud import storage
 
-def save_text_to_storage(text, name):
+def save_raw_to_storage(text, name):
     bucket_name = os.environ.get('BUCKET')
     gcs = storage.Client()
     bucket = gcs.get_bucket(bucket_name)
@@ -66,6 +67,21 @@ def first_day_of_next_month():
     timestamp = datetime.datetime.combine(first_day_of_next_month, datetime.time()).timestamp()
     return timestamp
 
+def event_quotas_exceeded(event):
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
+    if(n_events >= DEFAULT_QUOTAS['events_free']):
+        return True
+
+def timeline_quotas_exceeded():
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
+    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
+        return True
 
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'

@@ -4,9 +4,10 @@ import datetime, time
 from decorators.decorators import  premium_required, token_required, generic_error_handler
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
-import utils.methods as methods
+import utils.event_methods as event_methods
 import utils.utils as utils
-from utils.methods import create_new_timeline, create_ai_timeline_, timeline_quotas_exceeded
+from utils.event_methods import create_new_timeline, create_ai_timeline_, timeline_quotas_exceeded
+from ai import generate_timeline, process_timeline
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -78,7 +79,7 @@ def create_timeline():
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    default_events = methods.create_events([today, yesterday])
+    default_events = event_methods.create_events([today, yesterday])
     db.add_batch('events', default_events)
     return json.dumps(timeline)
 
@@ -91,7 +92,7 @@ def create_timeline():
 @generic_error_handler
 def create_ai_timeline():
     utils.abort_if_already_ai_generating()
-    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
+    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['image_association'])
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -108,3 +109,28 @@ def generate_timeline_name():
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
 
+
+
+def create_new_timeline(name, source):
+    db = app.config['db']
+    timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
+    timeline['id'] = db.add("timelines", timeline)
+    return timeline
+
+def create_ai_timeline_(timelineName, nEvents, image_association):
+    db = app.config['db']
+    db.user.update_ai_tracking_status('timeline', True)
+    try:
+        events = generate_timeline.main(timelineName, nEvents, image_association)
+        if(len(events) < 1):
+            raise Exception("No events generated")
+        timeline = create_new_timeline(timelineName, 'ai')
+        for event in events:
+            event['tid'] = timeline['id']
+        db.add_batch('events', events)        
+        db.user.update_ai_tracking_status('timeline', False, timeline)
+        return timeline
+    except Exception as e:
+        utils.print_full_exception(e)
+        db.user.update_ai_tracking_status('timeline', False)
+        raise Exception("Error generating timeline")

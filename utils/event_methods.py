@@ -6,28 +6,11 @@ import time
 from ai.dalle import generate_image
 from utils.constants import DEFAULT_QUOTAS
 from utils.utils import get_secret, print_full_exception
-from ai import generate_timeline, process_timeline
 from google.cloud import storage
 import os
 import re
 import datetime
 
-
-def event_quotas_exceeded(event):
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
-    if(n_events >= DEFAULT_QUOTAS['events_free']):
-        return True
-
-def timeline_quotas_exceeded():
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
-    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        return True
 
 def strip_leading_zeros(event):
 
@@ -289,28 +272,100 @@ def get_google_images(eventName, timelineName, num=1):
         raise Exception("Error getting images")
 
 
-def create_new_timeline(name, source):
-    db = app.config['db']
-    timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
-    timeline['id'] = db.add("timelines", timeline)
-    return timeline
 
-def create_ai_timeline_(timelineName, nEvents, imageAssociation):
-    db = app.config['db']
-    db.user.update_ai_tracking_status('timeline', True)
+
+
+
+def to_dd_mm_yyyy(newDate):
+    isNegative = False
+    if('-' in newDate):
+        isNegative = True
+        newDate = newDate.replace('-', '')
+    splitted = newDate.strip().split(' ')
+    newDate = splitted[-1]+'-'+splitted[-2]+'-'+splitted[-3]
+    if(isNegative):
+        newDate = '-'+newDate
+    
+    return newDate
+
+def month_to_num(newDate):
+    months = {'january': 1, 'february': 2, 'march': 3, 'april': 4,
+            'may': 5, 'june': 6, 'july': 7, 'august': 8,
+            'september': 9, 'october': 10, 'november': 11, 'december': 12}
+    for month in months:
+        if(month in newDate):
+            newDate = newDate.replace(month, str(months[month]))
+            newDate = to_dd_mm_yyyy(newDate.strip())
+    return newDate
+
+def process_negative_literals(date):
+    newDate = re.sub(r'[a-zA-Z]', '', date).strip()
+    if('-' not in newDate):
+        newDate = '-'+newDate
+    return newDate
+
+def process_date(date):
+    if(date == None): return None
+    newDate = date.lower().strip()
+    newDate = newDate.replace(', ', '')
+    newDate = newDate.replace(',', '')
+    if('ac' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bce' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('bc' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bby' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('ad' in newDate):
+        newDate = newDate.replace('ad', '')
+    if('aby' in newDate):
+        newDate = newDate.replace('aby', '')
+
+    if(any(month in newDate for month in months)):
+        newDate = month_to_num(newDate)
+    
+    if(newDate == 'present' or newDate == 'ongoing' ):
+        newDate = datetime.now().year
+
+    return str(newDate).strip()
+
+
+def handle_centuries(event):
+    if('century' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
+        event['endDate'] = str(int(event['startDate']) + 100)
+    return event
+
+def handle_decades(event):
+    if('s' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group()
+        event['endDate'] = str(int(event['startDate']) + 10)
+    return event
+
+
+
+
+def vaildate_date(date):
+    if(date == None): return
+    split_date = split_date(date)
+    if(split_date['year'] < -4600000000 or split_date['year'] > 4600000000):
+        raise Exception('year is out of range')
+
+def validate_dates(startDate, endDate):
+    if(startDate == None or endDate == None): 
+        return endDate
+    start_date = split_date(startDate)
+    end_date = split_date(endDate)
+    if(start_date['year'] >= end_date['year']):
+        return None
     try:
-        df = generate_timeline.main(timelineName, nEvents)
-        events = process_timeline.main(df, timelineName, imageAssociation)
-        if(len(events) < 1):
-            raise Exception("No events generated")
-        timeline = create_new_timeline(timelineName, 'ai')
-        for event in events:
-            event['tid'] = timeline['id']
-        db.add_batch('events', events)        
-        db.user.update_ai_tracking_status('timeline', False, timeline)
-        return timeline
-    except Exception as e:
-        print_full_exception(e)
-        db.user.update_ai_tracking_status('timeline', False)
-        raise Exception("Error generating timeline")
-
+        if(start_date['year'] == end_date['year'] and start_date['month'] > end_date['month']):
+            return None
+    except KeyError:
+        pass
+    try:
+        if(start_date['year'] == end_date['year'] and start_date['month'] == end_date['month'] and start_date['day'] > end_date['day']):
+            return None
+    except KeyError:
+        pass

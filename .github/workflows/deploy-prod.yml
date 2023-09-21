@@ -11,7 +11,7 @@ jobs:
       GCP_PROJECT_ID: timelime-prod
       GCP_EMAIL: main-219@timelime-prod.iam.gserviceaccount.com
       GCP_PROJECT_NUMBER: 260031091728
-      BUCKET: timelime-user-images-bucket
+      BUCKET: timelime-prod-bucket
       FE_URL: https://time-lime.com
     steps:
     - name: Checkout code
