@@ -1,3 +1,4 @@
+import uuid
 import flask
 from flask_cors import CORS
 from firestore.firestore_db import FirestoreDB
@@ -6,6 +7,20 @@ from utils import event_methods as event_methods
 from routes import timeline_bp, events_bp, auth_bp, other_bp, payment_bp, quizzes_bp
 from decorators.decorators import limiter
 import warnings
+from google.api_core.retry import Retry
+from utils.utils import generate_random_id, set_env_variables
+
+
+retry = Retry(
+    initial=0.1,  # Initial retry delay in seconds
+    maximum=360.0,  # Maximum retry delay in seconds
+    multiplier=2,  # Multiplier for exponential backoff
+)
+
+print('TO USE ONLY ON LOCAL HOST', flush=True)
+set_env_variables()
+
+
 warnings.filterwarnings("ignore", category=UserWarning)
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -19,6 +34,7 @@ app.register_blueprint(payment_bp)
 app.register_blueprint(quizzes_bp)
 firestore_init.init()
 app.config['db'] = FirestoreDB()
+app.config['session'] = generate_random_id()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

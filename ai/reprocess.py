@@ -5,7 +5,6 @@ import time
 from utils.utils import get_secret, save_df_to_storage, save_raw_to_storage
 
 def interpret_response(resp, type_):
-    save_raw_to_storage(resp, type_)
     try:
         obj = eval(resp)
         if(type(obj) == dict):
@@ -14,14 +13,14 @@ def interpret_response(resp, type_):
         return df
     except:
         try:
-            df = add_ai_layer(resp, type_)
+            df = _ai_reformating(resp, type_)
             return df
         except:
             raise Exception('Could not parse response')
 
 
 
-def add_ai_layer(text, type_):
+def _ai_reformating(text, type_):
 
     if(type_ == 'quizzes'):
         format_ = '{question: string, options: string[], answer: string}'

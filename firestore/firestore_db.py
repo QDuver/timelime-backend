@@ -1,6 +1,5 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
-from utils.utils import print_full_exception
 from flask import current_app as app
 class FirestoreDB: 
 
@@ -60,14 +59,10 @@ class FirestoreDB:
         if order_by:
             data = data.order_by(*order_by)
 
-        try:
-            if not doc:
-                return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
-            if(doc):
-                return dict(data.get().to_dict(), id=doc)
-        except Exception as e:
-            print_full_exception(e)
-            return None
+        if not doc:
+            return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
+        if(doc):
+            return dict(data.get().to_dict(), id=doc)
 
 
 class UnprotectedFirestoreDB:

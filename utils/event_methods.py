@@ -4,8 +4,8 @@ import time
 from googleapiclient.discovery import build
 import time
 from ai.dalle import generate_image
-from utils.constants import DEFAULT_QUOTAS
-from utils.utils import get_secret, print_full_exception
+from utils.constants import DEFAULT_QUOTAS, MONTHS
+from utils.utils import get_secret
 from google.cloud import storage
 import os
 import re
@@ -257,19 +257,15 @@ def  split_date(date, default=None):
 
 def get_google_images(eventName, timelineName, num=1):
     db = app.config['db']
-    try:
-        API_KEY = get_secret('SEARCH_ENGINE')
-        SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-        query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
+    API_KEY = get_secret('SEARCH_ENGINE')
+    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
 
-        service = build("customsearch", "v1", developerKey=API_KEY)
-        result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-        links = [link['link'] for link in result.get("items", [])]
-        db.user.update_ai_tracking_status('search', False, True)
-        return links
-    except Exception as e:
-        print_full_exception(e)
-        raise Exception("Error getting images")
+    service = build("customsearch", "v1", developerKey=API_KEY)
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
+    links = [link['link'] for link in result.get("items", [])]
+    db.user.update_ai_tracking_status('search', False, True)
+    return links
 
 
 
@@ -289,12 +285,9 @@ def to_dd_mm_yyyy(newDate):
     return newDate
 
 def month_to_num(newDate):
-    months = {'january': 1, 'february': 2, 'march': 3, 'april': 4,
-            'may': 5, 'june': 6, 'july': 7, 'august': 8,
-            'september': 9, 'october': 10, 'november': 11, 'december': 12}
-    for month in months:
+    for month in MONTHS:
         if(month in newDate):
-            newDate = newDate.replace(month, str(months[month]))
+            newDate = newDate.replace(month, str(MONTHS[month]))
             newDate = to_dd_mm_yyyy(newDate.strip())
     return newDate
 
@@ -305,8 +298,9 @@ def process_negative_literals(date):
     return newDate
 
 def process_date(date):
+    print('process_date', date)
     if(date == None): return None
-    newDate = date.lower().strip()
+    newDate = str(date).lower().strip()
     newDate = newDate.replace(', ', '')
     newDate = newDate.replace(',', '')
     if('ac' in newDate): 
@@ -322,7 +316,7 @@ def process_date(date):
     if('aby' in newDate):
         newDate = newDate.replace('aby', '')
 
-    if(any(month in newDate for month in months)):
+    if(any(month in newDate for month in MONTHS)):
         newDate = month_to_num(newDate)
     
     if(newDate == 'present' or newDate == 'ongoing' ):

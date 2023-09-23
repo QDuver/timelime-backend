@@ -1,11 +1,8 @@
-import time
 from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from google.cloud import error_reporting
 from utils.constants import DEFAULT_QUOTAS
 from utils.event_methods import get_google_images
-from ai import generate_quiz, process_quiz
-import utils.utils as utils
 
 other_bp = Blueprint('other', __name__)
 

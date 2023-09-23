@@ -1,10 +1,7 @@
-import ast
-import os
-import pandas as pd
 
-# name = 'jesus'
-# df = pd.read_csv(f'ai/generated/timelines/{name}.csv')
-# print(df)
+import datetime
 
-test = ast.literal_eval("['2035', '2040', '2045', '2050']")
 
+print(datetime.datetime.now().timestamp())
+# get timestamp up to seconds
+print(int(datetime.datetime.now().replace(microsecond=0).timestamp()))

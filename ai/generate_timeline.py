@@ -1,3 +1,4 @@
+from ai.reprocess import interpret_response
 import numpy as np
 import openai
 import pandas as pd
@@ -5,7 +6,7 @@ from firebase_admin import auth
 from firestore.firestore_db import UnprotectedFirestoreDB
 from flask import current_app as app
 from utils import event_methods as events_utils
-from utils.utils import get_secret
+from utils.utils import get_secret, save_df_to_storage, save_raw_to_storage
 from utils.event_methods import vaildate_date, validate_dates, process_date, handle_centuries, handle_decades
 
 import ai
@@ -23,7 +24,7 @@ def _process_dates(df):
     df = df.apply(lambda x: events_utils.strip_leading_zeros(x), axis=1)
     return df
 
-def _process(df, timelineName, image_association = None):
+def process_ai_timeline(df, timelineName, image_association = None):
     try:
         db = app.config['db']
     except:
@@ -36,7 +37,7 @@ def _process(df, timelineName, image_association = None):
 
     events = []
     for i, row in df.iterrows():
-        try:
+        # try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
             row['endDate'] = validate_dates(row['startDate'], row['endDate'])
@@ -44,8 +45,8 @@ def _process(df, timelineName, image_association = None):
             if(image_association == 'google'):
                 event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
             events.append(event)
-        except Exception as e:
-            print('error', e, 'could not load event', row.to_dict())
+        # except Exception as e:
+        #     print('error', e, 'could not load event', row.to_dict())
     
     return events
     
@@ -73,8 +74,11 @@ def main(timelineName, n_events, image_association = None):
   )
 
   resp = response['choices'][0]['message']['content']
-  df = ai.reprocess.interpret_response(resp, 'timelines')
-  events = _process(df, timelineName, image_association)
-  return events
+  save_raw_to_storage(resp, 'timelines')
+  df = interpret_response(resp, 'timelines')
+  save_df_to_storage(df, 'timelines')
+  df = process_ai_timeline(df, timelineName, image_association)
+  save_df_to_storage(df, 'timelines')
+  return df
 
 

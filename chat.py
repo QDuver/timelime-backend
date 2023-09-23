@@ -20,12 +20,14 @@ message1 =f'''
 '''
 
 message2 = '''
-In Stripe / angular, I have a checkout session that I create with the following code:
-const stripe = Stripe('pk_live_xxx');
-stripe.redirectToCheckout({ sessionId: res.id});
-It doesn't work with the above key, but it work with the pk_test_xxx key.
-I've checked the key in the Stripe dashboard and it's the same as the one I'm using.
-What could be the issue?  
+in python, i'm running this code
+
+client = secretmanager.SecretManagerServiceClient()
+response = client.access_secret_version(name='GCP_CREDENTIALS', )
+
+I get the following error:
+
+google.api_core.exceptions.RetryError: Deadline of 60.0s exceeded while calling target function, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.250.78.202:443: Handshake read failed
 '''
 
 response = openai.ChatCompletion.create(

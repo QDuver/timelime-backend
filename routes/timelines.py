@@ -1,13 +1,12 @@
 import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
-from decorators.decorators import  premium_required, token_required, generic_error_handler
+from decorators.decorators import  premium_required, print_full_exception, token_required, generic_error_handler
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 import utils.event_methods as event_methods
 import utils.utils as utils
-from utils.event_methods import create_new_timeline, create_ai_timeline_, timeline_quotas_exceeded
-from ai import generate_timeline, process_timeline
+from ai import generate_timeline
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -74,7 +73,7 @@ def edit_timeline():
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    if(timeline_quotas_exceeded()):
+    if(utils.timeline_quotas_exceeded()):
         return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines']} timelines with the Free plan - Handle FE"}), 403
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
@@ -92,7 +91,7 @@ def create_timeline():
 @generic_error_handler
 def create_ai_timeline():
     utils.abort_if_already_ai_generating()
-    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['image_association'])
+    timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
     return json.dumps(timeline)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
@@ -131,6 +130,6 @@ def create_ai_timeline_(timelineName, nEvents, image_association):
         db.user.update_ai_tracking_status('timeline', False, timeline)
         return timeline
     except Exception as e:
-        utils.print_full_exception(e)
+        print_full_exception(e)
         db.user.update_ai_tracking_status('timeline', False)
         raise Exception("Error generating timeline")
