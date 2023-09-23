@@ -17,8 +17,8 @@ retry = Retry(
     multiplier=2,  # Multiplier for exponential backoff
 )
 
-print('TO USE ONLY ON LOCAL HOST', flush=True)
-set_env_variables()
+# print('TO USE ONLY ON LOCAL HOST', flush=True)
+# set_env_variables()
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
