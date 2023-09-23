@@ -21,12 +21,3 @@ def _read_txt_file():
 
     df = reprocess.main('asdf', data, 'quizzes')
     df.to_csv(f'ai/generated/quizzes/portugal.csv', index=False)
-
-# df = generate_timeline.main('ipanema', 10)
-# print(df)
-
-
-df = pd.read_csv("C:/Users/Msi/Downloads/2023-09-20 19_27_10.csv")
-print(df)
-quiz = process_quiz.main(df)
-print(quiz)

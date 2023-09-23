@@ -11,7 +11,7 @@ pd.set_option('display.max_columns', None)
 
 def process_ai_quiz(df):
     df = df.head(10)
-    df = df.astype(str)
+    df = df.astype(str).replace({'none': None}).replace({'None': None})
     quiz = {}
     quiz['questions'] = df['question'].tolist()
     quiz['options'] = []
@@ -55,6 +55,6 @@ def main(events):
     save_raw_to_storage(resp, 'quizzes')
     df = ai.reprocess.interpret_response(resp, 'quizzes')
     save_df_to_storage(df, 'quizzes')
-    df = process_ai_quiz(df)
-    save_df_to_storage(df, 'quizzes')
-    return df
+    quiz = process_ai_quiz(df)
+    save_df_to_storage(pd.DataFrame(quiz), 'quizzes')
+    return quiz

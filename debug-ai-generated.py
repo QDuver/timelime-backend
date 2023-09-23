@@ -13,12 +13,11 @@ import firestore.firestore_init as firestore_init
 set_env_variables()
 firestore_init.init()
 type_ = 'timelines'
-sessionId = 'hAWbZ'
+sessionId = 'spPOG'
 blobs = read_from_storage(type_)
 blobs = [blob for blob in blobs if sessionId in blob.name]
-print(len(blobs))
 for i, blob in enumerate(blobs):
-    print(blob.name)
+    print(i, blob.name)
     file = blob.download_as_string().decode('utf-8')
     if(i==0):
         print(file)

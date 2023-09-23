@@ -51,8 +51,9 @@ def print_full_exception(e):
     logger = logging.getLogger('my_logger')
     logger.setLevel(logging.WARNING)
     error_type = type(e).__name__
+    error_message = str(e)
     tb_formatted = ''.join(traceback.format_tb(e.__traceback__))
-    log_message = f"\n\nTraceback:\n{tb_formatted}\n\nError Type: {error_type}"
+    log_message = f"\n\nTraceback:\n{tb_formatted}\n\nError Type: {error_type}\nError Message: {error_message}\n\n"
     print('ERROR --------')
     logger.error(log_message)
     print('--------')

@@ -22,9 +22,8 @@ def create_quiz():
     
     db.user.update_ai_tracking_status('quiz', True)
     try:
-        timelineName = db.get('timelines', doc=tid)['name']
         events = db.get('events', where=('tid', '==', tid))
-        quiz = generate_quiz.main(timelineName, events)
+        quiz = generate_quiz.main(events)
         quiz['tid'] = tid
         db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)

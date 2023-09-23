@@ -31,13 +31,14 @@ def process_ai_timeline(df, timelineName, image_association = None):
         db = UnprotectedFirestoreDB()
     
     df = df.replace({np.nan: None})
+    df = df.astype(str).replace({'none': None}).replace({'None': None})
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = _process_dates(df)
 
 
     events = []
     for i, row in df.iterrows():
-        # try:
+        try:
             vaildate_date(row['startDate'])
             vaildate_date(row['endDate'])
             row['endDate'] = validate_dates(row['startDate'], row['endDate'])
@@ -45,8 +46,8 @@ def process_ai_timeline(df, timelineName, image_association = None):
             if(image_association == 'google'):
                 event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
             events.append(event)
-        # except Exception as e:
-        #     print('error', e, 'could not load event', row.to_dict())
+        except Exception as e:
+            print('error', e, 'could not load event', row.to_dict())
     
     return events
     
@@ -77,8 +78,8 @@ def main(timelineName, n_events, image_association = None):
   save_raw_to_storage(resp, 'timelines')
   df = interpret_response(resp, 'timelines')
   save_df_to_storage(df, 'timelines')
-  df = process_ai_timeline(df, timelineName, image_association)
-  save_df_to_storage(df, 'timelines')
-  return df
+  events = process_ai_timeline(df, timelineName, image_association)
+  save_df_to_storage(pd.DataFrame(events), 'timelines')
+  return events
 
 

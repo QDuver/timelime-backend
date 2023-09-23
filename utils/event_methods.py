@@ -298,9 +298,8 @@ def process_negative_literals(date):
     return newDate
 
 def process_date(date):
-    print('process_date', date)
     if(date == None): return None
-    newDate = str(date).lower().strip()
+    newDate = date.lower().strip()
     newDate = newDate.replace(', ', '')
     newDate = newDate.replace(',', '')
     if('ac' in newDate): 
@@ -342,8 +341,8 @@ def handle_decades(event):
 
 def vaildate_date(date):
     if(date == None): return
-    split_date = split_date(date)
-    if(split_date['year'] < -4600000000 or split_date['year'] > 4600000000):
+    splitted = split_date(date)
+    if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
         raise Exception('year is out of range')
 
 def validate_dates(startDate, endDate):
