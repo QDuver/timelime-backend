@@ -1,10 +1,36 @@
 import ai
-from utils.utils import get_secret, print_full_exception
+from utils.utils import get_secret, save_df_to_storage, save_raw_to_storage
 import openai
 import pandas as pd
-import time
+import datetime
+from firestore.firestore_db import UnprotectedFirestoreDB
+from flask import current_app as app
+import re
+import ast
+pd.set_option('display.max_columns', None)
 
-def main(timelineName, events):
+def process_ai_quiz(df):
+    df = df.head(10)
+    df = df.astype(str).replace({'none': None}).replace({'None': None})
+    quiz = {}
+    quiz['questions'] = df['question'].tolist()
+    quiz['options'] = []
+    for i, option  in enumerate(df['options'].tolist()):
+        d = {}
+        options = ast.literal_eval(option)
+        for i, option2 in enumerate(options):
+            d[f'q{i}'] = re.sub(r'^[a-zA-Z]\)\s+', '', option2)
+        quiz['options'].append(d)
+    answer = df['answer'].tolist()
+    answer = [re.sub(r'^[a-zA-Z]\)\s+', '', str(a)) for a in answer]
+    quiz['answer'] = answer
+
+    quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    quiz['uid'] = app.config['db'].uid
+        
+    return quiz
+
+def main(events):
     openai.api_key = get_secret('OpenAPI')
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
@@ -26,13 +52,9 @@ def main(timelineName, events):
     )
 
     resp = resp['choices'][0]['message']['content']
-    name = timelineName.lower().replace(' ', '-')
-    try:
-      obj = eval(resp)
-      if(type(obj) == dict):
-          obj = obj[list(obj.keys())[0]]
-      df = pd.DataFrame(obj)
-      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)
-    except Exception as e:
-      df = ai.reprocess.main(name, resp, 'quizzes')
-      df.to_csv(f'ai/generated/quizzes/{name}.csv', index=False)
+    save_raw_to_storage(resp, 'quizzes')
+    df = ai.reprocess.interpret_response(resp, 'quizzes')
+    save_df_to_storage(df, 'quizzes')
+    quiz = process_ai_quiz(df)
+    save_df_to_storage(pd.DataFrame(quiz), 'quizzes')
+    return quiz

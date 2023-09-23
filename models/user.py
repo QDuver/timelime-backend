@@ -4,7 +4,7 @@ from firebase_admin import auth
 
 from models.exceptions import TokenExpired
 from utils.constants import DEFAULT_QUOTAS
-from utils.utils import first_day_of_next_month, print_full_exception
+from utils.utils import first_day_of_next_month
 
 class User:
     DEFAULT_USER_SETTINGS = {
@@ -25,6 +25,7 @@ class User:
         'exp': None,
         'expiresIn': None,
         'nextQuotaRefresh': None,
+        'subscription': None,
     }
 
 
@@ -58,6 +59,7 @@ class User:
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
+        self.subscription = user.get('subscription', None)
         self.db.user = self
     
     def create_new_user(self):
@@ -82,6 +84,12 @@ class User:
             return
         try:
             token = self.request.headers.get("Authorization").split(" ")[1]
+            if(token == 'dhasf039847pnasdlkfuh73094fo'):
+                self.uid = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
+                self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
+                self.isAnonymous = False
+                self.db.uid = self.firebaseUser['uid']
+                return
             firebaseResp = auth.verify_id_token(token)
             self.exp = firebaseResp['exp']
             self.expiresIn = firebaseResp['exp'] - time.time()

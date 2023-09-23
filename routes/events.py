@@ -3,7 +3,7 @@ import json
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from utils.constants import DEFAULT_QUOTAS
-import utils.methods as methods
+import utils.event_methods as event_methods
 import pandas as pd
 import io
 events_bp = Blueprint('events', __name__)
@@ -22,7 +22,7 @@ def download_headers():
 def download_events(timeline_id):
     headers = HEADERS_MANDATORY + HEADERS_OPTIONAL
 
-    ev = methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(app.config['db'] ,timeline_id)
     df = pd.read_json(json.dumps(ev['events']))
     if('isEndEvent' in df.columns):
         df = df[df['isEndEvent'] != True]
@@ -38,7 +38,7 @@ def download_events(timeline_id):
 @token_required
 @generic_error_handler
 def get_events(timeline_id):
-    ev = methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
@@ -46,12 +46,12 @@ def get_events(timeline_id):
 @generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
-    if(methods.event_quotas_exceeded(event)):
+    if(event_methods.event_quotas_exceeded(event)):
         return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['events']} events per timeline with the Free plan - Handle FE"}), 403
-    event = methods.create_events([event])[0]
+    event = event_methods.create_events([event])[0]
     event_id = app.config['db'].add('events', event)
     event['id'] = event_id
-    methods.handle_image(request, event)
+    event_methods.handle_image(request, event)
     return json.dumps(event)
 
 
@@ -61,7 +61,7 @@ def create_event():
 def upload_events():
     db = app.config['db']
     try:
-        processed_events = methods.create_events(request.json)
+        processed_events = event_methods.create_events(request.json)
         db.add_batch('events', processed_events)
     except:
         return jsonify({"message": "Error uploading events - Handle FE"}), 400
@@ -72,9 +72,9 @@ def upload_events():
 @generic_error_handler
 def edit_event():
     event = json.loads(request.form.get('event'))
-    event = methods.edit_event(event)
+    event = event_methods.edit_event(event)
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    methods.handle_image(request, event)
+    event_methods.handle_image(request, event)
     return json.dumps(event)
 
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
@@ -82,7 +82,7 @@ def edit_event():
 @generic_error_handler
 @premium_required('image')
 def generate_image():
-    event = methods.generate_image(request.json)
+    event = event_methods.generate_image(request.json)
     return json.dumps(event)
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])

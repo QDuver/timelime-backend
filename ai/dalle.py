@@ -1,5 +1,6 @@
+from decorators.decorators import print_full_exception
 import openai
-from utils.utils import get_secret, print_full_exception
+from utils.utils import get_secret
 import time
 from flask import current_app as app
 

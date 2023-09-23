@@ -2,29 +2,50 @@ import datetime
 from google.cloud import secretmanager
 import os
 import json
+from clean_schedule.main import DEFAULT_QUOTAS
 from flask import jsonify, current_app as app
-import logging
-import traceback
+from google.cloud import storage
+import random
+import string
 
-logger = logging.getLogger('my_logger')
-logger.setLevel(logging.WARNING)
+def generate_random_id(length=5):
+    characters = string.ascii_letters + string.digits
+    random_id = ''.join(random.choice(characters) for _ in range(length))
+    return random_id
+
+def _get_name(type_):
+    uid = app.config['db'].user.uid
+    now = int(datetime.datetime.now().replace(microsecond=0).timestamp())
+    return f"{type_}/{app.config['session']}-{uid}-{now}"
+
+def _get_bucket():
+    bucket_name = os.environ.get('BUCKET')
+    if(not bucket_name):
+        bucket_name = 'timelime-dev-bucket'
+    gcs = storage.Client()
+    bucket = gcs.get_bucket(bucket_name)
+    return bucket
+
+def save_raw_to_storage(text, type_):
+    blob = _get_bucket().blob(f'{_get_name(type_)}.txt')
+    blob.upload_from_string(text)
+
+def save_df_to_storage(df, type_):
+    blob = _get_bucket().blob(f'{_get_name(type_)}.csv')
+    blob.upload_from_string(df.to_csv(index=False), 'text/csv')
 
 
-def get_fe_url():
-    try:
-        return os.environ.get('FE_URL')
-    except:
-        set_env_variables()
-        return os.environ.get('FE_URL')
+def read_from_storage(type_):
+    bucket = _get_bucket()
+    blobs = bucket.list_blobs(prefix=type_)
+    return sorted(blobs, key=lambda x: x.updated)
+    
+
 
 def get_secret(secret_name):
-    try:
-        return get_secret_core(secret_name)
-    except:
-        set_env_variables()
-        return get_secret_core(secret_name)
 
-def get_secret_core(secret_name):
+    if(secret_name == 'GCP_CREDENTIALS' and os.environ.get('FE_URL') == 'https://localhost:4200'):
+        return json.load(open('secrets/GCP_CREDENTIALS.json'))
 
     client = secretmanager.SecretManagerServiceClient()
     secret = f"projects/{os.environ.get('GCP_PROJECT_NUMBER')}/secrets/{secret_name}/versions/latest"
@@ -45,17 +66,26 @@ def first_day_of_next_month():
     timestamp = datetime.datetime.combine(first_day_of_next_month, datetime.time()).timestamp()
     return timestamp
 
+def event_quotas_exceeded(event):
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
+    if(n_events >= DEFAULT_QUOTAS['events_free']):
+        return True
+
+def timeline_quotas_exceeded():
+    db = app.config['db']
+    if(db.user.isPremium):
+        return False
+    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
+    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
+        return True
 
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
     os.environ['FE_URL'] = 'https://localhost:4200'
-
-def print_full_exception(e):
-    logger.error('This is an warning message')
-    logger.error(traceback.print_tb(e.__traceback__))
-    # logger.error(e.__traceback__.tb_lineno)
-
 
 def abort_if_already_ai_generating():
     db = app.config['db']

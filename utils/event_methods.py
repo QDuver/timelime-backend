@@ -4,30 +4,13 @@ import time
 from googleapiclient.discovery import build
 import time
 from ai.dalle import generate_image
-from utils.constants import DEFAULT_QUOTAS
-from utils.utils import get_secret, print_full_exception
-from ai import generate_timeline, process_timeline
+from utils.constants import DEFAULT_QUOTAS, MONTHS
+from utils.utils import get_secret
 from google.cloud import storage
 import os
 import re
 import datetime
 
-
-def event_quotas_exceeded(event):
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
-    if(n_events >= DEFAULT_QUOTAS['events_free']):
-        return Trues
-
-def timeline_quotas_exceeded():
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
-    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        return True
 
 def strip_leading_zeros(event):
 
@@ -46,14 +29,14 @@ def strip_leading_zeros(event):
 def handle_image(request, event):
     db = app.config['db']
     if('file' in request.files):
-        bucket_name = os.environ.get('TIMELIME_USER_IMAGES_BUCKET', 'timelime-dev-user-images-bucket')
+        bucket_name = os.environ.get('BUCKET', 'timelime-dev-user-images-bucket')
         file = request.files['file']
         gcs = storage.Client()
         bucket = gcs.get_bucket(bucket_name)
-        blob = bucket.blob(event['id'])
+        blob = bucket.blob('images/'+event['id'])
         blob.upload_from_string( file.read(), content_type=file.content_type )
         event['imageName'] = event['imageURL']
-        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/{event["id"]}'
+        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
         db.edit('events', event['id'], event)
     if('imageURL' in event and 'An AI image will start' in event['imageURL']):
         event['imageGenerating'] = True
@@ -274,43 +257,108 @@ def  split_date(date, default=None):
 
 def get_google_images(eventName, timelineName, num=1):
     db = app.config['db']
+    API_KEY = get_secret('SEARCH_ENGINE')
+    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
+
+    service = build("customsearch", "v1", developerKey=API_KEY)
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
+    links = [link['link'] for link in result.get("items", [])]
+    db.user.update_ai_tracking_status('search', False, True)
+    return links
+
+
+
+
+
+
+def to_dd_mm_yyyy(newDate):
+    isNegative = False
+    if('-' in newDate):
+        isNegative = True
+        newDate = newDate.replace('-', '')
+    splitted = newDate.strip().split(' ')
+    newDate = splitted[-1]+'-'+splitted[-2]+'-'+splitted[-3]
+    if(isNegative):
+        newDate = '-'+newDate
+    
+    return newDate
+
+def month_to_num(newDate):
+    for month in MONTHS:
+        if(month in newDate):
+            newDate = newDate.replace(month, str(MONTHS[month]))
+            newDate = to_dd_mm_yyyy(newDate.strip())
+    return newDate
+
+def process_negative_literals(date):
+    newDate = re.sub(r'[a-zA-Z]', '', date).strip()
+    if('-' not in newDate):
+        newDate = '-'+newDate
+    return newDate
+
+def process_date(date):
+    if(date == None): return None
+    newDate = date.lower().strip()
+    newDate = newDate.replace(', ', '')
+    newDate = newDate.replace(',', '')
+    if('ac' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bce' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('bc' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bby' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('ad' in newDate):
+        newDate = newDate.replace('ad', '')
+    if('aby' in newDate):
+        newDate = newDate.replace('aby', '')
+
+    if(any(month in newDate for month in MONTHS)):
+        newDate = month_to_num(newDate)
+    
+    if(newDate == 'present' or newDate == 'ongoing' ):
+        newDate = datetime.now().year
+
+    return str(newDate).strip()
+
+
+def handle_centuries(event):
+    if('century' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
+        event['endDate'] = str(int(event['startDate']) + 100)
+    return event
+
+def handle_decades(event):
+    if('s' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group()
+        event['endDate'] = str(int(event['startDate']) + 10)
+    return event
+
+
+
+
+def vaildate_date(date):
+    if(date == None): return
+    splitted = split_date(date)
+    if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
+        raise Exception('year is out of range')
+
+def validate_dates(startDate, endDate):
+    if(startDate == None or endDate == None): 
+        return endDate
+    start_date = split_date(startDate)
+    end_date = split_date(endDate)
+    if(start_date['year'] >= end_date['year']):
+        return None
     try:
-        API_KEY = get_secret('SEARCH_ENGINE')
-        SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-        query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
-
-        service = build("customsearch", "v1", developerKey=API_KEY)
-        result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-        links = [link['link'] for link in result.get("items", [])]
-        db.user.update_ai_tracking_status('search', False, True)
-        return links
-    except Exception as e:
-        print_full_exception(e)
-        raise Exception("Error getting images")
-
-
-def create_new_timeline(name, source):
-    db = app.config['db']
-    timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
-    timeline['id'] = db.add("timelines", timeline)
-    return timeline
-
-def create_ai_timeline_(timelineName, nEvents, imageAssociation):
-    db = app.config['db']
-    db.user.update_ai_tracking_status('timeline', True)
+        if(start_date['year'] == end_date['year'] and start_date['month'] > end_date['month']):
+            return None
+    except KeyError:
+        pass
     try:
-        generate_timeline.main(timelineName, nEvents)
-        events = process_timeline.main(timelineName, imageAssociation)
-        if(len(events) < 1):
-            raise Exception("No events generated")
-        timeline = create_new_timeline(timelineName, 'ai')
-        for event in events:
-            event['tid'] = timeline['id']
-        db.add_batch('events', events)        
-        db.user.update_ai_tracking_status('timeline', False, timeline)
-        return timeline
-    except Exception as e:
-        print_full_exception(e)
-        db.user.update_ai_tracking_status('timeline', False)
-        raise Exception("Error generating timeline")
-
+        if(start_date['year'] == end_date['year'] and start_date['month'] == end_date['month'] and start_date['day'] > end_date['day']):
+            return None
+    except KeyError:
+        pass

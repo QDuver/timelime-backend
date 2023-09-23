@@ -1,21 +1,22 @@
-import json
-import os
+
 import stripe
 from decorators.decorators import generic_error_handler, token_required
 from firestore.firestore_db import UnprotectedFirestoreDB
-from utils.utils import get_fe_url, get_secret, print_full_exception
+from utils.utils import get_secret
 from flask import Blueprint, jsonify, request, current_app as app
+import os
 
-stripe.api_key = get_secret('stripe')
 payment_bp = Blueprint('payment', __name__)
-FE_URL = get_fe_url()
+FE_URL = os.environ.get('FE_URL')
 
 @payment_bp.route('/cancel-premium', endpoint="simple", methods=['POST'])
 @generic_error_handler
 @token_required
 def cancel_premium():
     db = app.config['db']
-    db.edit('users', db.user.uid, {'isPremium': False})
+    stripe.api_key = get_secret('stripe')
+    stripe.Subscription.cancel(db.user.subscription)
+    db.edit('users', db.user.uid, {'isPremium': False, 'subscription': None})
     return jsonify(success=True)
 
 
@@ -23,8 +24,8 @@ def cancel_premium():
 @generic_error_handler
 @token_required
 def checkout():
-    print('stripe general endpoint_secret', get_secret('stripe'), flush=True)
     dummy = request.json
+    stripe.api_key = get_secret('stripe')
     prices = stripe.Price.list(
     expand=['data.product']
 )
@@ -45,19 +46,17 @@ def checkout():
     return jsonify({'id': checkout_session.id})
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
-# @generic_error_handler
 def webhook():
+    stripe.api_key = get_secret('stripe')
     endpoint_secret = get_secret('stripe-webhook')
-    print('webhook endpoint_secret', endpoint_secret, flush=True)
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
     if event['type'] == 'checkout.session.completed':
       uid = event['data']['object']['metadata']['uid']
-      print('UID', uid, flush=True)
       if uid:
         db = UnprotectedFirestoreDB()
-        db.edit('users', uid, {'isPremium': True})
+        db.edit('users', uid, {'isPremium': True, 'subscription': event['data']['object']['subscription']})
         return jsonify(success=True)
 
 

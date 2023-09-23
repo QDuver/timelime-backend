@@ -1,14 +1,12 @@
 
-import time
+import logging
+import traceback
 from flask import jsonify, request, current_app as app
 from firebase_admin import auth
-import hashlib
-import hmac
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
-from utils.utils import print_full_exception
 
 limiter = Limiter( get_remote_address, default_limits=["10 per second"] )
 
@@ -48,3 +46,14 @@ def add_quotas(user):
     if('quotas' not in user):
         user['quotas'] = DEFAULT_QUOTAS
     return user
+
+def print_full_exception(e):
+    logger = logging.getLogger('my_logger')
+    logger.setLevel(logging.WARNING)
+    error_type = type(e).__name__
+    error_message = str(e)
+    tb_formatted = ''.join(traceback.format_tb(e.__traceback__))
+    log_message = f"\n\nTraceback:\n{tb_formatted}\n\nError Type: {error_type}\nError Message: {error_message}\n\n"
+    print('ERROR --------')
+    logger.error(log_message)
+    print('--------')
