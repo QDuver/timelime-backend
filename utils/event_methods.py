@@ -319,7 +319,7 @@ def process_date(date):
         newDate = month_to_num(newDate)
     
     if(newDate == 'present' or newDate == 'ongoing' ):
-        newDate = datetime.now().year
+        newDate = datetime.datetime.now().year
 
     return str(newDate).strip()
 
