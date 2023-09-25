@@ -85,7 +85,7 @@ class User:
         try:
             token = self.request.headers.get("Authorization").split(" ")[1]
             if(token == 'dhasf039847pnasdlkfuh73094fo'):
-                self.uid = 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'
+                self.uid = 'LKKHd0ji3nSvHzoQiNe4hTCrh6E3'
                 self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
                 self.isAnonymous = False
                 self.db.uid = self.firebaseUser['uid']

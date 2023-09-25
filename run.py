@@ -10,15 +10,8 @@ import warnings
 from google.api_core.retry import Retry
 from utils.utils import generate_random_id, set_env_variables
 
-
-retry = Retry(
-    initial=0.1,  # Initial retry delay in seconds
-    maximum=360.0,  # Maximum retry delay in seconds
-    multiplier=2,  # Multiplier for exponential backoff
-)
-
-# print('TO USE ONLY ON LOCAL HOST', flush=True)
-# set_env_variables()
+print('TO USE ONLY ON LOCAL HOST', flush=True)
+set_env_variables()
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
