@@ -29,6 +29,6 @@ def main(timelineName, n_events, image_association = None):
       ]
   )
 
-  return process.main(resp, 'timelines', image_association)
+  return process.main(resp, 'timelines', timelineName, image_association)
 
 

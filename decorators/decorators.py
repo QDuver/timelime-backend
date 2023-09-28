@@ -5,6 +5,7 @@ from flask import jsonify, request, current_app as app
 from firebase_admin import auth
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from models.exceptions import TokenExpired
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 
@@ -26,7 +27,11 @@ def premium_required(type_):
 def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
-        User(request)
+        user = User(request)
+        print(user, flush=True)
+        if(user.token_expired):
+            return jsonify({"message": "Token expired"}), 401
+
 
         return route_function(*args, **kwargs)
     
@@ -34,6 +39,7 @@ def token_required(route_function):
 
 def generic_error_handler(func):
     def decorator(*args, **kwargs):
+        print('generic_error_handler', flush=True)
         try:
             return func(*args, **kwargs)
         except Exception as e:

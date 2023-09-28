@@ -22,9 +22,7 @@ def main(events):
         raise Exception('No events found in the timeline')
 
     resp = openai.ChatCompletion.create(
-    # model="gpt-3.5-turbo-16k-0613",
-    model="gpt-4",
-
+    model="gpt-3.5-turbo-16k-0613",
     messages=[
           {"role": "system", "content": f'''
           Response has to be in JSON format. Each object represents a question, with the following format: question, options, answer.

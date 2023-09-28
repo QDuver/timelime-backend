@@ -12,16 +12,19 @@ import re
 import datetime
 
 
-def strip_leading_zeros(event):
+def strip_leading_zeros(event): #to avoid dates like 0010-01-01
 
-    def handle_if_dash_as_first(date):
+    def handle_if_dash_as_first(date): # to avoid dates like -0010-01-01
         if(not date):
             return '0'
         return date if date[0] != '-' else '0'+date
 
-    event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
+
+    if(event['startDate'][0] == '0'):
+        event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
     try:
-        event['endDate'] = handle_if_dash_as_first(event['endDate'].lstrip('0'))
+        if(event['endDate'][0] == '0'):
+            event['endDate'] = handle_if_dash_as_first(event['endDate'].lstrip('0'))
     except:
         pass
     return event
@@ -29,7 +32,7 @@ def strip_leading_zeros(event):
 def handle_image(request, event):
     db = app.config['db']
     if('file' in request.files):
-        bucket_name = os.environ.get('BUCKET', 'timelime-dev-user-images-bucket')
+        bucket_name = os.environ.get('BUCKET')
         file = request.files['file']
         gcs = storage.Client()
         bucket = gcs.get_bucket(bucket_name)
@@ -302,6 +305,7 @@ def process_date(date):
     newDate = date.lower().strip()
     newDate = newDate.replace(', ', '')
     newDate = newDate.replace(',', '')
+    newDate = newDate.replace('.0', '')
     if('ac' in newDate): 
         newDate = process_negative_literals(newDate)
     if('bce' in newDate):
@@ -317,11 +321,12 @@ def process_date(date):
 
     if(any(month in newDate for month in MONTHS)):
         newDate = month_to_num(newDate)
-    
     if(newDate == 'present' or newDate == 'ongoing' ):
         newDate = datetime.datetime.now().year
 
-    return str(newDate).strip()
+    newDate = str(newDate).strip()
+
+    return newDate
 
 
 def handle_centuries(event):
@@ -362,3 +367,4 @@ def validate_dates(startDate, endDate):
             return None
     except KeyError:
         pass
+    return endDate

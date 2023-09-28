@@ -85,6 +85,7 @@ def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
     os.environ['FE_URL'] = 'https://localhost:4200'
+    os.environ['BUCKET'] = 'timelime-dev-bucket'
 
 def abort_if_already_ai_generating():
     db = app.config['db']

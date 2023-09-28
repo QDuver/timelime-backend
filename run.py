@@ -7,11 +7,10 @@ from utils import event_methods as event_methods
 from routes import timeline_bp, events_bp, auth_bp, other_bp, payment_bp, quizzes_bp
 from decorators.decorators import limiter
 import warnings
-from google.api_core.retry import Retry
 from utils.utils import generate_random_id, set_env_variables
 
-print('TO USE ONLY ON LOCAL HOST', flush=True)
-set_env_variables()
+# print('TO USE ONLY ON LOCAL HOST', flush=True)
+# set_env_variables()
 
 
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -11,7 +11,7 @@ from flask import current_app as app
 from utils import event_methods as events_utils
 from utils.event_methods import vaildate_date, validate_dates, process_date, handle_centuries, handle_decades
 
-def main(resp, type_, image_association=None):
+def main(resp, type_, timelineName, image_association=None):
     resp = resp['choices'][0]['message']['content']
     save_raw_to_storage(resp, type_, 'step1')
     try:
@@ -24,7 +24,7 @@ def main(resp, type_, image_association=None):
             raise Exception('Could not parse response')
     save_df_to_storage(df, type_, 'step3')
     if(type_ == 'timelines'):
-        generated = process_ai_timeline(df, image_association)
+        generated = process_ai_timeline(df, timelineName, image_association)
     elif(type_ == 'quizzes'):
         generated = process_ai_quiz(df)
     save_df_to_storage(pd.DataFrame(generated), type_, 'step4')
@@ -100,7 +100,6 @@ def process_ai_timeline(df, timelineName, image_association = None):
     df = df.drop_duplicates(subset=['name', 'startDate'], keep='first')
     df = _process_dates(df)
 
-
     events = []
     for i, row in df.iterrows():
         try:
@@ -119,7 +118,6 @@ def process_ai_timeline(df, timelineName, image_association = None):
 
 def process_ai_quiz(df):
     df = df.head(10)
-    print(df, flush=True)
     df = df.astype(str).replace({'none': None}).replace({'None': None})
     quiz = {}
     quiz['questions'] = df['question'].tolist()

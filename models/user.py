@@ -26,14 +26,20 @@ class User:
         'expiresIn': None,
         'nextQuotaRefresh': None,
         'subscription': None,
+        'lastPaymentFailed': None,
     }
+    token_expired = False
 
 
     def __init__(self, request):
 
         self.db = app.config['db']
         self.request = request
-        self.set_token()
+        try:
+            self.set_token()
+        except TokenExpired:
+            self.token_expired = True
+            return
         self.populate_user_data()
         self.remove_loading_if_too_long()
 
@@ -60,6 +66,7 @@ class User:
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
         self.subscription = user.get('subscription', None)
+        self.lastPaymentFailed = user.get('lastPaymentFailed', None)
         self.db.user = self
     
     def create_new_user(self):
@@ -99,7 +106,7 @@ class User:
             self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
         except Exception as e:
             if('Token expired' in str(e)):
-                raise TokenExpired('Token expired')
+                raise TokenExpired('Please reauthenticate to continue navigating the app')
             else:
                 raise e
             
@@ -136,7 +143,7 @@ class User:
         trackers = ['image', 'quiz', 'timeline']
         for tracker in trackers:
             try:
-                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 360):
+                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 120):
                     self.generating[tracker]['loading'] = False
                     self.generating[tracker]['started'] = None
                     self.generating[tracker]['generated'] = None
