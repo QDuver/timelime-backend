@@ -53,8 +53,8 @@ def webhook():
 
     session_id = event['data']['object']['id']
     if event['type'] == 'checkout.session.completed':
-      create_subscription(session_id)
       uid = event['data']['object']['metadata']['uid']
+      create_subscription(session_id, uid)
       if uid:
         db.edit('users', uid, {'isPremium': True, 'subscription': event['data']['object']['subscription'], 'lastPaymentFailed': False})
         return jsonify(success=True)
@@ -68,8 +68,9 @@ def webhook():
     return jsonify(success=False)
 
 
-def create_subscription(session_id):
-    db = app.config['db']
+def create_subscription(session_id, uid):
+    db = UnprotectedFirestoreDB()
+    user = db.get('users', uid)
     if(db.get('stripe_sessions', session_id)):
         return
     db.add('stripe_sessions', {}, doc_id = session_id)
@@ -78,6 +79,6 @@ def create_subscription(session_id):
     session = stripe.checkout.Session.retrieve( session_id )
     setup_intent = stripe.SetupIntent.retrieve( session["setup_intent"] )
     payment_method = setup_intent["payment_method"]
-    customer = stripe.Customer.create(description=db.user.uid, email=db.user.email, metadata={'uid': db.user.uid}, payment_method=payment_method )
-    # stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ], trial_period_days=1, metadata={'uid': db.user.uid}, )
-    stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ],  metadata={'uid': db.user.uid}, )
+    customer = stripe.Customer.create(description=uid, email=user.email, metadata={'uid': uid}, payment_method=payment_method )
+    # stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ], trial_period_days=1, metadata={'uid': uid}, )
+    stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ],  metadata={'uid': uid}, )
