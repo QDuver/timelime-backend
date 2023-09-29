@@ -59,10 +59,13 @@ class FirestoreDB:
         if order_by:
             data = data.order_by(*order_by)
 
-        if not doc:
-            return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
-        if(doc):
-            return dict(data.get().to_dict(), id=doc)
+        try:
+            if not doc:
+                return [dict(doc.to_dict(), id=doc.id) for doc in data.get()]
+            if(doc):
+                return dict(data.get().to_dict(), id=doc)
+        except Exception as e:
+            return None
 
 
 class UnprotectedFirestoreDB:

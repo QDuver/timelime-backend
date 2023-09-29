@@ -1,4 +1,6 @@
 import ai
+from ai import process
+from ai.process import ai_reformating
 from utils.utils import get_secret, save_df_to_storage, save_raw_to_storage
 import openai
 import pandas as pd
@@ -9,32 +11,15 @@ import re
 import ast
 pd.set_option('display.max_columns', None)
 
-def process_ai_quiz(df):
-    df = df.head(10)
-    df = df.astype(str).replace({'none': None}).replace({'None': None})
-    quiz = {}
-    quiz['questions'] = df['question'].tolist()
-    quiz['options'] = []
-    for i, option  in enumerate(df['options'].tolist()):
-        d = {}
-        options = ast.literal_eval(option)
-        for i, option2 in enumerate(options):
-            d[f'q{i}'] = re.sub(r'^[a-zA-Z]\)\s+', '', option2)
-        quiz['options'].append(d)
-    answer = df['answer'].tolist()
-    answer = [re.sub(r'^[a-zA-Z]\)\s+', '', str(a)) for a in answer]
-    quiz['answer'] = answer
 
-    quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    quiz['uid'] = app.config['db'].uid
-        
-    return quiz
 
 def main(events):
     openai.api_key = get_secret('OpenAPI')
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
     n_events = len(events) if len(events) < 10 else 10
+    if(n_events < 1):
+        raise Exception('No events found in the timeline')
 
     resp = openai.ChatCompletion.create(
     model="gpt-3.5-turbo-16k-0613",
@@ -51,10 +36,5 @@ def main(events):
       ]
     )
 
-    resp = resp['choices'][0]['message']['content']
-    save_raw_to_storage(resp, 'quizzes')
-    df = ai.reprocess.interpret_response(resp, 'quizzes')
-    save_df_to_storage(df, 'quizzes')
-    quiz = process_ai_quiz(df)
-    save_df_to_storage(pd.DataFrame(quiz), 'quizzes')
-    return quiz
+    return process.main(resp, 'quizzes', None)
+

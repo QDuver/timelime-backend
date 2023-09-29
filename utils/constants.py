@@ -8,7 +8,7 @@ DEFAULT_QUOTAS = {
     'timelines_free': 5,
     'events_free': 30,
     'image': 50,
-    'premium': 4
+    'premium': 3.5
 }
 
 

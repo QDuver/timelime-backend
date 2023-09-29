@@ -13,10 +13,9 @@ def generate_random_id(length=5):
     random_id = ''.join(random.choice(characters) for _ in range(length))
     return random_id
 
-def _get_name(type_):
+def _get_name(type_, step):
     uid = app.config['db'].user.uid
-    now = int(datetime.datetime.now().replace(microsecond=0).timestamp())
-    return f"{type_}/{app.config['session']}-{uid}-{now}"
+    return f"{type_}/{app.config['session']}-{uid}-{step}"
 
 def _get_bucket():
     bucket_name = os.environ.get('BUCKET')
@@ -26,12 +25,12 @@ def _get_bucket():
     bucket = gcs.get_bucket(bucket_name)
     return bucket
 
-def save_raw_to_storage(text, type_):
-    blob = _get_bucket().blob(f'{_get_name(type_)}.txt')
+def save_raw_to_storage(text, type_, step):
+    blob = _get_bucket().blob(f'{_get_name(type_, step)}.txt')
     blob.upload_from_string(text)
 
-def save_df_to_storage(df, type_):
-    blob = _get_bucket().blob(f'{_get_name(type_)}.csv')
+def save_df_to_storage(df, type_, step):
+    blob = _get_bucket().blob(f'{_get_name(type_, step)}.csv')
     blob.upload_from_string(df.to_csv(index=False), 'text/csv')
 
 
@@ -86,6 +85,7 @@ def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
     os.environ['FE_URL'] = 'https://localhost:4200'
+    os.environ['BUCKET'] = 'timelime-dev-bucket'
 
 def abort_if_already_ai_generating():
     db = app.config['db']
