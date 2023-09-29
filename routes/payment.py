@@ -79,6 +79,6 @@ def create_subscription(session_id, uid):
     session = stripe.checkout.Session.retrieve( session_id )
     setup_intent = stripe.SetupIntent.retrieve( session["setup_intent"] )
     payment_method = setup_intent["payment_method"]
-    customer = stripe.Customer.create(description=uid, email=user.email, metadata={'uid': uid}, payment_method=payment_method )
+    customer = stripe.Customer.create(description=uid, email=user['email'], metadata={'uid': uid}, payment_method=payment_method )
     # stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ], trial_period_days=1, metadata={'uid': uid}, )
     stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ],  metadata={'uid': uid}, )
