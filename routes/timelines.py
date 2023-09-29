@@ -74,7 +74,7 @@ def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
     if(utils.timeline_quotas_exceeded()):
-        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines']} timelines with the Free plan - Handle FE"}), 403
+        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines_free']} timelines with the Free plan - Handle FE"}), 403
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}

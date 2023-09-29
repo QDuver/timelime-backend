@@ -75,11 +75,17 @@ class User:
         user['isAnonymous'] = self.isAnonymous
         user['joinedOn'] = time.time()
         if not(self.isAnonymous):
-            user['email'] = self.firebaseUser['email']
-            user['displayName'] = self.firebaseUser['displayName']
-            user['photoUrl'] = self.firebaseUser['photoUrl']
+            self._assignFirebaseAttribute(user, 'displayName')
+            self._assignFirebaseAttribute(user, 'email')
+            self._assignFirebaseAttribute(user, 'photoUrl')
         self.db.add("users", user, doc_id=user['uid'])            
         return user
+
+    def _assignFirebaseAttribute(self, user, key):
+        try:
+            user[key] = self.firebaseUser[key]
+        except:
+            pass
 
     def set_token(self):
         if('X-Allow-Unauthorized' in self.request.headers):
