@@ -71,14 +71,15 @@ def webhook():
 def create_subscription(session_id, uid):
     db = UnprotectedFirestoreDB()
     user = db.get('users', uid)
-    if(db.get('stripe_sessions', session_id)):
-        return
+    # if(db.get('stripe_sessions', session_id)):
+    #     return
     db.add('stripe_sessions', {}, doc_id = session_id)
     stripe.api_key = get_secret('stripe')
     prices = stripe.Price.list( expand=['data.product'] )
     session = stripe.checkout.Session.retrieve( session_id )
     setup_intent = stripe.SetupIntent.retrieve( session["setup_intent"] )
     payment_method = setup_intent["payment_method"]
+    print('CREATING CUSTOMER', flush=True)
     customer = stripe.Customer.create(description=uid, email=user['email'], metadata={'uid': uid}, payment_method=payment_method )
     # stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ], trial_period_days=1, metadata={'uid': uid}, )
     stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ],  metadata={'uid': uid}, )
