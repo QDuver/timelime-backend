@@ -17,15 +17,11 @@ def cancel_premium():
     dummy = request.json
     db = app.config['db']
     stripe.api_key = get_secret('stripe')
-    # get user's subscription
-    subscription = stripe.Subscription.retrieve(db.user.subscription)
-    # cancel subscription
-    subscription.delete()
-    # try:
-    #     # stripe.Subscription.cancel(db.user.subscription)
-    # except:
-    #     pass
-    db.edit('users', db.user.uid, {'isPremium': False, 'subscription': None})
+    customer = stripe.Customer.retrieve(db.user.stripeCustomerId)
+    customer_subscriptions = stripe.Subscription.list(customer=customer.id)
+    for subscription in customer_subscriptions:
+        stripe.Subscription.delete(subscription.id)
+    db.edit('users', db.user.uid, {'isPremium': False, 'lastPaymentFailed': False})
     return jsonify(success=True)
 
 @payment_bp.route('/create-checkout-session', endpoint="checkout", methods=['POST'])

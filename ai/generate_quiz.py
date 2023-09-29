@@ -36,5 +36,5 @@ def main(events):
       ]
     )
 
-    return process.main(resp, 'quizzes')
+    return process.main(resp, 'quizzes', None)
 
