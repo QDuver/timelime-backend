@@ -60,7 +60,7 @@ def webhook():
         return jsonify(success=True)
 
     if event['type'] == 'invoice.payment_failed':
-      uid = event['data']['object']['customer']['metadata']['uid']
+      uid = event['data']['object']['subscription_details']['metadata']['uid']
       if uid:
         db.edit('users', uid, {'isPremium': False, 'subscription': None, 'lastPaymentFailed': True})
         return jsonify(success=True)
