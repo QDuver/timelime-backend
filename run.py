@@ -9,8 +9,8 @@ from decorators.decorators import limiter
 import warnings
 from utils.utils import generate_random_id, set_env_variables
 
-print('TO USE ONLY ON LOCAL HOST', flush=True)
-set_env_variables()
+# print('TO USE ONLY ON LOCAL HOST', flush=True)
+# set_env_variables()
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
