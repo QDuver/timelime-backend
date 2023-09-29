@@ -25,8 +25,8 @@ class User:
         'exp': None,
         'expiresIn': None,
         'nextQuotaRefresh': None,
-        'subscription': None,
         'lastPaymentFailed': None,
+        'stripeCustomerId': None,
     }
     token_expired = False
 
@@ -65,8 +65,8 @@ class User:
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
-        self.subscription = user.get('subscription', None)
         self.lastPaymentFailed = user.get('lastPaymentFailed', None)
+        self.stripeCustomerId = user.get('stripeCustomerId', None)
         self.db.user = self
     
     def create_new_user(self):
