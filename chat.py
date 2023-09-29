@@ -5,9 +5,19 @@ set_env_variables()
 openai.api_key = get_secret('OpenAPI')
 
 msg = '''
-In Stripe, I've been able to create a monthly subscription for a customer, with a 7 day trial.
-After the 7 days, if the payment does not go through, how to catch the payment failed event? And how do I get the user's id? Can I retrieve metadata i set in the checkout session?
-I use Python/Flask on server-side
+With this code :
+    stripe.api_key = get_secret('stripe')
+    prices = stripe.Price.list( expand=['data.product'] )
+    session = stripe.checkout.Session.retrieve( session_id )
+    setup_intent = stripe.SetupIntent.retrieve( session["setup_intent"] )
+    payment_method = setup_intent["payment_method"]
+    customer = stripe.Customer.create(description=uid, email=user['email'], metadata={'uid': uid} )
+    stripe.PaymentMethod.attach(payment_method, customer=customer.id)
+    customer = stripe.Customer.retrieve(customer.id)
+    stripe.Subscription.create( customer=customer.id, items=[ {"price": prices.data[0].id}, ],  metadata={'uid': uid}, )
+
+    I still get this error : 
+    This customer has no attached payment source or default payment method.
 '''
 
 response = openai.ChatCompletion.create(
