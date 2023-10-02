@@ -6,6 +6,8 @@ from utils.constants import DEFAULT_QUOTAS
 import utils.event_methods as event_methods
 import pandas as pd
 import io
+
+from utils.utils import event_quotas_exceeded
 events_bp = Blueprint('events', __name__)
 HEADERS_MANDATORY = ['name', 'startDate']
 HEADERS_OPTIONAL = ['endDate', 'description', 'categoryName', 'categoryColor', 'imageURL',]
@@ -46,7 +48,7 @@ def get_events(timeline_id):
 @generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
-    if(event_methods.event_quotas_exceeded(event)):
+    if(event_quotas_exceeded(event)):
         return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['events']} events per timeline with the Free plan - Handle FE"}), 403
     event = event_methods.create_events([event])[0]
     event_id = app.config['db'].add('events', event)
