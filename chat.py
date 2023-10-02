@@ -5,9 +5,11 @@ set_env_variables()
 openai.api_key = get_secret('OpenAPI')
 
 msg = '''
-I have my own website called Timelime, and I handle authentication through GCP / Firebase.
-Currently when user logs in through Google, the Consent Screen mentions : "Choose an account to continue to timelime-prod.firebaseapp.com"
-I want to change this to "Choose an account to continue to Timelime"
+I have this in my Angular SSR code but I don't remember why it's there :
+RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules, initialNavigation: 'enabledBlocking', useHash: true})
+It's in app-routing.module.ts.
+It's adding a "#" after the root url.
+Is there a reason for this, and is there a way to remove it?
 '''
 
 response = openai.ChatCompletion.create(

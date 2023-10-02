@@ -4,7 +4,7 @@ import pandas as pd
 from decorators.decorators import  premium_required, print_full_exception, token_required, generic_error_handler
 import utils.utils as utils
 from ai import generate_quiz
-
+from firestore.firestore_db import UnprotectedFirestoreDB
 quizzes_bp = Blueprint('quizzes', __name__)
 
 
@@ -13,28 +13,8 @@ quizzes_bp = Blueprint('quizzes', __name__)
 @generic_error_handler
 @premium_required('quiz')
 def create_quiz():
-    db = app.config['db']
     utils.abort_if_already_ai_generating()
-    tid = request.json['tid']
-    existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
-    if(len(existing_quizzes) > 3):
-        return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
-    
-    db.user.update_ai_tracking_status('quiz', True)
-    try:
-        events = db.get('events', where=('tid', '==', tid))
-        quiz = generate_quiz.main(events)
-        quiz['tid'] = tid
-        db.user.update_ai_tracking_status('quiz', False, quiz)
-        db.add('quizzes', quiz)
-    except Exception as e:
-        print_full_exception(e)
-        db.user.update_ai_tracking_status('quiz', False)
-        raise Exception("Error generating quiz")
-
-    
-    quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
-    quiz = process(quiz)
+    quiz = create_quiz_(request.json['tid'])
     return jsonify(quiz), 200
 
 
@@ -69,6 +49,31 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted"}), 200
 
 
+def create_quiz_(tid, test=False):
+    db = app.config['db'] if not test else UnprotectedFirestoreDB()
+    existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
+    if(len(existing_quizzes) > 3):
+        return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
+    
+    if(test == False):
+        db.user.update_ai_tracking_status('quiz', True)
+    try:
+        events = db.get('events', where=('tid', '==', tid))
+        quiz = generate_quiz.main(events)
+        quiz['tid'] = tid
+        if(test == False):
+            db.user.update_ai_tracking_status('quiz', False, quiz)
+        db.add('quizzes', quiz)
+    except Exception as e:
+        print_full_exception(e)
+        if(test == False):
+            db.user.update_ai_tracking_status('quiz', False)
+        raise Exception("Error generating quiz")
+
+    
+    quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
+    quiz = process(quiz)
+
 def process(quiz):
     quiz['options'] = [list(option.values()) for option in quiz['options']]
     # quiz['questions'] = quiz['questions'][0:3]
@@ -76,7 +81,10 @@ def process(quiz):
     return quiz
 
 def map_with_user_existing_results(quiz):
-    db = app.config['db']
+    try:
+        db = app.config['db']
+    except:
+        db = UnprotectedFirestoreDB()
     try:
         quiz['user_results'] = db.get("users", db.uid)['quiz_results'][quiz['id']]
     except:

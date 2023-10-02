@@ -28,10 +28,8 @@ def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
         user = User(request)
-        print(user, flush=True)
         if(user.token_expired):
             return jsonify({"message": "Token expired"}), 401
-
 
         return route_function(*args, **kwargs)
     

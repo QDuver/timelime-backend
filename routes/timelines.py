@@ -7,6 +7,7 @@ from utils.constants import DEFAULT_QUOTAS
 import utils.event_methods as event_methods
 import utils.utils as utils
 from ai import generate_timeline
+from firestore.firestore_db import UnprotectedFirestoreDB
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -53,6 +54,36 @@ def _process_timeline(timeline):
             timeline['isEditable'] = False
     
     return timeline
+
+@timeline_bp.route("/duplicate-timeline", endpoint="duplicate_timeline", methods=['POST'])
+@token_required
+@generic_error_handler
+def duplicate_timeline():
+    if(utils.timeline_quotas_exceeded()):
+        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines_free']} timelines with the Free plan - Handle FE"}), 403
+    db = app.config['db']
+    timeline = request.json['timeline']
+    new_timeline = create_new_timeline(timeline['name'] + ' (copy)', 'manual')
+    new_timeline = _process_timeline(new_timeline)
+    events = db.get("events", where=('tid', '==', timeline['id']))
+    
+    categories = db.get("categories", where=('tid', '==', timeline['id']))
+    category_mapping = {}
+    for category in categories:
+        category_id = category['id']
+        del category['id']
+        category['tid'] = new_timeline['id']
+        category['uid'] = db.uid
+        new_id = db.add("categories", category)
+        category_mapping[category_id] = new_id
+    for event in events:
+        event['tid'] = new_timeline['id']
+        event['uid'] = db.uid
+        if 'categoryId' in event:
+            event['categoryId'] = category_mapping[event['categoryId']]            
+        del event['id'] 
+    db.add_batch("events", events)
+    return json.dumps(new_timeline)
 
 @timeline_bp.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
 @token_required
@@ -111,14 +142,18 @@ def generate_timeline_name():
 
 
 def create_new_timeline(name, source):
-    db = app.config['db']
+    try:
+        db = app.config['db']
+    except:
+        db = UnprotectedFirestoreDB()
     timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
     timeline['id'] = db.add("timelines", timeline)
     return timeline
 
-def create_ai_timeline_(timelineName, nEvents, image_association):
-    db = app.config['db']
-    db.user.update_ai_tracking_status('timeline', True)
+def create_ai_timeline_(timelineName, nEvents, image_association, test=False):
+    db = app.config['db'] if test == False else UnprotectedFirestoreDB()
+    if(test == False):
+        db.user.update_ai_tracking_status('timeline', True)
     try:
         events = generate_timeline.main(timelineName, nEvents, image_association)
         if(len(events) < 1):
@@ -126,10 +161,12 @@ def create_ai_timeline_(timelineName, nEvents, image_association):
         timeline = create_new_timeline(timelineName, 'ai')
         for event in events:
             event['tid'] = timeline['id']
-        db.add_batch('events', events)        
-        db.user.update_ai_tracking_status('timeline', False, timeline)
+        db.add_batch('events', events)
+        if(test == False):        
+            db.user.update_ai_tracking_status('timeline', False, timeline)
         return timeline
     except Exception as e:
         print_full_exception(e)
-        db.user.update_ai_tracking_status('timeline', False)
+        if(test == False):
+            db.user.update_ai_tracking_status('timeline', False)
         raise Exception("Error generating timeline")
