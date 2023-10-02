@@ -44,7 +44,6 @@ def checkout():
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 def webhook():
-    print('webhook', flush=True)
     db = UnprotectedFirestoreDB()
     stripe.api_key = get_secret('stripe')
     endpoint_secret = get_secret('stripe-webhook')

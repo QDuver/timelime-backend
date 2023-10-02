@@ -107,7 +107,7 @@ def process_ai_timeline(df, timelineName, image_association = None):
             vaildate_date(row['endDate'])
             row['endDate'] = validate_dates(row['startDate'], row['endDate'])
             event = {'uid': db.uid, 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
-            if(image_association == 'google'):
+            if(image_association == True):
                 event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
             events.append(event)
         except Exception as e:
@@ -117,6 +117,10 @@ def process_ai_timeline(df, timelineName, image_association = None):
     
 
 def process_ai_quiz(df):
+    try:
+        db = app.config['db']
+    except:
+        db = UnprotectedFirestoreDB()
     df = df.head(10)
     df = df.astype(str).replace({'none': None}).replace({'None': None})
     quiz = {}
@@ -133,6 +137,6 @@ def process_ai_quiz(df):
     quiz['answer'] = answer
 
     quiz['created_on'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    quiz['uid'] = app.config['db'].uid
+    quiz['uid'] = db.uid
         
     return quiz

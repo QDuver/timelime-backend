@@ -14,8 +14,13 @@ def generate_random_id(length=5):
     return random_id
 
 def _get_name(type_, step):
-    uid = app.config['db'].user.uid
-    return f"{type_}/{app.config['session']}-{uid}-{step}"
+    try:
+        uid = app.config['db'].user.uid
+        session = app.config['session']
+    except:
+        uid = 'test-id'
+        session = 'test-session'
+    return f"{type_}/{session}-{uid}-{step}"
 
 def _get_bucket():
     bucket_name = os.environ.get('BUCKET')

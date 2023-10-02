@@ -33,7 +33,7 @@ class FirestoreDB:
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).update(data)
 
-    @limiter.limit("20/minute")
+    @limiter.limit("40/minute")
     def add(self, collection, data, doc_id=None):
         self.forbid_if_too_many_entries(collection)
         if(doc_id):
@@ -44,10 +44,13 @@ class FirestoreDB:
     @limiter.limit("5/minute")
     def add_batch(self, collection, data):
         batch = self.db.batch()
+        ids = []
         for doc in data:
             ref = self.db.collection(collection).document()
+            ids.append(ref.id)
             batch.set(ref, doc)
-        return batch.commit()
+        batch.commit()
+        return ids
 
     @limiter.limit("10/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
@@ -70,7 +73,7 @@ class FirestoreDB:
 
 class UnprotectedFirestoreDB:
 
-    uid = None
+    uid = '0Gu3S71O2Thq0bSv5DTY7pszf1P2'
     def __init__(self):
         self.db = firestore.client()
 
@@ -88,10 +91,13 @@ class UnprotectedFirestoreDB:
 
     def add_batch(self, collection, data):
         batch = self.db.batch()
+        ids = []
         for doc in data:
             ref = self.db.collection(collection).document()
+            ids.append(ref.id)
             batch.set(ref, doc)
-        return batch.commit()
+        batch.commit()
+        return ids
 
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
