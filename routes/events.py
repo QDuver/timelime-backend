@@ -1,5 +1,6 @@
 
 import json
+import time
 from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
 from decorators.decorators import premium_required, token_required, generic_error_handler
 from utils.constants import DEFAULT_QUOTAS
@@ -44,8 +45,8 @@ def get_events(timeline_id):
     return json.dumps(ev)
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
-@token_required
 @generic_error_handler
+@token_required
 def create_event():
     event = json.loads(request.form.get('event'))
     if(event_quotas_exceeded(event)):
@@ -75,6 +76,7 @@ def upload_events():
 def edit_event():
     event = json.loads(request.form.get('event'))
     event = event_methods.edit_event(event)
+    start = time.time()
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     event_methods.handle_image(request, event)
     return json.dumps(event)

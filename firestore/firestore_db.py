@@ -7,15 +7,15 @@ class FirestoreDB:
     def __init__(self):
         self.db = firestore.client()
 
-    def forbid_if_too_many_entries(self, collection):
-        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
-            raise Exception("You've reached the maximum quota of timelines")
+    # def forbid_if_too_many_entries(self, collection):
+    #     if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
+    #         raise Exception("You've reached the maximum quota of timelines")
 
-        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.uid))) > 1000):
-            raise Exception("You've reached the maximum quota of categories")
+    #     if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.uid))) > 1000):
+    #         raise Exception("You've reached the maximum quota of categories")
         
-        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
-            raise Exception("You've reached the maximum quota of events")
+    #     if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
+    #         raise Exception("You've reached the maximum quota of events")
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
@@ -35,7 +35,6 @@ class FirestoreDB:
 
     @limiter.limit("40/minute")
     def add(self, collection, data, doc_id=None):
-        self.forbid_if_too_many_entries(collection)
         if(doc_id):
             return self.db.collection(collection).document(doc_id).set(data)
         else:
