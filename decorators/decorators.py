@@ -1,5 +1,6 @@
 
 import logging
+import time
 import traceback
 from flask import jsonify, request, current_app as app
 from firebase_admin import auth
@@ -27,8 +28,11 @@ def premium_required(type_):
 def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
+        start = time.time()
         user = User(request)
+        print(time.time() - start, 'token_required', flush=True)
         if(user.token_expired):
+            print('TOKEN EXPIRED', flush=True)
             return jsonify({"message": "Token expired"}), 401
 
         return route_function(*args, **kwargs)

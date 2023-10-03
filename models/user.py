@@ -1,7 +1,6 @@
 import time
 from flask import current_app as app, jsonify
 from firebase_admin import auth
-
 from models.exceptions import TokenExpired
 from utils.constants import DEFAULT_QUOTAS
 from utils.utils import first_day_of_next_month
@@ -37,7 +36,7 @@ class User:
         self.request = request
         try:
             self.set_token()
-        except TokenExpired:
+        except TokenExpired as e:
             self.token_expired = True
             return
         self.populate_user_data()
@@ -120,10 +119,13 @@ class User:
         return user_dict
     
     def fill_in_missing_attributes(self, user):
+        changed = False
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
             if(attr not in user):
+                changed = True
                 user[attr] = self.DEFAULT_USER_SETTINGS[attr]
-        self.db.edit("users", user['uid'], user)
+        if(changed):
+            self.db.edit("users", user['uid'], user)
         return user
     
     def update_ai_tracking_status(self, type_, loading, generated=None):
