@@ -5,11 +5,10 @@ set_env_variables()
 openai.api_key = get_secret('OpenAPI')
 
 msg = '''
-I have this in my Angular SSR code but I don't remember why it's there :
-RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules, initialNavigation: 'enabledBlocking', useHash: true})
-It's in app-routing.module.ts.
-It's adding a "#" after the root url.
-Is there a reason for this, and is there a way to remove it?
+In Angular, I have three successive backend requests to trigger, and as soon as one of them is returned, I want to be able to process the response without having to wait for the others to finish.
+const reqs = [this.__apiService.getTimeline('a'), this.__apiService.getTimeline('b'), this.__apiService.getTimeline('c')]
+I need to be able to treat each response individually within the subscription.
+What's the best rxjs operator to use in this case?
 '''
 
 response = openai.ChatCompletion.create(

@@ -30,7 +30,6 @@ def token_required(route_function):
     def decorated_function(*args, **kwargs):
         start = time.time()
         user = User(request)
-        print(time.time() - start, 'token_required', flush=True)
         if(user.token_expired):
             print('TOKEN EXPIRED', flush=True)
             return jsonify({"message": "Token expired"}), 401
@@ -41,7 +40,6 @@ def token_required(route_function):
 
 def generic_error_handler(func):
     def decorator(*args, **kwargs):
-        print('generic_error_handler', flush=True)
         try:
             return func(*args, **kwargs)
         except Exception as e:
