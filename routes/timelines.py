@@ -1,9 +1,7 @@
 import json
-from flask import Blueprint, jsonify, request, current_app as app
+from flask import Blueprint, request, current_app as app
 import datetime, time
 from decorators.decorators import  premium_required, print_full_exception, token_required, error_handler
-from models.user import User
-from utils.constants import DEFAULT_QUOTAS
 import utils.event_methods as event_methods
 import utils.utils as utils
 from ai import generate_timeline
