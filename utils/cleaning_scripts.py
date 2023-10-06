@@ -1,9 +1,13 @@
 
 
 from firestore.firestore_db import FirestoreDB, UnprotectedFirestoreDB
+from firestore import firestore_init
 from firebase_admin import firestore
-
+from utils.utils import set_env_variables
+set_env_variables()
+firestore_init.init()
 db = UnprotectedFirestoreDB()
+
 
 def delete_timeline(timeline_id):
     db.delete('timelines', timeline_id)

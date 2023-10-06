@@ -1,7 +1,6 @@
 import time
 from flask import current_app as app, jsonify
 from firebase_admin import auth
-from models.exceptions import TokenExpired
 from utils.constants import DEFAULT_QUOTAS
 from utils.utils import first_day_of_next_month
 
@@ -27,18 +26,13 @@ class User:
         'lastPaymentFailed': None,
         'stripeCustomerId': None,
     }
-    token_expired = False
 
 
     def __init__(self, request):
 
         self.db = app.config['db']
         self.request = request
-        try:
-            self.set_token()
-        except TokenExpired as e:
-            self.token_expired = True
-            return
+        self.set_token() 
         self.populate_user_data()
         self.remove_loading_if_too_long()
 
@@ -88,27 +82,21 @@ class User:
             self.db.uid = self.uid
             self.isAnonymous = True
             return
-        try:
-            token = self.request.headers.get("Authorization").split(" ")[1]
-            if(token == 'dhasf039847pnasdlkfuh73094fo'):
-                self.uid = 'LKKHd0ji3nSvHzoQiNe4hTCrh6E3'
-                self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
-                self.isAnonymous = False
-                self.db.uid = self.firebaseUser['uid']
-                return
-            firebaseResp = auth.verify_id_token(token)
-            self.exp = firebaseResp['exp']
-            self.expiresIn = firebaseResp['exp'] - time.time()
-            self.uid = firebaseResp['uid']
-            self.db.uid = self.uid
+        token = self.request.headers.get("Authorization").split(" ")[1]
+        if(token == 'dhasf039847pnasdlkfuh73094fo'):
+            self.uid = 'LKKHd0ji3nSvHzoQiNe4hTCrh6E3'
+            self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
             self.isAnonymous = False
-            self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
-        except Exception as e:
-            if('Token expired' in str(e)):
-                raise TokenExpired('Please reauthenticate to continue navigating the app')
-            else:
-                raise e
-            
+            self.db.uid = self.firebaseUser['uid']
+            return
+        firebaseResp = auth.verify_id_token(token)
+        self.exp = firebaseResp['exp']
+        self.expiresIn = firebaseResp['exp'] - time.time()
+        self.uid = firebaseResp['uid']
+        self.db.uid = self.uid
+        self.isAnonymous = False
+        self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
+        
     def to_dict(self):
         user_dict = {}
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):

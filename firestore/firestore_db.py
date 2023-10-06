@@ -51,7 +51,7 @@ class FirestoreDB:
         batch.commit()
         return ids
 
-    @limiter.limit("10/second")
+    @limiter.limit("20/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
         if doc:

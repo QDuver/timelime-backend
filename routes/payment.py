@@ -1,7 +1,7 @@
 
 import time
 import stripe
-from decorators.decorators import generic_error_handler, token_required
+from decorators.decorators import error_handler, token_required
 from firestore.firestore_db import UnprotectedFirestoreDB
 from utils.utils import get_secret
 from flask import Blueprint, jsonify, request, current_app as app
@@ -11,7 +11,7 @@ payment_bp = Blueprint('payment', __name__)
 FE_URL = os.environ.get('FE_URL')
 
 @payment_bp.route('/cancel-premium', endpoint="cancel_premium", methods=['POST'])
-@generic_error_handler
+@error_handler
 @token_required
 def cancel_premium():
     dummy = request.json
@@ -25,7 +25,7 @@ def cancel_premium():
     return jsonify(success=True)
 
 @payment_bp.route('/create-checkout-session', endpoint="checkout", methods=['POST'])
-@generic_error_handler
+@error_handler
 @token_required
 def checkout():
     dummy = request.json

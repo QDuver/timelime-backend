@@ -6,6 +6,7 @@ from clean_schedule.main import DEFAULT_QUOTAS
 from flask import jsonify, current_app as app
 from google.cloud import storage
 import random
+from models.exceptions import CustomException
 import string
 
 def generate_random_id(length=5):
@@ -76,15 +77,16 @@ def event_quotas_exceeded(event):
         return False
     n_events = len(db.get('events', where=('tid', '==', event['tid'])))
     if(n_events >= DEFAULT_QUOTAS['events_free']):
-        return True
+        raise CustomException(f'You can create only {DEFAULT_QUOTAS["timelines_free"]} events per timeline with the Free plan')
 
 def timeline_quotas_exceeded():
     db = app.config['db']
     if(db.user.isPremium):
-        return False
+        return
     n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
     if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        return True
+        raise CustomException(f'You can create only {DEFAULT_QUOTAS["timelines_free"]} timelines with the Free plan')
+
 
 def set_env_variables():
     os.environ['GCP_PROJECT_NUMBER'] = '82528465111'

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, current_app as app
-from decorators.decorators import premium_required, token_required, generic_error_handler
+from decorators.decorators import premium_required, token_required, error_handler
 from google.cloud import error_reporting
 from utils.constants import DEFAULT_QUOTAS
 from utils.event_methods import get_google_images
@@ -14,14 +14,14 @@ def get_error_reporting_client():
     return client
 
 @other_bp.route("/quotas", endpoint="get_quotas", methods=['GET'])
-@generic_error_handler
+@error_handler
 def get_quotas():
     quotas = DEFAULT_QUOTAS
     return jsonify(quotas), 200
 
 @other_bp.route("/report_error", endpoint="report_error", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 def report_error():
     client = get_error_reporting_client()
     try:
@@ -34,7 +34,7 @@ def report_error():
 
 @other_bp.route("/google-imgs", endpoint="google_images", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 @premium_required('search')
 def google_images():
     links = get_google_images(request.json['eventName'], request.json['timelineName'], 10)

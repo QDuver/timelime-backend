@@ -1,18 +1,19 @@
 import json
 from flask import Blueprint, jsonify, request, current_app as app
 import datetime, time
-from decorators.decorators import  premium_required, print_full_exception, token_required, generic_error_handler
+from decorators.decorators import  premium_required, print_full_exception, token_required, error_handler
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 import utils.event_methods as event_methods
 import utils.utils as utils
 from ai import generate_timeline
 from firestore.firestore_db import UnprotectedFirestoreDB
+from models.exceptions import CustomException
 
 timeline_bp = Blueprint('timeline', __name__)
 
 @timeline_bp.route("/timelines", endpoint="get_timelines")
-@generic_error_handler
+@error_handler
 @token_required
 def get_timelines():
     db = app.config['db']
@@ -21,18 +22,15 @@ def get_timelines():
     return json.dumps(timelines)
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="get_timeline")
-@generic_error_handler
+@error_handler
 @token_required
 def get_timeline(timeline_id):
     db = app.config['db']
 
     timeline = db.get("timelines", doc=timeline_id)
     if(not timeline):
-        return jsonify({"message": "Timeline not found"}), 403
-    try:
-        timeline = _process_timeline(timeline)
-    except PermissionError as e:
-        return jsonify({"message": str(e)}), 403
+        raise CustomException('Timeline not found')
+    timeline = _process_timeline(timeline)
     return json.dumps(timeline)
 
 def _process_timeline(timeline):
@@ -45,11 +43,12 @@ def _process_timeline(timeline):
     except: 
         pass
 
+    print(timeline['uid'], user.uid, flush=True)
     if(user.uid != timeline['uid']):
         if(user.isAnonymous and len(timeline['uid']) < 12):
-            raise PermissionError('This timeline has expired. Login to save your progress - Handle FE')
+            raise CustomException('This timeline has expired. Login to save your progress')
         if(not timeline['isPublic']):
-            raise PermissionError('This timeline is private')
+            raise CustomException('This timeline is private')
         else:
             timeline['isEditable'] = False
     
@@ -57,10 +56,9 @@ def _process_timeline(timeline):
 
 @timeline_bp.route("/duplicate-timeline", endpoint="duplicate_timeline", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 def duplicate_timeline():
-    if(utils.timeline_quotas_exceeded()):
-        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines_free']} timelines with the Free plan - Handle FE"}), 403
+    utils.timeline_quotas_exceeded()
     db = app.config['db']
     timeline = request.json['timeline']
     new_timeline = create_new_timeline(timeline['name'] + ' (copy)', 'manual')
@@ -87,7 +85,7 @@ def duplicate_timeline():
 
 @timeline_bp.route("/timeline", endpoint="edit_timeline", methods=['PUT'])
 @token_required
-@generic_error_handler
+@error_handler
 def edit_timeline():
     db = app.config['db']
     timeline = request.json
@@ -100,12 +98,11 @@ def edit_timeline():
 
 @timeline_bp.route("/timeline", endpoint="create_timeline", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 def create_timeline():
     db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
-    if(utils.timeline_quotas_exceeded()):
-        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['timelines_free']} timelines with the Free plan - Handle FE"}), 403
+    utils.timeline_quotas_exceeded()
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
@@ -119,7 +116,7 @@ def create_timeline():
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @token_required
 @premium_required('timeline')
-@generic_error_handler
+@error_handler
 def create_ai_timeline():
     utils.abort_if_already_ai_generating()
     timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['imageAssociation'])
@@ -127,7 +124,7 @@ def create_ai_timeline():
 
 @timeline_bp.route("/timeline/<timeline_id>", endpoint="delete_timeline", methods=['DELETE'])
 @token_required
-@generic_error_handler
+@error_handler
 def delete_timeline(timeline_id):
     db = app.config['db']
     db.delete("timelines", timeline_id)

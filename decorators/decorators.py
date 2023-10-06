@@ -6,7 +6,7 @@ from flask import jsonify, request, current_app as app
 from firebase_admin import auth
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from models.exceptions import TokenExpired
+from models.exceptions import CustomException
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 
@@ -25,28 +25,29 @@ def premium_required(type_):
         return wrapper
     return decorator
 
-def token_required(route_function):
-
-    def decorated_function(*args, **kwargs):
-        start = time.time()
-        user = User(request)
-        if(user.token_expired):
-            print('TOKEN EXPIRED', flush=True)
-            return jsonify({"message": "Token expired"}), 401
-
-        return route_function(*args, **kwargs)
-    
-    return decorated_function
-
-def generic_error_handler(func):
+def error_handler(func):
     def decorator(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except CustomException as e:
+            return jsonify({"message": str(e)}), 403
         except Exception as e:
+            if( type(e).__name__ == 'RateLimitExceeded' ):
+                return jsonify({"message": "Too many requests, please try again later"}), 429
+            if('Token expired' in str(e)):
+                return jsonify({"message": "Session expired, please re-authenticate"}), 403
+
             print_full_exception(e)
-            return jsonify('Something went wrong, please try again later'), 500  # Return a 500 Internal Server Error
+            return jsonify('Ooops, something went wrong, please try again later'), 500  # Return a 500 Internal Server Error
     return decorator
 
+def token_required(route_function):
+
+    def decorated_function(*args, **kwargs):
+        User(request)
+        return route_function(*args, **kwargs)
+    
+    return decorated_function
 
 def add_quotas(user):
     if('quotas' not in user):

@@ -1,7 +1,7 @@
 
 from flask import Blueprint, jsonify, request, current_app as app
 import pandas as pd
-from decorators.decorators import  premium_required, print_full_exception, token_required, generic_error_handler
+from decorators.decorators import  premium_required, print_full_exception, token_required, error_handler
 import utils.utils as utils
 from ai import generate_quiz
 from firestore.firestore_db import UnprotectedFirestoreDB
@@ -10,7 +10,7 @@ quizzes_bp = Blueprint('quizzes', __name__)
 
 @quizzes_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 @premium_required('quiz')
 def create_quiz():
     utils.abort_if_already_ai_generating()
@@ -20,7 +20,7 @@ def create_quiz():
 
 @quizzes_bp.route("/get-quizzes/<tid>", endpoint="get_quizzes", methods=['GET'])
 @token_required
-@generic_error_handler
+@error_handler
 def get_quizzes(tid):
     db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
@@ -31,7 +31,7 @@ def get_quizzes(tid):
 
 @quizzes_bp.route("/submit-quiz/", endpoint="submit_quiz", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 def submit_quiz():
     db = app.config['db']
     recap = compute_quiz_results(request.json)
@@ -42,7 +42,7 @@ def submit_quiz():
 
 @quizzes_bp.route("/delete-quiz/<quiz_id>", endpoint="delete_quiz", methods=['DELETE'])
 @token_required
-@generic_error_handler
+@error_handler
 def delete_quiz(quiz_id):
     db = app.config['db']
     db.delete("quizzes", quiz_id)

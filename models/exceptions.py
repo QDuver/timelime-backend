@@ -1,2 +1,2 @@
-class TokenExpired(Exception):
+class CustomException(Exception):
     pass
