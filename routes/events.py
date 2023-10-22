@@ -2,7 +2,7 @@
 import json
 import time
 from flask import Blueprint, request, current_app as app, Response, jsonify
-from decorators.decorators import premium_required, token_required, error_handler
+from decorators.decorators import premium_required, print_full_exception, token_required, error_handler
 import utils.event_methods as event_methods
 import pandas as pd
 from models.exceptions import CustomException
@@ -50,7 +50,7 @@ def get_events(timeline_id):
 def create_event():
     event = json.loads(request.form.get('event'))
     event_quotas_exceeded(event)
-    event = event_methods.create_events([event])[0]
+    event = event_methods.create_events(app.config['db'], [event])[0]
     event_id = app.config['db'].add('events', event)
     event['id'] = event_id
     event_methods.handle_image(request, event)
@@ -63,10 +63,11 @@ def create_event():
 def upload_events():
     db = app.config['db']
     try:
-        processed_events = event_methods.create_events(request.json)
+        processed_events = event_methods.create_events(db, request.json)
         db.add_batch('events', processed_events)
-    except:
-        raise CustomException("Error uploading events")
+    except Exception as e:
+        print_full_exception(e)
+        raise CustomException("backend.errorUploadingEvents")
     return jsonify('success')
 
 @events_bp.route("/event", endpoint="edit_event", methods=['PUT'])
@@ -74,8 +75,7 @@ def upload_events():
 @error_handler
 def edit_event():
     event = json.loads(request.form.get('event'))
-    event = event_methods.edit_event(event)
-    start = time.time()
+    event, _ = event_methods.create_or_edit_preprocessing(app.config['db'], event)    
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
     event_methods.handle_image(request, event)
     return json.dumps(event)
@@ -111,5 +111,5 @@ def delete_category(category_id):
     events = app.config['db'].get("events", where=('category', '==', category_id))
     for event in events:
         event['categoryId'] = None
-        events.edit_event(event)
+        event_methods.create_or_edit_preprocessing(app.config['db'], event)
     return json.dumps({})

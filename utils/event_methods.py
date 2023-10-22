@@ -12,6 +12,13 @@ import re
 import datetime
 
 
+def strip_decimal_zeros(event):
+    if('startDate' in event and event['startDate'] and '.0' in event['startDate']):
+        event['startDate'] = event['startDate'].rstrip('.0')
+    if('endDate' in event and event['endDate'] and '.0' in event['endDate']):
+        event['endDate'] = event['endDate'].rstrip('.0')
+    return event
+
 def strip_leading_zeros(event): #to avoid dates like 0010-01-01
 
     def handle_if_dash_as_first(date): # to avoid dates like -0010-01-01
@@ -46,12 +53,12 @@ def handle_image(request, event):
         db.edit('events', event['id'], event)
 
 
-def create_or_edit_preprocessing(event, categories = None):
-    if not (categories):
-        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
+def create_or_edit_preprocessing(db, event, categories = None):
+    if categories == None:
+        categories = db.get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
-        app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
+        db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
 
     elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
         foundCategory = False
@@ -61,11 +68,16 @@ def create_or_edit_preprocessing(event, categories = None):
                 foundCategory = True
                 break
         if(not foundCategory):
-            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
+            event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
+            categories = db.get('categories', where=('tid', '==', event['tid']))
+
+    if('categoryId' not in event): 
+        event['categoryId'] = None
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
     event = strip_leading_zeros(event)
+    event = strip_decimal_zeros(event)
 
     if('endDate' not in event):
         event['endDate'] = None
@@ -73,11 +85,10 @@ def create_or_edit_preprocessing(event, categories = None):
         event['description'] = None
     
     event['lastUsed'] = int(time.time())
-    return event
+    return event, categories
     
 
-def create_events(events):
-    db = app.config['db']
+def create_events(db, events):
     for event in events:
         for key in list(event.keys()):
             if ' (optional)' in key:
@@ -87,13 +98,10 @@ def create_events(events):
     processed_events = []
     for event in events:
         event['uid'] = db.uid
-        event = create_or_edit_preprocessing(event, categories)
+        event, categories = create_or_edit_preprocessing(db, event, categories)
         processed_events.append(event)
     return processed_events
 
-
-def edit_event(event):
-    return create_or_edit_preprocessing(event)
 
 def set_to_highlight(events):
     filtered = [e for e in events if "lastUsed" in e]
@@ -117,7 +125,6 @@ def assign_none_to_empty(events):
     return events
 
 def get_events(db, timeline_id):    
-    start = time.time()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     if(len(events) < 1):
@@ -258,11 +265,13 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName, timelineName, num=1):
+def get_google_images(eventName, timelineName, startDate, num=1):
     db = app.config['db']
     API_KEY = get_secret('SEARCH_ENGINE')
     SEARCH_ENGINE_ID = "90d862b25c6fc454e"
     query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
+    if(startDate):
+        query += " " + startDate
 
     service = build("customsearch", "v1", developerKey=API_KEY)
     result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
@@ -314,6 +323,8 @@ def process_date(date):
         newDate = process_negative_literals(newDate)
     if('bby' in newDate):
         newDate = process_negative_literals(newDate)
+    if('ce' in newDate):
+        newDate = newDate.replace('ce', '')
     if('ad' in newDate):
         newDate = newDate.replace('ad', '')
     if('aby' in newDate):

@@ -25,14 +25,19 @@ class User:
         'nextQuotaRefresh': None,
         'lastPaymentFailed': None,
         'stripeCustomerId': None,
+        'language': 'en'
     }
 
 
-    def __init__(self, request):
+    def __init__(self, db, request=None, uid=None):
 
-        self.db = app.config['db']
-        self.request = request
-        self.set_token() 
+        self.db = db
+        if(request):
+            self.request = request
+            self.set_token() 
+        else:
+            self.uid = uid
+            self.db.uid = self.uid
         self.populate_user_data()
         self.remove_loading_if_too_long()
 
@@ -58,8 +63,9 @@ class User:
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
-        self.lastPaymentFailed = user.get('lastPaymentFailed', None)
+        self.lastPaymentFailed = user.get('lastPaymentFailed ', None)
         self.stripeCustomerId = user.get('stripeCustomerId', None)
+        self.language = user.get('language', 'en')
         self.db.user = self
     
     def create_new_user(self):
@@ -68,9 +74,9 @@ class User:
         user['isAnonymous'] = self.isAnonymous
         user['joinedOn'] = time.time()
         if not(self.isAnonymous):
-            user['email'] = self.firebaseUser['email']
-            user['displayName'] = self.firebaseUser['displayName']
-            user['photoUrl'] = self.firebaseUser['photoUrl']
+            user['email'] = self.firebaseUser['email'] if 'email' in self.firebaseUser else None
+            user['displayName'] = self.firebaseUser['displayName'] if 'displayName' in self.firebaseUser else None
+            user['photoUrl'] = self.firebaseUser['photoUrl'] if 'photoUrl' in self.firebaseUser else None
         self.db.add("users", user, doc_id=user['uid'])            
         return user
 

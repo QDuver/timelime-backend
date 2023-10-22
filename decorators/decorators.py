@@ -17,10 +17,10 @@ def premium_required(type_):
         def wrapper(*args, **kwargs):
             db = app.config['db']
             if not(db.user.isPremium):
-                return jsonify({"message": "Premium subscription required"}), 403
+                return jsonify({"message": "backend.premiumSubscriptionRequired"}), 403
             else:
                 if(db.user.quotas[type_] <= 0):
-                    return jsonify({"message": "Your have exceeded your monthly quota for this feature"}), 403
+                    return jsonify({"message": "backend.monthlyQuotaReached"}), 403
             return route_function(*args, **kwargs)
         return wrapper
     return decorator
@@ -33,18 +33,19 @@ def error_handler(func):
             return jsonify({"message": str(e)}), 403
         except Exception as e:
             if( type(e).__name__ == 'RateLimitExceeded' ):
-                return jsonify({"message": "Too many requests, please try again later"}), 429
+                return jsonify({"message": "backend.tooManyRequests"}), 429
             if('Token expired' in str(e)):
-                return jsonify({"message": "Session expired, please re-authenticate"}), 403
+                return jsonify({"message": "backend.sessionExpired"}), 403
 
             print_full_exception(e)
-            return jsonify('Ooops, something went wrong, please try again later'), 500  # Return a 500 Internal Server Error
+            return jsonify({"message": 'backend.somethingWentWrong'}), 500  # Return a 500 Internal Server Error
     return decorator
 
 def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
-        User(request)
+        db = app.config['db']
+        User(db, request = request)
         return route_function(*args, **kwargs)
     
     return decorated_function

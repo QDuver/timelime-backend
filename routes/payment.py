@@ -17,10 +17,11 @@ def cancel_premium():
     dummy = request.json
     db = app.config['db']
     stripe.api_key = get_secret('stripe')
-    customer = stripe.Customer.retrieve(db.user.stripeCustomerId)
-    customer_subscriptions = stripe.Subscription.list(customer=customer.id)
-    for subscription in customer_subscriptions:
-        stripe.Subscription.delete(subscription.id)
+    if(db.user.stripeCustomerId):
+        customer = stripe.Customer.retrieve(db.user.stripeCustomerId)
+        customer_subscriptions = stripe.Subscription.list(customer=customer.id)
+        for subscription in customer_subscriptions:
+            stripe.Subscription.delete(subscription.id)
     db.edit('users', db.user.uid, {'isPremium': False, 'lastPaymentFailed': False})
     return jsonify(success=True)
 
@@ -28,14 +29,14 @@ def cancel_premium():
 @error_handler
 @token_required
 def checkout():
-    dummy = request.json
+    payload = request.json
     stripe.api_key = get_secret('stripe')
 
     checkout_session = stripe.checkout.Session.create(
         mode='setup',
         payment_method_types=['card'],
-        success_url=FE_URL + '/#/profile?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url=FE_URL + '/#?cancel-payment=t',
+        success_url= f'{FE_URL}/{payload["lang"]}/profile?session_id='+ '{CHECKOUT_SESSION_ID}',
+        cancel_url=f'{FE_URL}/{payload["lang"]}?cancel-payment=t',
         customer_email=app.config['db'].user.email,
         metadata={'uid': app.config['db'].user.uid}
     )

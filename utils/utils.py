@@ -2,12 +2,17 @@ import datetime
 from google.cloud import secretmanager
 import os
 import json
-from clean_schedule.main import DEFAULT_QUOTAS
 from flask import jsonify, current_app as app
 from google.cloud import storage
 import random
 from models.exceptions import CustomException
 import string
+
+from utils.constants import DEFAULT_QUOTAS
+
+def divide_chunks(l, n): 
+    for i in range(0, len(l), n):  
+        yield l[i:i + n] 
 
 def generate_random_id(length=5):
     characters = string.ascii_letters + string.digits
@@ -77,7 +82,7 @@ def event_quotas_exceeded(event):
         return False
     n_events = len(db.get('events', where=('tid', '==', event['tid'])))
     if(n_events >= DEFAULT_QUOTAS['events_free']):
-        raise CustomException(f'You can create only {DEFAULT_QUOTAS["timelines_free"]} events per timeline with the Free plan')
+        raise CustomException(f'backend.freeEventsQuotaReached')
 
 def timeline_quotas_exceeded():
     db = app.config['db']
@@ -85,7 +90,7 @@ def timeline_quotas_exceeded():
         return
     n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
     if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        raise CustomException(f'You can create only {DEFAULT_QUOTAS["timelines_free"]} timelines with the Free plan')
+        raise CustomException(f'backend.freeTimelinesQuotaReached.{DEFAULT_QUOTAS["timelines_free"]}')
 
 
 def set_env_variables():
@@ -99,6 +104,6 @@ def abort_if_already_ai_generating():
     user = db.user
     try:
         if(user.generating['quiz']['loading'] or user.generating['timeline']['loading']):
-            return jsonify({"message": "You already have a quiz or timeline being generated"}), 400
+            return jsonify({"message": "loadingTracker.quizOrTimelineAlreadyGenerating"}), 400
     except KeyError:
         pass

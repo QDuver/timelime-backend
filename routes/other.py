@@ -37,7 +37,7 @@ def report_error():
 @error_handler
 @premium_required('search')
 def google_images():
-    links = get_google_images(request.json['eventName'], request.json['timelineName'], 10)
+    links = get_google_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'], 10)
     return jsonify({"links": links}), 200
 
 

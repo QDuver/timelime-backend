@@ -108,7 +108,7 @@ def process_ai_timeline(df, timelineName, image_association = None):
             row['endDate'] = validate_dates(row['startDate'], row['endDate'])
             event = {'uid': db.uid, 'name': row['name'], 'startDate': row['startDate'], 'description': row['description'], 'endDate': row['endDate']}
             if(image_association == True):
-                event['imageURL'] = events_utils.get_google_images(row['name'], timelineName)[0]
+                event['imageURL'] = events_utils.get_google_images(row['name'], timelineName, row['startDate'])[0]
             events.append(event)
         except Exception as e:
             print('error', e, 'could not load event', row.to_dict())

@@ -76,6 +76,9 @@ class UnprotectedFirestoreDB:
     def __init__(self):
         self.db = firestore.client()
 
+    def set_user(self, user):
+        self.user = user
+
     def delete(self, collection, doc):
         return self.db.collection(collection).document(doc).delete()
     

@@ -14,7 +14,7 @@ quizzes_bp = Blueprint('quizzes', __name__)
 @premium_required('quiz')
 def create_quiz():
     utils.abort_if_already_ai_generating()
-    quiz = create_quiz_(request.json['tid'])
+    quiz = create_quiz_(request.json['tid'], request.json['lang'],)
     return jsonify(quiz), 200
 
 
@@ -49,11 +49,12 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted"}), 200
 
 
-def create_quiz_(tid, test=False):
+def create_quiz_(tid, lang='en', test=False):
     db = app.config['db'] if not test else UnprotectedFirestoreDB()
     existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
+
     if(len(existing_quizzes) > 3):
-        return jsonify({"message": "You've reached the maximum number of quizzes for this timeline"}), 400
+        return jsonify({"message": "backend.maxNumberOfQuizReached"}), 400
     
     if(test == False):
         db.user.update_ai_tracking_status('quiz', True)
@@ -73,6 +74,7 @@ def create_quiz_(tid, test=False):
     
     quiz = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'DESCENDING'))[0]
     quiz = process(quiz)
+    return quiz
 
 def process(quiz):
     quiz['options'] = [list(option.values()) for option in quiz['options']]
@@ -115,13 +117,13 @@ def compute_quiz_results(data):
     total = len(results)
     message = ''
     if(score == 1):
-        message = 'Great work! You got them all right!'
+        message = 'quiz.quizResultMsg1'
     elif(score > 0.79):
-        message = 'Great work! You almost got them all right!'
+        message = 'quiz.quizResultMsg2'
     elif(score > 0.59):
-        message = 'Good job! You got more than half of them right!'
+        message = 'quiz.quizResultMsg3'
     elif(score > 0.39):
-        message = 'Nice try! You got some of them right!'
+        message = 'quiz.quizResultMsg4'
     else:
-        message = 'You can do better! Study the timeline and try again!'
+        message = 'quiz.quizResultMsg5'
     return {'score': score, 'correct': correct, 'total': total, 'message': message, 'errorIndexes': [i for i, x in enumerate(results) if not x]}
