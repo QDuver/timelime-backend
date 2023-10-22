@@ -4,41 +4,34 @@ import time
 from googleapiclient.discovery import build
 import time
 from ai.dalle import generate_image
-from utils.constants import DEFAULT_QUOTAS
-from utils.utils import get_secret, print_full_exception
-from ai import generate_timeline, process_timeline
+from utils.constants import DEFAULT_QUOTAS, MONTHS
+from utils.utils import get_secret
 from google.cloud import storage
 import os
 import re
 import datetime
 
 
-def event_quotas_exceeded(event):
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
-    if(n_events >= DEFAULT_QUOTAS['events_free']):
-        return Trues
+def strip_decimal_zeros(event):
+    if('startDate' in event and event['startDate'] and '.0' in event['startDate']):
+        event['startDate'] = event['startDate'].rstrip('.0')
+    if('endDate' in event and event['endDate'] and '.0' in event['endDate']):
+        event['endDate'] = event['endDate'].rstrip('.0')
+    return event
 
-def timeline_quotas_exceeded():
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
-    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        return True
+def strip_leading_zeros(event): #to avoid dates like 0010-01-01
 
-def strip_leading_zeros(event):
-
-    def handle_if_dash_as_first(date):
+    def handle_if_dash_as_first(date): # to avoid dates like -0010-01-01
         if(not date):
             return '0'
         return date if date[0] != '-' else '0'+date
 
-    event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
+
+    if(event['startDate'][0] == '0'):
+        event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
     try:
-        event['endDate'] = handle_if_dash_as_first(event['endDate'].lstrip('0'))
+        if(event['endDate'][0] == '0'):
+            event['endDate'] = handle_if_dash_as_first(event['endDate'].lstrip('0'))
     except:
         pass
     return event
@@ -46,26 +39,26 @@ def strip_leading_zeros(event):
 def handle_image(request, event):
     db = app.config['db']
     if('file' in request.files):
-        bucket_name = os.environ.get('TIMELIME_USER_IMAGES_BUCKET', 'timelime-dev-user-images-bucket')
+        bucket_name = os.environ.get('BUCKET')
         file = request.files['file']
         gcs = storage.Client()
         bucket = gcs.get_bucket(bucket_name)
-        blob = bucket.blob(event['id'])
+        blob = bucket.blob('images/'+event['id'])
         blob.upload_from_string( file.read(), content_type=file.content_type )
         event['imageName'] = event['imageURL']
-        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/{event["id"]}'
+        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
         db.edit('events', event['id'], event)
     if('imageURL' in event and 'An AI image will start' in event['imageURL']):
         event['imageGenerating'] = True
         db.edit('events', event['id'], event)
 
 
-def create_or_edit_preprocessing(event, categories = None):
-    if not (categories):
-        categories = app.config['db'].get('categories', where=('tid', '==', event['tid']))
+def create_or_edit_preprocessing(db, event, categories = None):
+    if categories == None:
+        categories = db.get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
-        app.config['db'].edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
+        db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
 
     elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
         foundCategory = False
@@ -75,11 +68,16 @@ def create_or_edit_preprocessing(event, categories = None):
                 foundCategory = True
                 break
         if(not foundCategory):
-            event['categoryId'] = app.config['db'].add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
+            event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
+            categories = db.get('categories', where=('tid', '==', event['tid']))
+
+    if('categoryId' not in event): 
+        event['categoryId'] = None
 
     event.pop('categoryColor', None)
     event.pop('categoryName', None)
     event = strip_leading_zeros(event)
+    event = strip_decimal_zeros(event)
 
     if('endDate' not in event):
         event['endDate'] = None
@@ -87,11 +85,10 @@ def create_or_edit_preprocessing(event, categories = None):
         event['description'] = None
     
     event['lastUsed'] = int(time.time())
-    return event
+    return event, categories
     
 
-def create_events(events):
-    db = app.config['db']
+def create_events(db, events):
     for event in events:
         for key in list(event.keys()):
             if ' (optional)' in key:
@@ -101,13 +98,10 @@ def create_events(events):
     processed_events = []
     for event in events:
         event['uid'] = db.uid
-        event = create_or_edit_preprocessing(event, categories)
+        event, categories = create_or_edit_preprocessing(db, event, categories)
         processed_events.append(event)
     return processed_events
 
-
-def edit_event(event):
-    return create_or_edit_preprocessing(event)
 
 def set_to_highlight(events):
     filtered = [e for e in events if "lastUsed" in e]
@@ -131,7 +125,6 @@ def assign_none_to_empty(events):
     return events
 
 def get_events(db, timeline_id):    
-    start = time.time()
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     if(len(events) < 1):
@@ -272,45 +265,117 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName, timelineName, num=1):
+def get_google_images(eventName, timelineName, startDate, num=1):
     db = app.config['db']
+    API_KEY = get_secret('SEARCH_ENGINE')
+    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
+    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
+    if(startDate):
+        query += " " + startDate
+
+    service = build("customsearch", "v1", developerKey=API_KEY)
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
+    links = [link['link'] for link in result.get("items", [])]
+    db.user.update_ai_tracking_status('search', False, True)
+    return links
+
+
+
+
+
+
+def to_dd_mm_yyyy(newDate):
+    isNegative = False
+    if('-' in newDate):
+        isNegative = True
+        newDate = newDate.replace('-', '')
+    splitted = newDate.strip().split(' ')
+    newDate = splitted[-1]+'-'+splitted[-2]+'-'+splitted[-3]
+    if(isNegative):
+        newDate = '-'+newDate
+    
+    return newDate
+
+def month_to_num(newDate):
+    for month in MONTHS:
+        if(month in newDate):
+            newDate = newDate.replace(month, str(MONTHS[month]))
+            newDate = to_dd_mm_yyyy(newDate.strip())
+    return newDate
+
+def process_negative_literals(date):
+    newDate = re.sub(r'[a-zA-Z]', '', date).strip()
+    if('-' not in newDate):
+        newDate = '-'+newDate
+    return newDate
+
+def process_date(date):
+    if(date == None): return None
+    newDate = date.lower().strip()
+    newDate = newDate.replace(', ', '')
+    newDate = newDate.replace(',', '')
+    newDate = newDate.replace('.0', '')
+    if('ac' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bce' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('bc' in newDate): 
+        newDate = process_negative_literals(newDate)
+    if('bby' in newDate):
+        newDate = process_negative_literals(newDate)
+    if('ce' in newDate):
+        newDate = newDate.replace('ce', '')
+    if('ad' in newDate):
+        newDate = newDate.replace('ad', '')
+    if('aby' in newDate):
+        newDate = newDate.replace('aby', '')
+
+    if(any(month in newDate for month in MONTHS)):
+        newDate = month_to_num(newDate)
+    if(newDate == 'present' or newDate == 'ongoing' ):
+        newDate = datetime.datetime.now().year
+
+    newDate = str(newDate).strip()
+
+    return newDate
+
+
+def handle_centuries(event):
+    if('century' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
+        event['endDate'] = str(int(event['startDate']) + 100)
+    return event
+
+def handle_decades(event):
+    if('s' in event['startDate']):
+        event['startDate'] = re.search(r'\d+', event['startDate']).group()
+        event['endDate'] = str(int(event['startDate']) + 10)
+    return event
+
+
+
+
+def vaildate_date(date):
+    if(date == None): return
+    splitted = split_date(date)
+    if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
+        raise Exception('year is out of range')
+
+def validate_dates(startDate, endDate):
+    if(startDate == None or endDate == None): 
+        return endDate
+    start_date = split_date(startDate)
+    end_date = split_date(endDate)
+    if(start_date['year'] >= end_date['year']):
+        return None
     try:
-        API_KEY = get_secret('SEARCH_ENGINE')
-        SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-        query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
-
-        service = build("customsearch", "v1", developerKey=API_KEY)
-        result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-        links = [link['link'] for link in result.get("items", [])]
-        db.user.update_ai_tracking_status('search', False, True)
-        return links
-    except Exception as e:
-        print_full_exception(e)
-        raise Exception("Error getting images")
-
-
-def create_new_timeline(name, source):
-    db = app.config['db']
-    timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
-    timeline['id'] = db.add("timelines", timeline)
-    return timeline
-
-def create_ai_timeline_(timelineName, nEvents, imageAssociation):
-    db = app.config['db']
-    db.user.update_ai_tracking_status('timeline', True)
+        if(start_date['year'] == end_date['year'] and start_date['month'] > end_date['month']):
+            return None
+    except KeyError:
+        pass
     try:
-        generate_timeline.main(timelineName, nEvents)
-        events = process_timeline.main(timelineName, imageAssociation)
-        if(len(events) < 1):
-            raise Exception("No events generated")
-        timeline = create_new_timeline(timelineName, 'ai')
-        for event in events:
-            event['tid'] = timeline['id']
-        db.add_batch('events', events)        
-        db.user.update_ai_tracking_status('timeline', False, timeline)
-        return timeline
-    except Exception as e:
-        print_full_exception(e)
-        db.user.update_ai_tracking_status('timeline', False)
-        raise Exception("Error generating timeline")
-
+        if(start_date['year'] == end_date['year'] and start_date['month'] == end_date['month'] and start_date['day'] > end_date['day']):
+            return None
+    except KeyError:
+        pass
+    return endDate

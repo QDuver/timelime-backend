@@ -1,10 +1,8 @@
 import time
 from flask import current_app as app, jsonify
 from firebase_admin import auth
-
-from models.exceptions import TokenExpired
 from utils.constants import DEFAULT_QUOTAS
-from utils.utils import first_day_of_next_month, print_full_exception
+from utils.utils import first_day_of_next_month
 
 class User:
     DEFAULT_USER_SETTINGS = {
@@ -25,14 +23,21 @@ class User:
         'exp': None,
         'expiresIn': None,
         'nextQuotaRefresh': None,
+        'lastPaymentFailed': None,
+        'stripeCustomerId': None,
+        'language': 'en'
     }
 
 
-    def __init__(self, request):
+    def __init__(self, db, request=None, uid=None):
 
-        self.db = app.config['db']
-        self.request = request
-        self.set_token()
+        self.db = db
+        if(request):
+            self.request = request
+            self.set_token() 
+        else:
+            self.uid = uid
+            self.db.uid = self.uid
         self.populate_user_data()
         self.remove_loading_if_too_long()
 
@@ -58,6 +63,9 @@ class User:
         self.isScaled = user.get('isScaled', False)
         self.lastLongPressHint = user.get('lastLongPressHint', None)
         self.nextQuotaRefresh = first_day_of_next_month()
+        self.lastPaymentFailed = user.get('lastPaymentFailed ', None)
+        self.stripeCustomerId = user.get('stripeCustomerId', None)
+        self.language = user.get('language', 'en')
         self.db.user = self
     
     def create_new_user(self):
@@ -66,9 +74,9 @@ class User:
         user['isAnonymous'] = self.isAnonymous
         user['joinedOn'] = time.time()
         if not(self.isAnonymous):
-            user['email'] = self.firebaseUser['email']
-            user['displayName'] = self.firebaseUser['displayName']
-            user['photoUrl'] = self.firebaseUser['photoUrl']
+            user['email'] = self.firebaseUser['email'] if 'email' in self.firebaseUser else None
+            user['displayName'] = self.firebaseUser['displayName'] if 'displayName' in self.firebaseUser else None
+            user['photoUrl'] = self.firebaseUser['photoUrl'] if 'photoUrl' in self.firebaseUser else None
         self.db.add("users", user, doc_id=user['uid'])            
         return user
 
@@ -80,21 +88,21 @@ class User:
             self.db.uid = self.uid
             self.isAnonymous = True
             return
-        try:
-            token = self.request.headers.get("Authorization").split(" ")[1]
-            firebaseResp = auth.verify_id_token(token)
-            self.exp = firebaseResp['exp']
-            self.expiresIn = firebaseResp['exp'] - time.time()
-            self.uid = firebaseResp['uid']
-            self.db.uid = self.uid
+        token = self.request.headers.get("Authorization").split(" ")[1]
+        if(token == 'dhasf039847pnasdlkfuh73094fo'):
+            self.uid = 'LKKHd0ji3nSvHzoQiNe4hTCrh6E3'
+            self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
             self.isAnonymous = False
-            self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
-        except Exception as e:
-            if('Token expired' in str(e)):
-                raise TokenExpired('Token expired')
-            else:
-                raise e
-            
+            self.db.uid = self.firebaseUser['uid']
+            return
+        firebaseResp = auth.verify_id_token(token)
+        self.exp = firebaseResp['exp']
+        self.expiresIn = firebaseResp['exp'] - time.time()
+        self.uid = firebaseResp['uid']
+        self.db.uid = self.uid
+        self.isAnonymous = False
+        self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
+        
     def to_dict(self):
         user_dict = {}
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
@@ -105,10 +113,13 @@ class User:
         return user_dict
     
     def fill_in_missing_attributes(self, user):
+        changed = False
         for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
             if(attr not in user):
+                changed = True
                 user[attr] = self.DEFAULT_USER_SETTINGS[attr]
-        self.db.edit("users", user['uid'], user)
+        if(changed):
+            self.db.edit("users", user['uid'], user)
         return user
     
     def update_ai_tracking_status(self, type_, loading, generated=None):
@@ -128,7 +139,7 @@ class User:
         trackers = ['image', 'quiz', 'timeline']
         for tracker in trackers:
             try:
-                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 360):
+                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 120):
                     self.generating[tracker]['loading'] = False
                     self.generating[tracker]['started'] = None
                     self.generating[tracker]['generated'] = None

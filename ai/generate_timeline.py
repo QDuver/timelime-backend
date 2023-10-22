@@ -1,49 +1,25 @@
+from ai import process, prompts
 import openai
 import pandas as pd
-import time
-import ai
-
 from utils.utils import get_secret
 
-def main(timelineName, n_events):
 
-  start = time.time()
-  name = timelineName.lower().replace(' ', '-')
+pd.set_option('display.max_columns', None)
 
-  # try:
-  #   df = pd.read_csv('ai/generated/timelines/'+name+'.csv', index_col=False, dtype=str)
-  #   return
-  # except:
-  #   pass
+def main(timeline_name, n_events, lang='en', image_association = None):
+
+  prompt = prompts.get_timeline_prompts(n_events, timeline_name)
 
   openai.api_key = get_secret('OpenAPI')
 
-  response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-16k-0613",
+  resp = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
     messages=[
-          {"role": "system", "content": f'''
-          Response has to be in JSON format. Each object represents an event, with the following format: name, description, startDate, endDate, endDate being optional.
-          Dates can be in YYYY-MM-DD or YYYY-MM or YYYY format.
-          Never write the dates with BC, AD, CE, BCE, ABY, BBY, etc. If they are negative, just put a minus sign before the year.
-          Escape all double quotes with a backslash.
-          '''},
-          {"role": "user", "content": f'''
-          Generate a historic timeline of {timelineName}.
-          Create about {n_events} events.
-           If possible, all periods of time should be equally represented
-             '''},
+          {"role": "system", "content": prompt[lang][0]},
+          {"role": "user", "content": prompt[lang][1]},
       ]
   )
 
-  print('time to generate', n_events, 'events', time.time() - start)
-  resp = response['choices'][0]['message']['content']
+  return process.main(resp, 'timelines', timeline_name, image_association)
 
-  try:
-    obj = eval(resp)
-    if(type(obj) == dict):
-      obj = obj[list(obj.keys())[0]]
-    df = pd.DataFrame(obj)
-    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
-  except:
-    df = ai.reprocess.main(name, resp, 'timelines')
-    df.to_csv(f'ai/generated/timelines/{name}.csv', index=False)
+

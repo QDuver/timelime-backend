@@ -1,9 +1,29 @@
 
 
 from firestore.firestore_db import FirestoreDB, UnprotectedFirestoreDB
-from firebase_admin import firestore
-
+from firestore import firestore_init
+from firebase_admin import firestore, auth
+from utils.utils import set_env_variables
+set_env_variables()
+firestore_init.init()
 db = UnprotectedFirestoreDB()
+
+
+def delete_all_users():
+    page = auth.list_users()
+    for user in page.users:
+        user_dict = user.__dict__['_data']
+        if('email' in user_dict and user_dict['email'] == 'quentin.duverge@gmail.com'):
+            continue
+        else:
+            auth.delete_user(user.uid)
+
+    # users = db.get('users')
+    # for user in users:
+    #     if('email' in user and user['email'] == 'quentin.duverge@gmail.com'):
+    #         continue
+    #     else:
+    #         db.delete('users', user['id'])
 
 def delete_timeline(timeline_id):
     db.delete('timelines', timeline_id)

@@ -1,6 +1,5 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
-from utils.utils import print_full_exception
 from flask import current_app as app
 class FirestoreDB: 
 
@@ -8,15 +7,15 @@ class FirestoreDB:
     def __init__(self):
         self.db = firestore.client()
 
-    def forbid_if_too_many_entries(self, collection):
-        if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
-            raise Exception("You've reached the maximum quota of timelines")
+    # def forbid_if_too_many_entries(self, collection):
+    #     if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
+    #         raise Exception("You've reached the maximum quota of timelines")
 
-        if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.uid))) > 1000):
-            raise Exception("You've reached the maximum quota of categories")
+    #     if(collection == 'categories' and len(self.get('categories', where=('uid', '==', self.uid))) > 1000):
+    #         raise Exception("You've reached the maximum quota of categories")
         
-        if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
-            raise Exception("You've reached the maximum quota of events")
+    #     if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
+    #         raise Exception("You've reached the maximum quota of events")
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
@@ -34,9 +33,8 @@ class FirestoreDB:
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).update(data)
 
-    @limiter.limit("20/minute")
+    @limiter.limit("40/minute")
     def add(self, collection, data, doc_id=None):
-        self.forbid_if_too_many_entries(collection)
         if(doc_id):
             return self.db.collection(collection).document(doc_id).set(data)
         else:
@@ -45,12 +43,15 @@ class FirestoreDB:
     @limiter.limit("5/minute")
     def add_batch(self, collection, data):
         batch = self.db.batch()
+        ids = []
         for doc in data:
             ref = self.db.collection(collection).document()
+            ids.append(ref.id)
             batch.set(ref, doc)
-        return batch.commit()
+        batch.commit()
+        return ids
 
-    @limiter.limit("10/second")
+    @limiter.limit("20/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
         if doc:
@@ -66,14 +67,17 @@ class FirestoreDB:
             if(doc):
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
-            print_full_exception(e)
             return None
 
 
 class UnprotectedFirestoreDB:
 
+    uid = '0Gu3S71O2Thq0bSv5DTY7pszf1P2'
     def __init__(self):
         self.db = firestore.client()
+
+    def set_user(self, user):
+        self.user = user
 
     def delete(self, collection, doc):
         return self.db.collection(collection).document(doc).delete()
@@ -89,10 +93,13 @@ class UnprotectedFirestoreDB:
 
     def add_batch(self, collection, data):
         batch = self.db.batch()
+        ids = []
         for doc in data:
             ref = self.db.collection(collection).document()
+            ids.append(ref.id)
             batch.set(ref, doc)
-        return batch.commit()
+        batch.commit()
+        return ids
 
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)

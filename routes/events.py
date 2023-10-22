@@ -1,28 +1,31 @@
 
 import json
-from flask import Blueprint, request, current_app as app, Response, send_file, jsonify
-from decorators.decorators import premium_required, token_required, generic_error_handler
-from utils.constants import DEFAULT_QUOTAS
-import utils.methods as methods
+import time
+from flask import Blueprint, request, current_app as app, Response, jsonify
+from decorators.decorators import premium_required, print_full_exception, token_required, error_handler
+import utils.event_methods as event_methods
 import pandas as pd
-import io
+from models.exceptions import CustomException
+
+
+from utils.utils import event_quotas_exceeded
 events_bp = Blueprint('events', __name__)
 HEADERS_MANDATORY = ['name', 'startDate']
 HEADERS_OPTIONAL = ['endDate', 'description', 'categoryName', 'categoryColor', 'imageURL',]
 
 
 @events_bp.route("/download-headers", endpoint="download_headers")
-@generic_error_handler
+@error_handler
 def download_headers():
     return json.dumps({'mandatory': HEADERS_MANDATORY, 'optional': HEADERS_OPTIONAL})
 
 @events_bp.route("/download/<timeline_id>", endpoint="download_events")
 @token_required
-@generic_error_handler
+@error_handler
 def download_events(timeline_id):
     headers = HEADERS_MANDATORY + HEADERS_OPTIONAL
 
-    ev = methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(app.config['db'] ,timeline_id)
     df = pd.read_json(json.dumps(ev['events']))
     if('isEndEvent' in df.columns):
         df = df[df['isEndEvent'] != True]
@@ -36,58 +39,58 @@ def download_events(timeline_id):
 
 @events_bp.route("/events/<timeline_id>", endpoint="get_events")
 @token_required
-@generic_error_handler
+@error_handler
 def get_events(timeline_id):
-    ev = methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(app.config['db'] ,timeline_id)
     return json.dumps(ev)
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
+@error_handler
 @token_required
-@generic_error_handler
 def create_event():
     event = json.loads(request.form.get('event'))
-    if(methods.event_quotas_exceeded(event)):
-        return jsonify({"message": f"You can create only {DEFAULT_QUOTAS['events']} events per timeline with the Free plan - Handle FE"}), 403
-    event = methods.create_events([event])[0]
+    event_quotas_exceeded(event)
+    event = event_methods.create_events(app.config['db'], [event])[0]
     event_id = app.config['db'].add('events', event)
     event['id'] = event_id
-    methods.handle_image(request, event)
+    event_methods.handle_image(request, event)
     return json.dumps(event)
 
 
 @events_bp.route("/upload-events", endpoint="upload_events", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 def upload_events():
     db = app.config['db']
     try:
-        processed_events = methods.create_events(request.json)
+        processed_events = event_methods.create_events(db, request.json)
         db.add_batch('events', processed_events)
-    except:
-        return jsonify({"message": "Error uploading events - Handle FE"}), 400
+    except Exception as e:
+        print_full_exception(e)
+        raise CustomException("backend.errorUploadingEvents")
     return jsonify('success')
 
 @events_bp.route("/event", endpoint="edit_event", methods=['PUT'])
 @token_required
-@generic_error_handler
+@error_handler
 def edit_event():
     event = json.loads(request.form.get('event'))
-    event = methods.edit_event(event)
+    event, _ = event_methods.create_or_edit_preprocessing(app.config['db'], event)    
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    methods.handle_image(request, event)
+    event_methods.handle_image(request, event)
     return json.dumps(event)
 
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
 @token_required
-@generic_error_handler
+@error_handler
 @premium_required('image')
 def generate_image():
-    event = methods.generate_image(request.json)
+    event = event_methods.generate_image(request.json)
     return json.dumps(event)
 
 @events_bp.route("/event/<event_id>", endpoint="delete_event", methods=['DELETE'])
 @token_required
-@generic_error_handler
+@error_handler
 def delete_event(event_id):
     app.config['db'].delete("events", event_id)
     return json.dumps({})
@@ -95,18 +98,18 @@ def delete_event(event_id):
 
 @events_bp.route("/categories/<timeline_id>", endpoint="get_categories", methods=['GET'])
 @token_required
-@generic_error_handler
+@error_handler
 def get_categories(timeline_id):
     categories = app.config['db'].get("categories", where=('tid', '==', timeline_id))
     return json.dumps(categories)
 
 @events_bp.route("/categories/<category_id>", endpoint="delete_category", methods=['DELETE'])
 @token_required
-@generic_error_handler
+@error_handler
 def delete_category(category_id):
     app.config['db'].delete("categories", category_id)
     events = app.config['db'].get("events", where=('category', '==', category_id))
     for event in events:
         event['categoryId'] = None
-        events.edit_event(event)
+        event_methods.create_or_edit_preprocessing(app.config['db'], event)
     return json.dumps({})
