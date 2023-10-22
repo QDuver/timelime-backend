@@ -5,7 +5,17 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 
-from utils.constants import DEFAULT_QUOTAS
+
+DEFAULT_QUOTAS = {
+    'search': 300,
+    'quiz': 200,
+    'timeline': 200,
+    'timelines_free': 5,
+    'events_free': 30,
+    'image': 50,
+    'premium': 3.5
+}
+
 
 # gcloud functions deploy clean-schedule --runtime python38 --project timelime-prod --entry-point clean_schedule --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=260031091728
 # gcloud scheduler jobs create http clean-schedule --project timelime-prod --schedule "0 4,16 * * *" --uri=https://europe-west2-timelime-prod.cloudfunctions.net/clean-schedule --location europe-west2

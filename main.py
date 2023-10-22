@@ -1,5 +1,6 @@
 
 import time
+from clean_schedule.main import clean_schedule
 import firestore.firestore_init as firestore_init
 from firestore.firestore_db import UnprotectedFirestoreDB
 from migrations.migrate_db import change_timeline_uid, init_projects, migrate_example_quizzes
@@ -10,4 +11,5 @@ from ai import tests
 from translations import translations
 
 # translations.main()
-delete_all_users()
+# delete_all_users()
+clean_schedule('aa')
