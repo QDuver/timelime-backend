@@ -45,14 +45,12 @@ def main():
         You are an experienced translator, and you have been hired to translate a timeline web application.
         You prioritize translations that are relevant in the context of a timeline web application over word for word translations.
         Output should be a JSON with the same structure as the input JSON, so no text before / after the curly brackets.
+        Do not modify existing translations, only translate empty strings.
+        "pt" key is for Portuguese, "fr" for French, "es" for Spanish, "de" for German, "it" for Italian.
+        Do not escape any characters.
         '''
         msg = f''' 
-        Your task is generate translations for all the empty strings, based on the non-empty strings.
-        All english strings are already present and are in the "en" key.
-        "pt" key is for Portuguese, "fr" for French, "es" for Spanish, "de" for German, "it" for Italian.
-        Some values are already translated, you should leave them as they are, just fill in the empty strings.
-
-        Do not escape any characters.
+        Generate translations for all the empty strings, based on the non-empty strings.
         Here are some example translations to help you get started :
         {examples}
         And here are the actual texts to translate: 

@@ -1,15 +1,9 @@
 
-import time
-from clean_schedule.main import clean_schedule
-import firestore.firestore_init as firestore_init
-from firestore.firestore_db import UnprotectedFirestoreDB
-from migrations.migrate_db import change_timeline_uid, init_projects, migrate_example_quizzes
-from utils.cleaning_scripts import delete_all_first_timelines, delete_all_users, delete_all_users_timeline
-from utils.utils import set_env_variables
-from utils.event_methods import strip_leading_zeros
-from ai import tests
+from migrations.migrate_db import init_projects, migrate_example_timelines
 from translations import translations
 
-# translations.main()
+# translations.main() 
 # delete_all_users()
-clean_schedule('aa')
+# clean_schedule('aa')
+preprod_db, prod_db = init_projects()
+migrate_example_timelines(preprod_db, prod_db, 'KxyRtAYovzTTQhqOgB92')

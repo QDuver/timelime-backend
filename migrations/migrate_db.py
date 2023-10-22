@@ -52,15 +52,15 @@ def migrate_timelines(preprod_db, prod_db):
         # prod_db.collection('timelines').document(timeline.id).set(timeline_dict)
 
 
-def migrate_example_timelines(preprod_db, prod_db):
-    preprod_events = preprod_db.collection('events').where('tid', '==', 'bAIsSOGstg4ySzHAKV59').get()
-    preprod_categories = preprod_db.collection('categories').where('tid', '==', 'bAIsSOGstg4ySzHAKV59').get()
-    preprod_timeline = preprod_db.collection('timelines').document('bAIsSOGstg4ySzHAKV59').get()
+def migrate_example_timelines(preprod_db, prod_db, timeline_id):
+    preprod_events = preprod_db.collection('events').where('tid', '==', timeline_id).get()
+    preprod_categories = preprod_db.collection('categories').where('tid', '==', timeline_id).get()
+    preprod_timeline = preprod_db.collection('timelines').document(timeline_id).get()
     for event in preprod_events:
         prod_db.collection('events').document(event.id).set(event.to_dict())
     for category in preprod_categories:
         prod_db.collection('categories').document(category.id).set(category.to_dict())
-    prod_db.collection('timelines').document('bAIsSOGstg4ySzHAKV59').set(preprod_timeline.to_dict())
+    prod_db.collection('timelines').document(timeline_id).set(preprod_timeline.to_dict())
 
 def migrate_example_quizzes():
     preprod_db, prod_db = init_projects()
