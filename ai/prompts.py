@@ -1,3 +1,15 @@
+TIMELIME_PROMPT = '''
+Generate a historic timeline of {timeline_name}.
+Create about {n_events} events.
+If possible, all periods of time should be equally represented.
+Never write the dates with BC, AD, CE, BCE, ABY, BBY, etc. If they are negative, just put a minus sign before the year.
+Escape all double quotes with a backslash.
+---
+{format_instructions}
+'''
+
+
+
 def get_timeline_prompts(n_events, timeline_name):
     return {
     'en': ['''

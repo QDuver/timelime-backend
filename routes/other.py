@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request, current_app as app
 from decorators.decorators import premium_required, token_required, error_handler
 from google.cloud import error_reporting
 from utils.constants import DEFAULT_QUOTAS
-from utils.event_methods import get_google_images
 
 other_bp = Blueprint('other', __name__)
 
@@ -32,12 +31,6 @@ def report_error():
     return jsonify({"message": "Error reported"}), 200
 
 
-@other_bp.route("/google-imgs", endpoint="google_images", methods=['POST'])
-@token_required
-@error_handler
-@premium_required('search')
-def google_images():
-    links = get_google_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'], 10)
-    return jsonify({"links": links}), 200
+
 
 

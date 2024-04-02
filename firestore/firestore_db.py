@@ -1,6 +1,11 @@
 from firebase_admin import firestore
 from decorators.decorators import limiter
 from flask import current_app as app
+import os
+
+from models.user import User
+db = None
+
 class FirestoreDB: 
 
     uid = None
@@ -117,3 +122,13 @@ class UnprotectedFirestoreDB:
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
             return None
+
+
+class UsedDB:
+    global db
+    if os.environ.get('FE_URL') == 'https://localhost:4200':
+        db = UnprotectedFirestoreDB() 
+        user = User(db, uid='0Gu3S71O2Thq0bSv5DTY7pszf1P2')
+        db.set_user(user)
+    else:
+        db = FirestoreDB()

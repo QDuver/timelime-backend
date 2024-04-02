@@ -146,15 +146,17 @@ def create_new_timeline(name, source):
     return timeline
 
 def create_ai_timeline_(timelineName, nEvents, lang, image_association, test=False):
+
     db = app.config['db'] if test == False else UnprotectedFirestoreDB()
+    if(image_association == True):
+        event['imageURL'] = event_methods.get_google_images(event['name'], timelineName, event['startDate'])[0]
     if(test == False):
         db.user.update_ai_tracking_status('timeline', True)
     try:
-        events = generate_timeline.main(timelineName, nEvents, lang, image_association)
-        if(len(events) < 1):
-            raise Exception("No events generated")
+        events = generate_timeline.main(timelineName, nEvents, lang)
         timeline = create_new_timeline(timelineName, 'ai')
         for event in events:
+            event['uid'] = db.uid
             event['tid'] = timeline['id']
         db.add_batch('events', events)
         if(test == False):        

@@ -13,9 +13,7 @@ response = openai.ChatCompletion.create(
 model="gpt-4",
 messages=[
         {"role": "system", "content": f''' 
-         I am trying to implement Facebook Login for Business on my application.
-         But on the authentication popup, I am only seeing on account I have admin access to.
-         I know for a fact I have admin access to other accounts.
+    In Angular SSR, how to know if the user is on an  in-app browser environment? (also known as webview)
          '''},
         {"role": "user", "content": msg},
     ]

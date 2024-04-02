@@ -19,39 +19,6 @@ def generate_random_id(length=5):
     random_id = ''.join(random.choice(characters) for _ in range(length))
     return random_id
 
-def _get_name(type_, step):
-    try:
-        uid = app.config['db'].user.uid
-        session = app.config['session']
-    except:
-        uid = 'test-id'
-        session = 'test-session'
-    return f"{type_}/{session}-{uid}-{step}"
-
-def _get_bucket():
-    bucket_name = os.environ.get('BUCKET')
-    if(not bucket_name):
-        bucket_name = 'timelime-dev-bucket'
-    gcs = storage.Client()
-    bucket = gcs.get_bucket(bucket_name)
-    return bucket
-
-def save_raw_to_storage(text, type_, step):
-    blob = _get_bucket().blob(f'{_get_name(type_, step)}.txt')
-    blob.upload_from_string(text)
-
-def save_df_to_storage(df, type_, step):
-    blob = _get_bucket().blob(f'{_get_name(type_, step)}.csv')
-    blob.upload_from_string(df.to_csv(index=False), 'text/csv')
-
-
-def read_from_storage(type_):
-    bucket = _get_bucket()
-    blobs = bucket.list_blobs(prefix=type_)
-    return sorted(blobs, key=lambda x: x.updated)
-    
-
-
 def get_secret(secret_name):
 
     if(secret_name == 'GCP_CREDENTIALS' and os.environ.get('FE_URL') == 'https://localhost:4200'):
@@ -98,6 +65,7 @@ def set_env_variables():
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'secrets/GCP_CREDENTIALS.json'
     os.environ['FE_URL'] = 'https://localhost:4200'
     os.environ['BUCKET'] = 'timelime-dev-bucket'
+    os.environ['OPENAI_API_KEY'] = get_secret('OpenAPI')
 
 def abort_if_already_ai_generating():
     db = app.config['db']

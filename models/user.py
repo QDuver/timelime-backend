@@ -129,11 +129,12 @@ class User:
             'generated': generated
         }
 
-        if(generated):
-            self.quotas[type_] = self.quotas[type_] - 1
-        
-
         self.update_user()
+
+    def update_quotas_status(self, type):
+        self.quotas[type] -= 1
+        self.update_user()
+
 
     def remove_loading_if_too_long(self):
         trackers = ['image', 'quiz', 'timeline']

@@ -1,9 +1,16 @@
 
-from migrations.migrate_db import init_projects, migrate_example_timelines
-from translations import translations
+from ai import langchain_client
+from utils.utils import set_env_variables
+from firestore import firestore_init
+set_env_variables()
+firestore_init.init()
+from firestore.firestore_db import UsedDB, db
+import utils.image_methods
 
-# translations.main() 
-# delete_all_users()
-# clean_schedule('aa')
-preprod_db, prod_db = init_projects()
-migrate_example_timelines(preprod_db, prod_db, 'KxyRtAYovzTTQhqOgB92')
+
+
+# event = db.get('events', where= ('tid', '==', 'lYSxp2HDrJO03m4EwVKc'))[0]
+# utils.image_methods.generate_image('google', event)
+# print('COUCOU')
+
+langchain_client.generate_image("Create an image of a halloween night at a haunted museum")

@@ -17,7 +17,8 @@ def main(events, lang='en'):
 
     prompt = prompts.get_quiz_prompts(n_events, events)
     resp = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
+    # model="gpt-3.5-turbo",
+    model="gpt-4",
     messages=[
           {"role": "system", "content": prompt[lang][0]},
           {"role": "user", "content": prompt[lang][1]},

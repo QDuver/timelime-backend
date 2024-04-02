@@ -62,17 +62,16 @@ def migrate_example_timelines(preprod_db, prod_db, timeline_id):
         prod_db.collection('categories').document(category.id).set(category.to_dict())
     prod_db.collection('timelines').document(timeline_id).set(preprod_timeline.to_dict())
 
-def migrate_example_quizzes():
+def migrate_example_quizzes(tids):
     preprod_db, prod_db = init_projects()
-    quizz = preprod_db.collection('quizzes').document('YAsxvnsCVomZ73xdNn4u').get().to_dict()
-    quizz['uid'] = 'ZhPpeqGHXVRZ73ohiwzhYtFFZ7O2'
-    quizz['tid'] = 'bAIsSOGstg4ySzHAKV59'
-    print(quizz)
-    prod_db.collection('quizzes').document('YAsxvnsCVomZ73xdNn4u').set(quizz)
+    for tid in tids:
+        quiz = preprod_db.collection('quizzes').where('tid', '==', tid).get()[0]
+        prod_db.collection('quizzes').document(quiz.id).set(quiz.to_dict())
+        prod_db.collection('quizzes').document(quiz.id).update({'uid': 'ZhPpeqGHXVRZ73ohiwzhYtFFZ7O2'})
 
 
 def change_timeline_uid(db, old, new):
-    events = db.collection('events').where('uid', '==', old).get()
+    events = db.collection('events').where('uid', '==', old).get() 
     categories = db.collection('categories').where('uid', '==', old).get()
     timelines = db.collection('timelines').where('uid', '==', old).get()
     quizzes = db.collection('quizzes').where('uid', '==', old).get()
@@ -85,3 +84,10 @@ def change_timeline_uid(db, old, new):
     for quiz in quizzes:
         db.collection('quizzes').document(quiz.id).update({'uid': new})
     
+
+def modify_example_timelines(preprod_db, prod_db):
+    db = prod_db
+    timelines = db.collection('timelines').where('uid', '==', '0Gu3S71O2Thq0bSv5DTY7pszf1P2').get()
+    for timeline in timelines:
+        db.collection('timelines').document(timeline.id).update({'uid': 'ZhPpeqGHXVRZ73ohiwzhYtFFZ7O2'})
+        db.collection('timelines').document(timeline.id).update({'isPublic': True})

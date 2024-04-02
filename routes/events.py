@@ -3,12 +3,13 @@ import json
 import time
 from flask import Blueprint, request, current_app as app, Response, jsonify
 from decorators.decorators import premium_required, print_full_exception, token_required, error_handler
+from utils import image_methods
 import utils.event_methods as event_methods
 import pandas as pd
 from models.exceptions import CustomException
-
-
+import utils.image_methods
 from utils.utils import event_quotas_exceeded
+
 events_bp = Blueprint('events', __name__)
 HEADERS_MANDATORY = ['name', 'startDate']
 HEADERS_OPTIONAL = ['endDate', 'description', 'categoryName', 'categoryColor', 'imageURL',]
@@ -53,7 +54,7 @@ def create_event():
     event = event_methods.create_events(app.config['db'], [event])[0]
     event_id = app.config['db'].add('events', event)
     event['id'] = event_id
-    event_methods.handle_image(request, event)
+    image_methods.handle_image(request, event)
     return json.dumps(event)
 
 
@@ -77,7 +78,7 @@ def edit_event():
     event = json.loads(request.form.get('event'))
     event, _ = event_methods.create_or_edit_preprocessing(app.config['db'], event)    
     app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
-    event_methods.handle_image(request, event)
+    image_methods.handle_image(request, event)
     return json.dumps(event)
 
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
@@ -113,3 +114,12 @@ def delete_category(category_id):
         event['categoryId'] = None
         event_methods.create_or_edit_preprocessing(app.config['db'], event)
     return json.dumps({})
+
+
+@events_bp.route("/google-imgs", endpoint="google_images", methods=['POST'])
+@token_required
+@error_handler
+@premium_required('search')
+def google_images():
+    links = image_methods.get_gooogle_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'], 10)
+    return jsonify({"links": links}), 200

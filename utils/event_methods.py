@@ -1,12 +1,9 @@
 from functools import cmp_to_key
 from flask import current_app as app
 import time 
-from googleapiclient.discovery import build
 import time
-from ai.dalle import generate_image
 from utils.constants import DEFAULT_QUOTAS, MONTHS
 from utils.utils import get_secret
-from google.cloud import storage
 import os
 import re
 import datetime
@@ -26,7 +23,6 @@ def strip_leading_zeros(event): #to avoid dates like 0010-01-01
             return '0'
         return date if date[0] != '-' else '0'+date
 
-
     if(event['startDate'][0] == '0'):
         event['startDate'] = handle_if_dash_as_first(event['startDate'].lstrip('0'))
     try:
@@ -36,21 +32,6 @@ def strip_leading_zeros(event): #to avoid dates like 0010-01-01
         pass
     return event
 
-def handle_image(request, event):
-    db = app.config['db']
-    if('file' in request.files):
-        bucket_name = os.environ.get('BUCKET')
-        file = request.files['file']
-        gcs = storage.Client()
-        bucket = gcs.get_bucket(bucket_name)
-        blob = bucket.blob('images/'+event['id'])
-        blob.upload_from_string( file.read(), content_type=file.content_type )
-        event['imageName'] = event['imageURL']
-        event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
-        db.edit('events', event['id'], event)
-    if('imageURL' in event and 'An AI image will start' in event['imageURL']):
-        event['imageGenerating'] = True
-        db.edit('events', event['id'], event)
 
 
 def create_or_edit_preprocessing(db, event, categories = None):
@@ -139,15 +120,7 @@ def get_events(db, timeline_id):
     events = sorted(events, key=cmp_to_key(custom_sort))
     events = set_scaling(events)
     events = assign_none_to_empty(events)
-    events = process_image(events)
     return {'events': events, 'categories': categories}
-
-
-def process_image(events):
-    for event in events:
-        if('imageURL' in event and event['imageURL'] and 'An AI image will start' in event['imageURL']):
-            event['imageURL'] = ''
-    return events
 
 
 def set_scaling(events):
@@ -265,25 +238,6 @@ def  split_date(date, default=None):
     return rv
 
 
-def get_google_images(eventName, timelineName, startDate, num=1):
-    db = app.config['db']
-    API_KEY = get_secret('SEARCH_ENGINE')
-    SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-    query = eventName + " " + timelineName if "new timeline" not in timelineName.lower() else eventName
-    if(startDate):
-        query += " " + startDate
-
-    service = build("customsearch", "v1", developerKey=API_KEY)
-    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-    links = [link['link'] for link in result.get("items", [])]
-    db.user.update_ai_tracking_status('search', False, True)
-    return links
-
-
-
-
-
-
 def to_dd_mm_yyyy(newDate):
     isNegative = False
     if('-' in newDate):
@@ -361,11 +315,15 @@ def vaildate_date(date):
     if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
         raise Exception('year is out of range')
 
-def validate_dates(startDate, endDate):
-    if(startDate == None or endDate == None): 
-        return endDate
-    start_date = split_date(startDate)
-    end_date = split_date(endDate)
+def validate_dates(row):
+    if(row['startDate']):
+        vaildate_date(row['startDate'])
+    if(row['endDate']):
+        vaildate_date(row['endDate'])
+    if(row['startDate'] == None or row['endDate'] == None): 
+        return row['endDate']
+    start_date = split_date(row['startDate'])
+    end_date = split_date(row['endDate'])
     if(start_date['year'] >= end_date['year']):
         return None
     try:
@@ -378,4 +336,4 @@ def validate_dates(startDate, endDate):
             return None
     except KeyError:
         pass
-    return endDate
+    return row['endDate']

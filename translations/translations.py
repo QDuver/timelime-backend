@@ -23,8 +23,8 @@ def main():
     existing_keys = ['examples']
     try:
         with open('C:/Users/Msi/Desktop/timelime-frontend-2/src/assets/translations/main/translations.json', 'r') as file:
-            translations = json.load(file)
-        existing_keys = existing_keys + list(translations.keys())
+            existing_translations = json.load(file)
+        existing_keys = existing_keys + list(existing_translations.keys())
     except FileNotFoundError:
         pass
     
@@ -32,6 +32,7 @@ def main():
          translations = json.load(file)
 
     examples = translations['examples']
+    # translations = remove_already_fully_translated(existing_translations)
     keys = list(translations.keys())
     print(keys)
     keys = [key for key in keys if key not in existing_keys]
@@ -69,6 +70,19 @@ def main():
         translated_chunk = translated_chunk.replace("{'", '{"').replace("'}", '"}').replace("':", '":').replace("',", '",').replace("'}", '"}').replace("{'", '{"').replace(": '", ': "').replace(", '", ', "').replace("\\", "")
         print(translated_chunk)
         update_translations(json.loads(translated_chunk))
+
+
+def remove_already_fully_translated(translations):
+    to_translate = []
+    for key in list(translations.keys()):
+        for sub_key in list(translations[key].keys()):
+            for lang in langs:
+                print(key, sub_key, lang['code'], translations[key][sub_key][lang['code']])
+                if(translations[key][sub_key][lang['code']]== ''):
+                    to_translate.append([key, sub_key])
+    print(to_translate)
+    return translations
+
 
 def update_translations(translated):
     try:

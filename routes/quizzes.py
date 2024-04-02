@@ -14,7 +14,7 @@ quizzes_bp = Blueprint('quizzes', __name__)
 @premium_required('quiz')
 def create_quiz():
     utils.abort_if_already_ai_generating()
-    quiz = create_quiz_(request.json['tid'], request.json['lang'],)
+    quiz = create_quiz_(app.config['db'], request.json['tid'], request.json['lang'],)
     return jsonify(quiz), 200
 
 
@@ -49,26 +49,22 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted"}), 200
 
 
-def create_quiz_(tid, lang='en', test=False):
-    db = app.config['db'] if not test else UnprotectedFirestoreDB()
+def create_quiz_(db, tid, lang='en'):
     existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
 
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "backend.maxNumberOfQuizReached"}), 400
     
-    if(test == False):
-        db.user.update_ai_tracking_status('quiz', True)
+    db.user.update_ai_tracking_status('quiz', True)
     try:
         events = db.get('events', where=('tid', '==', tid))
         quiz = generate_quiz.main(events)
         quiz['tid'] = tid
-        if(test == False):
-            db.user.update_ai_tracking_status('quiz', False, quiz)
+        db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)
     except Exception as e:
         print_full_exception(e)
-        if(test == False):
-            db.user.update_ai_tracking_status('quiz', False)
+        db.user.update_ai_tracking_status('quiz', False)
         raise Exception("Error generating quiz")
 
     
