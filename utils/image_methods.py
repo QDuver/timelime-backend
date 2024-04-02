@@ -12,60 +12,74 @@ from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 GOOGLE_IMAGE_API_KEY = get_secret('SEARCH_ENGINE')
 from firestore.firestore_db import db
+import ai.dalle as dalle
 
 def generate_image(type, event, timelineName = None, request=None):
-    _attach_image(event, True)
     if(type == 'ai'): 
         thread = Thread(target=generate_ai_image, args=(event,))
     elif(type == 'google'): 
-        thread = Thread(target=get_gooogle_images, args=(event['name'], timelineName, event['startDate']))
+        thread = Thread(target=get_google_image, args=(event,))
     elif(type == 'upload'): 
-        thread = Thread(target=handle_uploaded_image, args=(request, event))
+        thread = Thread(target=handle_uploaded_image, args=(event, request))
     thread.start()
-    return None
 
 
+
+def _handle_async_generation(func):
+    def wrapper(*args, **kwargs):
+        try:
+            event = args[0]
+            url = func(*args, **kwargs)
+            _attach_image(event, url)
+            _stop_loading(event)
+        except Exception as e:
+            _stop_loading(event)
+            print_full_exception(e)
+            raise Exception('Could not generate image')    
+
+    return wrapper
+
+@_handle_async_generation
 def generate_ai_image(event):
-    db.user.update_ai_tracking_status('image', True)
-    try:
-        timelineName = db.get('timelines', event['tid'])['name']
-        if('timeline' in timelineName.lower()):
-            timelineName = ''
-        prompt = f'A realistic futuristic photograph of {event["name"]}'
-        if(timelineName != ''):
-            prompt += f' in the context of {timelineName}'
-        if("description" in event and event["description"]):
-            prompt += f'. More details :  {event["description"]}'
-        openai.api_key = get_secret('OpenAPI')
-        response = openai.Image.create( prompt=prompt, n=1, size='1024x1024')
-        event["imageURL"] = response["data"][0]["url"]
-        db.user.update_ai_tracking_status('image', False, True)
+    prompt = _generate_prompt_from_event(event)
+    url = dalle.generate_image(prompt)
+    return url
 
-        _stop_loading(event)
-    except Exception as e:
-        _stop_loading(event)
-        db.user.update_ai_tracking_status('image', False, False)
-        print_full_exception(e)
-        raise Exception('Could not generate image')
-  
-def get_gooogle_images(eventName, timelineName=None, eventStartDate= None, num=1):
-    query = eventName + " " + eventStartDate[:4]
-    service = build("customsearch", "v1", developerKey=GOOGLE_IMAGE_API_KEY)
-    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
-    links = [link['link'] for link in result.get("items", [])]
-    db.user.update_ai_tracking_status('search', False, True)
-    return links
 
-def handle_uploaded_image(request, event):
+@_handle_async_generation
+def get_google_image(event):
+    timelineName = db.get('timelines', event['tid'])['name']
+    query = f"{timelineName} {event['name']}  {event['startDate'][:4]}"
+    url = _fetch_google_images(query, 10)[0]
+    return url
+
+@_handle_async_generation
+def handle_uploaded_image(event, request):
     bucket_name = os.environ.get('BUCKET')
     file = request.files['file']
     gcs = storage.Client()
     bucket = gcs.get_bucket(bucket_name)
     blob = bucket.blob('images/'+event['id'])
     blob.upload_from_string( file.read(), content_type=file.content_type )
-    event['imageName'] = event['imageURL']
-    event['imageURL'] = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
-    db.edit('events', event['id'], event)
+    url = f'https://storage.cloud.google.com/{bucket_name}/images/{event["id"]}'
+    return url
+
+
+
+
+def get_goooge_images(eventName, timelineName=None, eventStartDate= None):
+    query = f"{timelineName} {eventName}  {eventStartDate[:4]}"
+    links = _fetch_google_images(query, 10)
+    return links
+
+def _fetch_google_images(query, num):
+    service = build("customsearch", "v1", developerKey=GOOGLE_IMAGE_API_KEY)
+    result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
+    links = [link['link'] for link in result.get("items", [])]
+    db.user.update_ai_tracking_status('search', False, True)
+    return links
+
+
 
 def _attach_image(event, url):
     event['imageGenerating'] = True
@@ -80,6 +94,17 @@ def _attach_image(event, url):
 #         event['imageGenerating'] = True
 #         db.edit('events', event['id'], event)
 
+
+def _generate_prompt_from_event(event):
+    timelineName = db.get('timelines', event['tid'])['name']
+    if('timeline' in timelineName.lower()):
+        timelineName = ''
+    prompt = f'A realistic futuristic photograph of {event["name"]}'
+    if(timelineName != ''):
+        prompt += f' in the context of {timelineName}'
+    if("description" in event and event["description"]):
+        prompt += f'. More details :  {event["description"]}'
+    return prompt
 
 def _stop_loading(event):
     event["imageGenerating"] = False

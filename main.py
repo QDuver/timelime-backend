@@ -5,12 +5,8 @@ from firestore import firestore_init
 set_env_variables()
 firestore_init.init()
 from firestore.firestore_db import UsedDB, db
-import utils.image_methods
+from utils.image_methods import generate_image
 
+event = db.get('events', where= ('tid', '==', 'lYSxp2HDrJO03m4EwVKc'))[0]
 
-
-# event = db.get('events', where= ('tid', '==', 'lYSxp2HDrJO03m4EwVKc'))[0]
-# utils.image_methods.generate_image('google', event)
-# print('COUCOU')
-
-langchain_client.generate_image("Create an image of a halloween night at a haunted museum")
+generate_image('ai', event)
