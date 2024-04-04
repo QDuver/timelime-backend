@@ -1,12 +1,11 @@
 
 
-from firestore.firestore_db import FirestoreDB, UnprotectedFirestoreDB
+from config import db
 from firestore import firestore_init
 from firebase_admin import firestore, auth
 from utils.utils import set_env_variables
 set_env_variables()
 firestore_init.init()
-db = UnprotectedFirestoreDB()
 
 
 def delete_all_users():

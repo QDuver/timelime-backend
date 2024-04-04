@@ -5,7 +5,7 @@ from decorators.decorators import  premium_required, print_full_exception, token
 import utils.event_methods as event_methods
 import utils.utils as utils
 from ai import generate_timeline
-from firestore.firestore_db import UnprotectedFirestoreDB
+from config import db
 from models.exceptions import CustomException
 
 timeline_bp = Blueprint('timeline', __name__)
@@ -14,7 +14,6 @@ timeline_bp = Blueprint('timeline', __name__)
 @error_handler
 @token_required
 def get_timelines():
-    db = app.config['db']
     user = db.user
     timelines = db.get("timelines", where=('uid', '==', user.uid), order_by=('lastUsed', 'DESCENDING'))
     return json.dumps(timelines)
@@ -23,7 +22,6 @@ def get_timelines():
 @error_handler
 @token_required
 def get_timeline(timeline_id):
-    db = app.config['db']
 
     timeline = db.get("timelines", doc=timeline_id)
     if(not timeline):
@@ -55,7 +53,6 @@ def _process_timeline(db, timeline):
 @error_handler
 def duplicate_timeline():
     utils.timeline_quotas_exceeded()
-    db = app.config['db']
     timeline = request.json['timeline']
     new_timeline = create_new_timeline(timeline['name'] + ' (copy)', 'manual')
     new_timeline = _process_timeline(db, new_timeline)
@@ -84,7 +81,6 @@ def duplicate_timeline():
 @token_required
 @error_handler
 def edit_timeline():
-    db = app.config['db']
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
     timeline = db.get("timelines", doc=timeline['id'])
@@ -97,7 +93,6 @@ def edit_timeline():
 @token_required
 @error_handler
 def create_timeline():
-    db = app.config['db']
     req = request.json #for some reason if I remove this, won't work
     utils.timeline_quotas_exceeded()
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
@@ -116,7 +111,8 @@ def create_timeline():
 @premium_required('timeline')
 @error_handler
 def create_ai_timeline():
-    utils.abort_if_already_ai_generating()
+    user = db.user
+    user.abort_if_already_ai_generating()
     timeline = create_ai_timeline_(request.json['timelineName'], request.json['nEvents'], request.json['lang'], request.json['imageAssociation'])
     return json.dumps(timeline)
 
@@ -124,12 +120,10 @@ def create_ai_timeline():
 @token_required
 @error_handler
 def delete_timeline(timeline_id):
-    db = app.config['db']
     db.delete("timelines", timeline_id)
     return json.dumps({})
 
 def generate_timeline_name():
-    db = app.config['db']
     n_timelines = len(db.get("timelines", where=('uid', '==', db.uid)))
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
@@ -137,17 +131,12 @@ def generate_timeline_name():
 
 
 def create_new_timeline(name, source):
-    try:
-        db = app.config['db']
-    except:
-        db = UnprotectedFirestoreDB()
     timeline = {'uid': db.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
     timeline['id'] = db.add("timelines", timeline)
     return timeline
 
 def create_ai_timeline_(timelineName, nEvents, lang, image_association, test=False):
 
-    db = app.config['db'] if test == False else UnprotectedFirestoreDB()
     if(image_association == True):
         event['imageURL'] = event_methods.get_google_images(event['name'], timelineName, event['startDate'])[0]
     if(test == False):

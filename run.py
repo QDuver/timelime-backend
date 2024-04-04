@@ -14,9 +14,10 @@ app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 limiter.init_app(app)
 
-from firestore.firestore_db import UsedDB
-app.config['db'] = UsedDB()
-app.config['session'] = generate_random_id()
+import config
+config.init()
+
+# app.config['session'] = generate_random_id()
 
 
 app.register_blueprint(timeline_bp)

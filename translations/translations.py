@@ -3,7 +3,7 @@ import json
 import re
 import openai
 import pandas as pd
-from firestore.firestore_db import UnprotectedFirestoreDB
+from config import db
 from models.user import User
 from routes.timelines import _process_timeline, create_new_timeline
 from utils import event_methods
@@ -156,7 +156,6 @@ def translate_timeline():
         ]
     }
 
-    db = UnprotectedFirestoreDB()
     db.set_user(User(db, uid='0Gu3S71O2Thq0bSv5DTY7pszf1P2'))
     
     events = event_methods.get_events(db, space_exploration["tid"])['events']

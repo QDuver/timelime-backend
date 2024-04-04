@@ -4,7 +4,7 @@ import re
 from decorators.decorators import print_full_exception
 import openai
 import pandas as pd
-from firestore.firestore_db import UnprotectedFirestoreDB
+from config import db
 import numpy as np
 from flask import current_app as app
 from utils import event_methods as events_utils
@@ -25,10 +25,6 @@ def process_dates(df):
 
 
 def process_ai_quiz(df):
-    try:
-        db = app.config['db']
-    except:
-        db = UnprotectedFirestoreDB()
     df = df.head(10)
     df = df.astype(str).replace({'none': None}).replace({'None': None})
     quiz = {}

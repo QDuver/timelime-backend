@@ -4,8 +4,7 @@ from flask import Blueprint, request, jsonify, current_app as app
 from decorators.decorators import token_required, error_handler
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email
-import time
-
+from config import db
 from models.user import User
 auth_bp = Blueprint('auth', __name__)
 
@@ -13,7 +12,6 @@ auth_bp = Blueprint('auth', __name__)
 @error_handler
 @token_required
 def get_auth():
-    db = app.config['db']
     return  json.dumps(db.user.to_dict())
 
 

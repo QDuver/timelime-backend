@@ -1,6 +1,6 @@
 import time
-from flask import current_app as app, jsonify
 from firebase_admin import auth
+from flask import jsonify
 from utils.constants import DEFAULT_QUOTAS
 from utils.utils import first_day_of_next_month
 
@@ -154,3 +154,10 @@ class User:
     def update_premium_status(self, isPremium):
         self.isPremium = isPremium
         self.update_user()
+
+    def abort_if_already_ai_generating(self):
+        try:
+            if(self.generating['quiz']['loading'] or self.generating['timeline']['loading']):
+                return jsonify({"message": "loadingTracker.quizOrTimelineAlreadyGenerating"}), 400
+        except KeyError:
+            pass

@@ -1,11 +1,10 @@
 
-import time
 import stripe
 from decorators.decorators import error_handler, token_required
-from firestore.firestore_db import UnprotectedFirestoreDB
 from utils.utils import get_secret
 from flask import Blueprint, jsonify, request, current_app as app
 import os
+from config import db
 
 payment_bp = Blueprint('payment', __name__)
 FE_URL = os.environ.get('FE_URL')
@@ -14,8 +13,6 @@ FE_URL = os.environ.get('FE_URL')
 @error_handler
 @token_required
 def cancel_premium():
-    dummy = request.json
-    db = app.config['db']
     stripe.api_key = get_secret('stripe')
     if(db.user.stripeCustomerId):
         customer = stripe.Customer.retrieve(db.user.stripeCustomerId)
@@ -45,7 +42,6 @@ def checkout():
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 def webhook():
-    db = UnprotectedFirestoreDB()
     stripe.api_key = get_secret('stripe')
     endpoint_secret = get_secret('stripe-webhook')
     event = stripe.Webhook.construct_event(
@@ -76,7 +72,6 @@ def webhook():
 
 
 def create_subscription(session_id, uid):
-    db = UnprotectedFirestoreDB()
     user = db.get('users', uid)
     if(db.get('stripe_sessions', session_id)):
         return

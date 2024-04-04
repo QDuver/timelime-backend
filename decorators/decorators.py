@@ -1,6 +1,5 @@
 
 import logging
-import time
 import traceback
 from flask import jsonify, request, current_app as app
 from firebase_admin import auth
@@ -9,13 +8,13 @@ from flask_limiter.util import get_remote_address
 from models.exceptions import CustomException
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
+from config import db
 
 limiter = Limiter( get_remote_address, default_limits=["10 per second"] )
 
 def premium_required(type_):
     def decorator(route_function):
         def wrapper(*args, **kwargs):
-            db = app.config['db']
             if not(db.user.isPremium):
                 return jsonify({"message": "backend.premiumSubscriptionRequired"}), 403
             else:
@@ -44,7 +43,6 @@ def error_handler(func):
 def token_required(route_function):
 
     def decorated_function(*args, **kwargs):
-        db = app.config['db']
         User(db, request = request)
         return route_function(*args, **kwargs)
     

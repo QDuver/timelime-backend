@@ -5,7 +5,6 @@ from routes.timelines import create_ai_timeline_, create_new_timeline
 from utils.utils import set_env_variables
 import firestore.firestore_init as firestore_init
 import flask
-from firestore.firestore_db import UnprotectedFirestoreDB
 
 
 def main():

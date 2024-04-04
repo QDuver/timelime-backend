@@ -2,13 +2,8 @@ import datetime
 from google.cloud import secretmanager
 import os
 import json
-from flask import jsonify, current_app as app
-from google.cloud import storage
 import random
-from models.exceptions import CustomException
 import string
-
-from utils.constants import DEFAULT_QUOTAS
 
 def divide_chunks(l, n): 
     for i in range(0, len(l), n):  
@@ -43,21 +38,8 @@ def first_day_of_next_month():
     timestamp = datetime.datetime.combine(first_day_of_next_month, datetime.time()).timestamp()
     return timestamp
 
-def event_quotas_exceeded(event):
-    db = app.config['db']
-    if(db.user.isPremium):
-        return False
-    n_events = len(db.get('events', where=('tid', '==', event['tid'])))
-    if(n_events >= DEFAULT_QUOTAS['events_free']):
-        raise CustomException(f'backend.freeEventsQuotaReached')
 
-def timeline_quotas_exceeded():
-    db = app.config['db']
-    if(db.user.isPremium):
-        return
-    n_timelines = len(db.get('timelines', where=('uid', '==', db.uid)))
-    if(n_timelines >= DEFAULT_QUOTAS['timelines_free']):
-        raise CustomException(f'backend.freeTimelinesQuotaReached.{DEFAULT_QUOTAS["timelines_free"]}')
+
 
 
 def set_env_variables():
@@ -67,11 +49,3 @@ def set_env_variables():
     os.environ['BUCKET'] = 'timelime-dev-bucket'
     os.environ['OPENAI_API_KEY'] = get_secret('OpenAPI')
 
-def abort_if_already_ai_generating():
-    db = app.config['db']
-    user = db.user
-    try:
-        if(user.generating['quiz']['loading'] or user.generating['timeline']['loading']):
-            return jsonify({"message": "loadingTracker.quizOrTimelineAlreadyGenerating"}), 400
-    except KeyError:
-        pass

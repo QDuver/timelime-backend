@@ -4,7 +4,7 @@ import pandas as pd
 from decorators.decorators import  premium_required, print_full_exception, token_required, error_handler
 import utils.utils as utils
 from ai import generate_quiz
-from firestore.firestore_db import UnprotectedFirestoreDB
+from config import db
 quizzes_bp = Blueprint('quizzes', __name__)
 
 
@@ -13,7 +13,8 @@ quizzes_bp = Blueprint('quizzes', __name__)
 @error_handler
 @premium_required('quiz')
 def create_quiz():
-    utils.abort_if_already_ai_generating()
+    user = db.user
+    user.abort_if_already_ai_generating()
     quiz = create_quiz_(app.config['db'], request.json['tid'], request.json['lang'],)
     return jsonify(quiz), 200
 
@@ -22,7 +23,6 @@ def create_quiz():
 @token_required
 @error_handler
 def get_quizzes(tid):
-    db = app.config['db']
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
     for quiz in quizzes:
         quiz = process(quiz)
@@ -33,7 +33,6 @@ def get_quizzes(tid):
 @token_required
 @error_handler
 def submit_quiz():
-    db = app.config['db']
     recap = compute_quiz_results(request.json)
     if not (db.user.isAnonymous):
         update_user_quiz_results(recap)
@@ -44,7 +43,6 @@ def submit_quiz():
 @token_required
 @error_handler
 def delete_quiz(quiz_id):
-    db = app.config['db']
     db.delete("quizzes", quiz_id)
     return jsonify({"message": "Quiz deleted"}), 200
 
@@ -80,17 +78,12 @@ def process(quiz):
 
 def map_with_user_existing_results(quiz):
     try:
-        db = app.config['db']
-    except:
-        db = UnprotectedFirestoreDB()
-    try:
         quiz['user_results'] = db.get("users", db.uid)['quiz_results'][quiz['id']]
     except:
         quiz['user_results'] = None
 
 
 def update_user_quiz_results(recap):
-    db = app.config['db']
     try:
         results = db.get("users", db.uid)['quiz_results']
     except:
@@ -100,7 +93,6 @@ def update_user_quiz_results(recap):
 
 
 def compute_quiz_results(data):
-    db = app.config['db']
     quiz = db.get("quizzes", data['quizId'])
     results = []
     answer = quiz['answer']

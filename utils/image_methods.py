@@ -1,6 +1,6 @@
 from decorators.decorators import print_full_exception
 import openai
-from firestore.firestore_db import UnprotectedFirestoreDB, UsedDB
+from firestore.firestore_db import FirestoreDB
 from models.user import User
 from utils.utils import get_secret
 import time
@@ -11,7 +11,7 @@ import os
 from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 GOOGLE_IMAGE_API_KEY = get_secret('SEARCH_ENGINE')
-from firestore.firestore_db import db
+from config import db
 
 def generate_image(type, event, timelineName = None, request=None):
     _attach_image(event, True)
