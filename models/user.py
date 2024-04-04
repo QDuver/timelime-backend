@@ -29,26 +29,20 @@ class User:
     }
 
 
-    def __init__(self, db, request=None, uid=None):
+    def __init__(self, request=None, uid=None):
 
-        self.db = db
         if(request):
             self.request = request
             self.set_token() 
         else:
             self.uid = uid
-            self.db.uid = self.uid
         self.populate_user_data()
         self.remove_loading_if_too_long()
 
 
     def populate_user_data(self):
-        query = self.db.get("users", where=('uid', '==', self.uid))
-        if(len(query) == 0):
-            user = self.create_new_user()
-        else:
-            user = query[0]
-            user = self.fill_in_missing_attributes(user)
+        user = self.db.get("users", where=('uid', '==', self.uid))[0]
+        user = self.fill_in_missing_attributes(user) if user else self.create_new_user()
 
         self.name = user.get('displayName', None)
         self.email = user.get('email', None)
@@ -66,7 +60,6 @@ class User:
         self.lastPaymentFailed = user.get('lastPaymentFailed ', None)
         self.stripeCustomerId = user.get('stripeCustomerId', None)
         self.language = user.get('language', 'en')
-        self.db.user = self
     
     def create_new_user(self):
         user = self.DEFAULT_USER_SETTINGS
@@ -85,21 +78,13 @@ class User:
             tempId = self.request.headers['X-Allow-Unauthorized']
             self.firebaseUser = {'uid': tempId, 'isAnonymous': True}
             self.uid = tempId
-            self.db.uid = self.uid
             self.isAnonymous = True
             return
         token = self.request.headers.get("Authorization").split(" ")[1]
-        if(token == 'dhasf039847pnasdlkfuh73094fo'):
-            self.uid = 'LKKHd0ji3nSvHzoQiNe4hTCrh6E3'
-            self.firebaseUser = self.db.get("users", where=('uid', '==', self.uid))[0]
-            self.isAnonymous = False
-            self.db.uid = self.firebaseUser['uid']
-            return
         firebaseResp = auth.verify_id_token(token)
         self.exp = firebaseResp['exp']
         self.expiresIn = firebaseResp['exp'] - time.time()
         self.uid = firebaseResp['uid']
-        self.db.uid = self.uid
         self.isAnonymous = False
         self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
         

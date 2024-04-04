@@ -7,8 +7,7 @@ from utils import image_methods
 import utils.event_methods as event_methods
 import pandas as pd
 from models.exceptions import CustomException
-import utils.image_methods
-from utils.utils import event_quotas_exceeded
+from config import db
 
 events_bp = Blueprint('events', __name__)
 HEADERS_MANDATORY = ['name', 'startDate']
@@ -26,7 +25,7 @@ def download_headers():
 def download_events(timeline_id):
     headers = HEADERS_MANDATORY + HEADERS_OPTIONAL
 
-    ev = event_methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(timeline_id)
     df = pd.read_json(json.dumps(ev['events']))
     if('isEndEvent' in df.columns):
         df = df[df['isEndEvent'] != True]
@@ -42,7 +41,7 @@ def download_events(timeline_id):
 @token_required
 @error_handler
 def get_events(timeline_id):
-    ev = event_methods.get_events(app.config['db'] ,timeline_id)
+    ev = event_methods.get_events(timeline_id)
     return json.dumps(ev)
 
 @events_bp.route("/create-event", endpoint="create_event", methods=['POST'])
@@ -50,9 +49,9 @@ def get_events(timeline_id):
 @token_required
 def create_event():
     event = json.loads(request.form.get('event'))
-    event_quotas_exceeded(event)
-    event = event_methods.create_events(app.config['db'], [event])[0]
-    event_id = app.config['db'].add('events', event)
+    db.event_quotas_exceeded(event)
+    event = event_methods.create_events([event])[0]
+    event_id = db.add('events', event)
     event['id'] = event_id
     image_methods.handle_image(request, event)
     return json.dumps(event)
@@ -62,9 +61,8 @@ def create_event():
 @token_required
 @error_handler
 def upload_events():
-    db = app.config['db']
     try:
-        processed_events = event_methods.create_events(db, request.json)
+        processed_events = event_methods.create_events(request.json)
         db.add_batch('events', processed_events)
     except Exception as e:
         print_full_exception(e)
@@ -76,8 +74,8 @@ def upload_events():
 @error_handler
 def edit_event():
     event = json.loads(request.form.get('event'))
-    event, _ = event_methods.create_or_edit_preprocessing(app.config['db'], event)    
-    app.config['db'].edit('events', event['id'], {**event, 'isDefault': False})
+    event, _ = event_methods.create_or_edit_preprocessing(event)    
+    db.edit('events', event['id'], {**event, 'isDefault': False})
     image_methods.handle_image(request, event)
     return json.dumps(event)
 
@@ -93,7 +91,7 @@ def generate_image():
 @token_required
 @error_handler
 def delete_event(event_id):
-    app.config['db'].delete("events", event_id)
+    db.delete("events", event_id)
     return json.dumps({})
 
 
@@ -101,18 +99,18 @@ def delete_event(event_id):
 @token_required
 @error_handler
 def get_categories(timeline_id):
-    categories = app.config['db'].get("categories", where=('tid', '==', timeline_id))
+    categories = db.get("categories", where=('tid', '==', timeline_id))
     return json.dumps(categories)
 
 @events_bp.route("/categories/<category_id>", endpoint="delete_category", methods=['DELETE'])
 @token_required
 @error_handler
 def delete_category(category_id):
-    app.config['db'].delete("categories", category_id)
-    events = app.config['db'].get("events", where=('category', '==', category_id))
+    db.delete("categories", category_id)
+    events = db.get("events", where=('category', '==', category_id))
     for event in events:
         event['categoryId'] = None
-        event_methods.create_or_edit_preprocessing(app.config['db'], event)
+        event_methods.create_or_edit_preprocessing(event)
     return json.dumps({})
 
 

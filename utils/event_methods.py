@@ -7,6 +7,7 @@ from utils.utils import get_secret
 import os
 import re
 import datetime
+from config import db
 
 
 def strip_decimal_zeros(event):
@@ -34,7 +35,7 @@ def strip_leading_zeros(event): #to avoid dates like 0010-01-01
 
 
 
-def create_or_edit_preprocessing(db, event, categories = None):
+def create_or_edit_preprocessing(event, categories = None):
     if categories == None:
         categories = db.get('categories', where=('tid', '==', event['tid']))
 
@@ -69,7 +70,7 @@ def create_or_edit_preprocessing(db, event, categories = None):
     return event, categories
     
 
-def create_events(db, events):
+def create_events(events):
     for event in events:
         for key in list(event.keys()):
             if ' (optional)' in key:
@@ -79,7 +80,7 @@ def create_events(db, events):
     processed_events = []
     for event in events:
         event['uid'] = db.uid
-        event, categories = create_or_edit_preprocessing(db, event, categories)
+        event, categories = create_or_edit_preprocessing(event, categories)
         processed_events.append(event)
     return processed_events
 
@@ -105,7 +106,7 @@ def assign_none_to_empty(events):
                 event[col] = ''
     return events
 
-def get_events(db, timeline_id):    
+def get_events(timeline_id):    
     events = db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     if(len(events) < 1):

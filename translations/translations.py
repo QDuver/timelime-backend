@@ -158,7 +158,7 @@ def translate_timeline():
 
     db.set_user(User(db, uid='0Gu3S71O2Thq0bSv5DTY7pszf1P2'))
     
-    events = event_methods.get_events(db, space_exploration["tid"])['events']
+    events = event_methods.get_events(space_exploration["tid"])['events']
     events = pd.DataFrame(events)
     events = events.loc[events['isEndEvent'] != True]
     events = events.loc[events['isStepDate'] != True]
@@ -183,8 +183,8 @@ def translate_timeline():
         df2 = pd.DataFrame(json.loads(resp))
         events = df2.join(events[['startDate', 'endDate', 'imageURL', 'categoryColor']])
         timeline = create_new_timeline(translation["timeline_name"], 'manual')
-        timeline = _process_timeline(db, timeline)
+        timeline = _process_timeline(timeline)
         events['tid'] = timeline['id']
-        default_events = event_methods.create_events(db, events.to_dict('records'))
+        default_events = event_methods.create_events(events.to_dict('records'))
         db.add_batch('events', default_events)
         print(translation, timeline['id'])

@@ -8,10 +8,10 @@ import config
 import utils
 config.init()
 from config import db
+from utils import image_methods
 
 
 event = db.get('events', where= ('tid', '==', 'lYSxp2HDrJO03m4EwVKc'))[0]
-utils.image_methods.generate_image('google', event)
+image_methods.generate_image('google', event)
 print('COUCOU')
 
-# langchain_client.generate_image("Create an image of a halloween night at a haunted museum")

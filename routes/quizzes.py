@@ -47,7 +47,7 @@ def delete_quiz(quiz_id):
     return jsonify({"message": "Quiz deleted"}), 200
 
 
-def create_quiz_(db, tid, lang='en'):
+def create_quiz_(tid, lang='en'):
     existing_quizzes = db.get("quizzes", where=('tid', '==', tid))
 
     if(len(existing_quizzes) > 3):

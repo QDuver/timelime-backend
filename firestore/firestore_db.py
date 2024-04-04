@@ -1,14 +1,26 @@
 from firebase_admin import firestore
-from decorators.decorators import limiter
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from models.exceptions import CustomException
 from utils.constants import DEFAULT_QUOTAS
-db = None
+from functools import wraps
+
+limiter = Limiter( get_remote_address, default_limits=["10 per second"] )
 
 class FirestoreDB: 
 
-    uid = None
-    def __init__(self):
+    def __init__(self, use_limiter=True):
         self.db = firestore.client()
+        self.use_limiter = use_limiter
+        self.uid = None
+
+        if(self.use_limiter):
+            self.delete = self._apply_limit(self.delete, "30/minute")
+            self.edit = self._apply_limit(self.edit, "30/minute")
+            self.add = self._apply_limit(self.add, "40/minute")
+            self.add_batch = self._apply_limit(self.add_batch, "5/minute")
+            self.get = self._apply_limit(self.get, "20/second")
+
 
     # def forbid_if_too_many_entries(self, collection):
     #     if(collection == 'timelines' and len(self.get('timelines', where=('uid', '==', self.uid))) > 100):
@@ -19,6 +31,13 @@ class FirestoreDB:
         
     #     if(collection == 'events' and len(self.get('events', where=('uid', '==', self.uid))) > 1000):
     #         raise Exception("You've reached the maximum quota of events")
+
+
+    def _apply_limit(self, func, rate):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return limiter.limit(rate)(wrapper)
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
@@ -31,19 +50,16 @@ class FirestoreDB:
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).delete()
     
-    @limiter.limit("30/minute")
     def edit(self, collection, doc, data):
         self.forbid_if_not_owner(collection, doc)
         return self.db.collection(collection).document(doc).update(data)
 
-    @limiter.limit("40/minute")
     def add(self, collection, data, doc_id=None):
         if(doc_id):
             return self.db.collection(collection).document(doc_id).set(data)
         else:
             return self.db.collection(collection).add(data)[1].id
         
-    @limiter.limit("5/minute")
     def add_batch(self, collection, data):
         batch = self.db.batch()
         ids = []
@@ -54,7 +70,6 @@ class FirestoreDB:
         batch.commit()
         return ids
 
-    @limiter.limit("20/second")
     def get(self, collection, doc=None, where=None, order_by=None, limit=None):
         data = self.db.collection(collection)
         if doc:
@@ -71,6 +86,7 @@ class FirestoreDB:
                 return dict(data.get().to_dict(), id=doc)
         except Exception as e:
             return None
+
         
     def event_quotas_exceeded(self, event):
         if(self.user.isPremium):

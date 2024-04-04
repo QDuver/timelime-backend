@@ -4,3 +4,4 @@ from .auth import auth_bp
 from .other import other_bp
 from .payment import payment_bp
 from .quizzes import quizzes_bp
+from .playground import playground_bp

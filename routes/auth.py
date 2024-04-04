@@ -22,8 +22,8 @@ def edit_user():
     user = request.json
     del user['isPremium']
     del user['quotas']
-    app.config['db'].edit("users", user['uid'], user)
-    user = app.config['db'].get("users", user['uid'])
+    db.edit("users", user['uid'], user)
+    user = db.get("users", user['uid'])
     return user
 
 @auth_bp.route("/contact", methods=['POST'], endpoint="contact")

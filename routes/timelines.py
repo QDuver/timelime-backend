@@ -26,11 +26,10 @@ def get_timeline(timeline_id):
     timeline = db.get("timelines", doc=timeline_id)
     if(not timeline):
         raise CustomException('backend.timelineNotFound')
-    timeline = _process_timeline(db, timeline)
+    timeline = _process_timeline(timeline)
     return json.dumps(timeline)
 
-def _process_timeline(db, timeline):
-    user = db.user
+def _process_timeline(timeline):
     timeline['lastUsed'] = int(time.time())
     timeline['isEditable'] = True
     try:
@@ -55,7 +54,7 @@ def duplicate_timeline():
     utils.timeline_quotas_exceeded()
     timeline = request.json['timeline']
     new_timeline = create_new_timeline(timeline['name'] + ' (copy)', 'manual')
-    new_timeline = _process_timeline(db, new_timeline)
+    new_timeline = _process_timeline(new_timeline)
     events = db.get("events", where=('tid', '==', timeline['id']))
     
     categories = db.get("categories", where=('tid', '==', timeline['id']))
@@ -84,7 +83,7 @@ def edit_timeline():
     timeline = request.json
     db.edit("timelines", timeline['id'], timeline)
     timeline = db.get("timelines", doc=timeline['id'])
-    timeline = _process_timeline(db, timeline)
+    timeline = _process_timeline(timeline)
     return json.dumps(timeline)
 
 
@@ -96,10 +95,10 @@ def create_timeline():
     req = request.json #for some reason if I remove this, won't work
     utils.timeline_quotas_exceeded()
     timeline = create_new_timeline(generate_timeline_name(), 'manual')
-    timeline = _process_timeline(db, timeline)
+    timeline = _process_timeline(timeline)
     today = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
     yesterday = {'uid': db.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
-    default_events = event_methods.create_events(db, [today, yesterday])
+    default_events = event_methods.create_events([today, yesterday])
     db.add_batch('events', default_events)
     return json.dumps(timeline)
 
@@ -124,7 +123,7 @@ def delete_timeline(timeline_id):
     return json.dumps({})
 
 def generate_timeline_name():
-    n_timelines = len(db.get("timelines", where=('uid', '==', db.uid)))
+    n_timelines = len(et("timelines", where=('uid', '==', db.uid)))
     name = 'My new timeline' if n_timelines == 0 else f'My new timeline ({n_timelines + 1})'
     return name
 

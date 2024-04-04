@@ -1,17 +1,13 @@
 from decorators.decorators import print_full_exception
-import openai
-from firestore.firestore_db import FirestoreDB
-from models.user import User
 from utils.utils import get_secret
-import time
-from flask import current_app as app
 from google.cloud import storage
+from flask import copy_current_request_context
 from threading import Thread
 import os
 from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 GOOGLE_IMAGE_API_KEY = get_secret('SEARCH_ENGINE')
-from config import db
+from config import db, udb, user
 
 def generate_image(type, event, timelineName = None, request=None):
     if(type == 'ai'): 
@@ -22,9 +18,17 @@ def generate_image(type, event, timelineName = None, request=None):
         thread = Thread(target=handle_uploaded_image, args=(event, request))
     thread.start()
 
-
-
 def _handle_async_generation(func):
+
+    def _attach_image(event, url):
+        event['imageGenerating'] = True
+        event['imageURL'] = url
+        udb.edit('events', event['id'], event)
+
+    def _stop_loading(event):
+        event["imageGenerating"] = False
+        udb.edit('events', event["id"], event)
+
     def wrapper(*args, **kwargs):
         try:
             event = args[0]
@@ -47,7 +51,7 @@ def generate_ai_image(event):
 
 @_handle_async_generation
 def get_google_image(event):
-    timelineName = db.get('timelines', event['tid'])['name']
+    timelineName = udb.get('timelines', event['tid'])['name']
     query = f"{timelineName} {event['name']}  {event['startDate'][:4]}"
     url = _fetch_google_images(query, 10)[0]
     return url
@@ -64,8 +68,6 @@ def handle_uploaded_image(event, request):
     return url
 
 
-
-
 def get_goooge_images(eventName, timelineName=None, eventStartDate= None):
     query = f"{timelineName} {eventName}  {eventStartDate[:4]}"
     links = _fetch_google_images(query, 10)
@@ -78,12 +80,6 @@ def _fetch_google_images(query, num):
     db.user.update_ai_tracking_status('search', False, True)
     return links
 
-
-
-def _attach_image(event, url):
-    event['imageGenerating'] = True
-    event['imageURL'] = url
-    db.edit('events', event['id'], event)
 
 # def handle_image(request, event):
 #   
@@ -105,6 +101,4 @@ def _generate_prompt_from_event(event):
         prompt += f'. More details :  {event["description"]}'
     return prompt
 
-def _stop_loading(event):
-    event["imageGenerating"] = False
-    db.edit('events', event["id"], event)
+

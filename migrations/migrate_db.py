@@ -1,8 +1,6 @@
 import firebase_admin
 from firebase_admin import auth, credentials, firestore
-import os
-
-from utils.utils import set_env_variables
+from config import db
 
 def init_projects():
     preprod_cred = credentials.Certificate('secrets/GCP_CREDENTIALS.json')
@@ -70,7 +68,7 @@ def migrate_example_quizzes(tids):
         prod_db.collection('quizzes').document(quiz.id).update({'uid': 'ZhPpeqGHXVRZ73ohiwzhYtFFZ7O2'})
 
 
-def change_timeline_uid(db, old, new):
+def change_timeline_uid(old, new):
     events = db.collection('events').where('uid', '==', old).get() 
     categories = db.collection('categories').where('uid', '==', old).get()
     timelines = db.collection('timelines').where('uid', '==', old).get()

@@ -3,14 +3,11 @@ import logging
 import traceback
 from flask import jsonify, request, current_app as app
 from firebase_admin import auth
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from models.exceptions import CustomException
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 from config import db
 
-limiter = Limiter( get_remote_address, default_limits=["10 per second"] )
 
 def premium_required(type_):
     def decorator(route_function):
