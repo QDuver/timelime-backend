@@ -121,5 +121,5 @@ def delete_category(category_id):
 @error_handler
 @premium_required('search')
 def google_images():
-    links = image_methods.get_gooogle_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'], 10)
+    links = image_methods.get_google_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'])
     return jsonify({"links": links}), 200
