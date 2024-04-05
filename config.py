@@ -1,7 +1,8 @@
+import sys
 from firestore.firestore_db import FirestoreDB
+from models.user import User
 db = None
 udb = None
-user = None
 
 
 def init():

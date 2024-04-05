@@ -7,7 +7,7 @@ import os
 from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
 GOOGLE_IMAGE_API_KEY = get_secret('SEARCH_ENGINE')
-from config import db, udb, user
+from config import db, udb
 
 def generate_image(type, event, timelineName = None, request=None):
     if(type == 'ai'): 

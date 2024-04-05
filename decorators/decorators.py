@@ -37,13 +37,14 @@ def error_handler(func):
             return jsonify({"message": 'backend.somethingWentWrong'}), 500  # Return a 500 Internal Server Error
     return decorator
 
-def token_required(route_function):
+def token_required(func):
 
-    def decorated_function(*args, **kwargs):
+    def wrapper(*args, **kwargs):
+        user = db.get("users", where=('uid', '==', uid))[0]
         User(db, request = request)
-        return route_function(*args, **kwargs)
+        return func(*args, **kwargs)
     
-    return decorated_function
+    return wrapper
 
 def add_quotas(user):
     if('quotas' not in user):

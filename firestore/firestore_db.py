@@ -12,7 +12,6 @@ class FirestoreDB:
     def __init__(self, use_limiter=True):
         self.db = firestore.client()
         self.use_limiter = use_limiter
-        self.uid = None
 
         if(self.use_limiter):
             self.delete = self._apply_limit(self.delete, "30/minute")
@@ -41,8 +40,6 @@ class FirestoreDB:
 
     def forbid_if_not_owner(self, collection, doc):
         doc = self.db.collection(collection).document(doc).get().to_dict()
-        if(self.uid == 'BaxP33wjGCV5iUTKxiPs5b0Bx4c2'):
-            return
         if(doc['uid'] != self.uid):
             raise Exception('You are not the owner of this timeline')
 

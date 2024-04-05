@@ -1,9 +1,12 @@
+import sys
 import time
 from firebase_admin import auth
 from flask import jsonify
 from utils.constants import DEFAULT_QUOTAS
 from utils.utils import first_day_of_next_month
-
+from firestore.firestore_db import FirestoreDB
+import config
+user = None
 class User:
     DEFAULT_USER_SETTINGS = {
         'uid': None,
@@ -30,18 +33,18 @@ class User:
 
 
     def __init__(self, request=None, uid=None):
-
-        if(request):
-            self.request = request
-            self.set_token() 
-        else:
-            self.uid = uid
+        global user
+        self.uid = self.set_token(request) if(request) else uid
         self.populate_user_data()
-        self.remove_loading_if_too_long()
+        user = self
+
+    def get_user(self):
+        global user
+        return user
 
 
     def populate_user_data(self):
-        user = self.db.get("users", where=('uid', '==', self.uid))[0]
+        user = config.db.get("users", where=('uid', '==', self.uid))[0]
         user = self.fill_in_missing_attributes(user) if user else self.create_new_user()
 
         self.name = user.get('displayName', None)
@@ -73,20 +76,19 @@ class User:
         self.db.add("users", user, doc_id=user['uid'])            
         return user
 
-    def set_token(self):
-        if('X-Allow-Unauthorized' in self.request.headers):
-            tempId = self.request.headers['X-Allow-Unauthorized']
-            self.firebaseUser = {'uid': tempId, 'isAnonymous': True}
-            self.uid = tempId
+    def set_token(self, request):
+        if('X-Allow-Unauthorized' in request.headers):
+            uid = request.headers['X-Allow-Unauthorized']
+            self.firebaseUser = {'uid': uid, 'isAnonymous': True}
             self.isAnonymous = True
-            return
-        token = self.request.headers.get("Authorization").split(" ")[1]
+            return uid
+        token = request.headers.get("Authorization").split(" ")[1]
         firebaseResp = auth.verify_id_token(token)
         self.exp = firebaseResp['exp']
         self.expiresIn = firebaseResp['exp'] - time.time()
-        self.uid = firebaseResp['uid']
         self.isAnonymous = False
         self.firebaseUser = auth.get_user(self.uid).__dict__['_data']
+        return firebaseResp['uid']
         
     def to_dict(self):
         user_dict = {}
@@ -119,19 +121,6 @@ class User:
     def update_quotas_status(self, type):
         self.quotas[type] -= 1
         self.update_user()
-
-
-    def remove_loading_if_too_long(self):
-        trackers = ['image', 'quiz', 'timeline']
-        for tracker in trackers:
-            try:
-                if(self.generating[tracker]['loading'] and time.time() - self.generating[tracker]['started'] > 120):
-                    self.generating[tracker]['loading'] = False
-                    self.generating[tracker]['started'] = None
-                    self.generating[tracker]['generated'] = None
-                    self.update_user()
-            except:
-                pass
 
     def update_user(self):
         self.db.edit("users", self.uid, self.to_dict())
