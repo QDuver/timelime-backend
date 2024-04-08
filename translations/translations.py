@@ -3,14 +3,10 @@ import json
 import re
 import openai
 import pandas as pd
-from config import db
 from models.user import User
 from routes.timelines import _process_timeline, create_new_timeline
 from utils import event_methods
 
-from utils.utils import divide_chunks, get_secret, set_env_variables
-set_env_variables()
-openai.api_key = get_secret('OpenAPI')
 langs = [
     {'name': 'French', 'code': 'fr'},
     {'name': 'Spanish', 'code': 'es'},
@@ -19,6 +15,10 @@ langs = [
     {'name': 'Portuguese', 'code': 'pt'}
 ]
 def main():
+
+    def divide_chunks(l, n): 
+        for i in range(0, len(l), n):  
+            yield l[i:i + n] 
 
     existing_keys = ['examples']
     try:

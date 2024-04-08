@@ -1,25 +1,20 @@
 
 import logging
+import sys
 import traceback
-from flask import jsonify, request, current_app as app
-from firebase_admin import auth
+from flask import jsonify, request
 from models.exceptions import CustomException
 from models.user import User
 from utils.constants import DEFAULT_QUOTAS
 from config import db
+import config as c
 
-
-def premium_required(type_):
-    def decorator(route_function):
+def premium_required(func):
         def wrapper(*args, **kwargs):
-            if not(db.user.isPremium):
+            if not(c.user.isPremium):
                 return jsonify({"message": "backend.premiumSubscriptionRequired"}), 403
-            else:
-                if(db.user.quotas[type_] <= 0):
-                    return jsonify({"message": "backend.monthlyQuotaReached"}), 403
-            return route_function(*args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
-    return decorator
 
 def error_handler(func):
     def decorator(*args, **kwargs):
@@ -37,19 +32,13 @@ def error_handler(func):
             return jsonify({"message": 'backend.somethingWentWrong'}), 500  # Return a 500 Internal Server Error
     return decorator
 
-def token_required(func):
+def auth_required(func):
 
     def wrapper(*args, **kwargs):
-        user = db.get("users", where=('uid', '==', uid))[0]
-        User(db, request = request)
+        if c.user is None:
+            raise CustomException("backend.notAuthenticated")
         return func(*args, **kwargs)
-    
     return wrapper
-
-def add_quotas(user):
-    if('quotas' not in user):
-        user['quotas'] = DEFAULT_QUOTAS
-    return user
 
 def print_full_exception(e):
     logger = logging.getLogger('my_logger')

@@ -24,6 +24,9 @@ jobs:
         service_account_email: ${{ env.GCP_EMAIL }}
         service_account_key: ${{ secrets.GCP_CREDENTIALS_PREPROD }}
 
+    - name: Apply Database Migrations
+      run: python migrations/run.py
+
     - name: Configure Docker
       run: gcloud auth configure-docker europe-west2-docker.pkg.dev
 
@@ -40,27 +43,11 @@ jobs:
       run: docker push europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --allow-unauthenticated --port 5000 --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}} --set-env-vars FE_URL=${{env.FE_URL}} --set-env-vars BUCKET=${{env.BUCKET}}
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --allow-unauthenticated --port 5000 --region europe-west2 \
+      --set-env-vars FE_URL=${{env.FE_URL}} --set-env-vars BUCKET=${{env.BUCKET}} \
+      --set-env-vars GCP_CREDENTIALS=${{secrets.GCP_CREDENTIALS_PREPROD}} \
+      --set-env-vars STRIPE=${{secrets.STRIPE_PREPROD}} --set-env-vars STRIPE_WEBHOOK=${{secrets.STRIPE_WEBHOOK_PREPROD}}
+
 
     - name: Deploy Clean Schedule Cloud Function
-      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}} 
-
-    # - name: Deploy endpoint config
-    #   run: gcloud endpoints services deploy openapi-run.yaml --project ${{ env.GCP_PROJECT_ID }}
-
-    # - name: Run Python script
-    #   run: |
-    #     python deploy-gateway.py
-
-    # - name: Read generated ID from file
-    #   id: read-id
-    #   run: echo "GENERATED_ID=$(cat config-id.txt)" >> $GITHUB_ENV
-
-    # - name: chmod
-    #   run: chmod +x gcloud_build_image.sh
-
-    # - name: Deploy ESPV2 image
-    #   run: ./gcloud_build_image.sh -s gateway-uavkhjofda-nw.a.run.app -c ${{ env.GENERATED_ID }} -p ${{ env.GCP_PROJECT_ID }}
-
-    # - name: Deploy ESPV2 service
-    #   run: gcloud run deploy gateway --image="gcr.io/${{ env.GCP_PROJECT_ID }}/endpoints-runtime-serverless:2.45.0-gateway-uavkhjofda-nw.a.run.app-${{ env.GENERATED_ID }}" --allow-unauthenticated --region europe-west2 --platform managed --project=${{ env.GCP_PROJECT_ID }} --service-account ${{env.GCP_EMAIL}}
+      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http

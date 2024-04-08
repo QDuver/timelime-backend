@@ -1,13 +1,11 @@
 from functools import cmp_to_key
-from flask import current_app as app
+from config import db
 import time 
 import time
 from utils.constants import DEFAULT_QUOTAS, MONTHS
-from utils.utils import get_secret
 import os
 import re
 import datetime
-from config import db
 
 
 def strip_decimal_zeros(event):

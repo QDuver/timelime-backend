@@ -12,7 +12,7 @@ jobs:
       GCP_EMAIL: main-219@timelime-prod.iam.gserviceaccount.com
       GCP_PROJECT_NUMBER: 260031091728
       BUCKET: timelime-prod-bucket
-      FE_URL: https://time-lime.com
+      FE_URL: https://timelime.ai
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -23,6 +23,9 @@ jobs:
         project_id: ${{ env.GCP_PROJECT_ID }}
         service_account_email: ${{ env.GCP_EMAIL }}
         service_account_key: ${{ secrets.GCP_CREDENTIALS_PROD }}
+
+    - name: Apply Database Migrations
+      run: python migrations/run.py
 
     - name: Configure Docker
       run: gcloud auth configure-docker europe-west2-docker.pkg.dev
@@ -40,7 +43,10 @@ jobs:
       run: docker push europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest
 
     - name: Deploy to Cloud Run
-      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --allow-unauthenticated --region europe-west2 --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}} --set-env-vars FE_URL=${{env.FE_URL}} --set-env-vars BUCKET=${{env.BUCKET}}
+      run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --allow-unauthenticated --region europe-west2 \
+      --set-env-vars FE_URL=${{env.FE_URL}} --set-env-vars BUCKET=${{env.BUCKET}} \
+      --set-env-vars GCP_CREDENTIALS=${{secrets.GCP_CREDENTIALS_PROD}} \
+      --set-env-vars STRIPE=${{secrets.STRIPE_PROD}} --set-env-vars STRIPE_WEBHOOK=${{secrets.STRIPE_WEBHOOK_PROD}}
 
     - name: Deploy Clean Schedule Cloud Function
-      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http --set-env-vars GCP_PROJECT_NUMBER=${{env.GCP_PROJECT_NUMBER}}
+      run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http

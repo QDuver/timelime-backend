@@ -1,13 +1,11 @@
 from decorators.decorators import print_full_exception
-from utils.utils import get_secret
 from google.cloud import storage
-from flask import copy_current_request_context
+from config import db
 from threading import Thread
 import os
 from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
-GOOGLE_IMAGE_API_KEY = get_secret('SEARCH_ENGINE')
-from config import db, udb
+GOOGLE_IMAGE_API_KEY = os.environ.get('SEARCH_ENGINE')
 
 def generate_image(type, event, timelineName = None, request=None):
     if(type == 'ai'): 
@@ -77,7 +75,6 @@ def _fetch_google_images(query, num):
     service = build("customsearch", "v1", developerKey=GOOGLE_IMAGE_API_KEY)
     result = service.cse().list(q=query, cx=SEARCH_ENGINE_ID, searchType="image", num=num).execute()
     links = [link['link'] for link in result.get("items", [])]
-    db.user.update_ai_tracking_status('search', False, True)
     return links
 
 

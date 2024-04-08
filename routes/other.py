@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, request, current_app as app
-from decorators.decorators import premium_required, token_required, error_handler
+from flask import Blueprint, jsonify, request
+from decorators.decorators import auth_required, error_handler
 from google.cloud import error_reporting
 from utils.constants import DEFAULT_QUOTAS
 
@@ -19,7 +19,7 @@ def get_quotas():
     return jsonify(quotas), 200
 
 @other_bp.route("/report_error", endpoint="report_error", methods=['POST'])
-@token_required
+@auth_required
 @error_handler
 def report_error():
     client = get_error_reporting_client()

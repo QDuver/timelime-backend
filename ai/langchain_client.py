@@ -1,6 +1,5 @@
 from langchain.prompts.chat import ( ChatPromptTemplate, )
 from langchain_openai import ChatOpenAI, OpenAI
-from utils.utils import get_secret
 from langchain.agents import initialize_agent, load_tools
 
 def prompt_open_ai(template, template_params):

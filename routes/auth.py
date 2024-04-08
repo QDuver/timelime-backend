@@ -1,33 +1,33 @@
 
 import json
-from flask import Blueprint, request, jsonify, current_app as app
-from decorators.decorators import token_required, error_handler
+from flask import Blueprint, request, jsonify
+from decorators.decorators import auth_required, error_handler
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email
-from config import db
 from models.user import User
+import config as c
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route("/auth", endpoint="get_auth")
+@auth_bp.route("/auth", endpoint="authenticate")
 @error_handler
-@token_required
-def get_auth():
-    return  json.dumps(db.user.to_dict())
+def authenticate():
+    User(request = request)
+    return  json.dumps(c.user.__dict__)
 
 
 @auth_bp.route("/user", methods=['PUT'], endpoint="edit_user")
-@token_required
+@auth_required
 @error_handler
 def edit_user():
     user = request.json
     del user['isPremium']
     del user['quotas']
-    db.edit("users", user['uid'], user)
-    user = db.get("users", user['uid'])
+    c.db.edit("users", user['uid'], user)
+    user = c.db.get("users", user['uid'])
     return user
 
 @auth_bp.route("/contact", methods=['POST'], endpoint="contact")
-@token_required
+@auth_required
 @error_handler    
 def contact():
     sg = SendGridAPIClient('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')

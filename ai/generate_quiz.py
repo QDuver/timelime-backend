@@ -1,5 +1,4 @@
 from ai import process, prompts
-from utils.utils import get_secret
 import openai
 import pandas as pd
 pd.set_option('display.max_columns', None)
@@ -8,7 +7,6 @@ pd.set_option('display.max_columns', None)
 
 
 def main(events, lang='en'):
-    openai.api_key = get_secret('OpenAPI')
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     events = [{'name': event['name'], 'startDate': event['startDate'], 'endDate': event['endDate'], 'description': event['description']} for event in events]
     n_events = len(events) if len(events) < 10 else 10

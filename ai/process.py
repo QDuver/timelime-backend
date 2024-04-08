@@ -1,14 +1,9 @@
 import ast
 import datetime
 import re
-from decorators.decorators import print_full_exception
-import openai
-import pandas as pd
 from config import db
-import numpy as np
-from flask import current_app as app
 from utils import event_methods as events_utils
-from utils.event_methods import vaildate_date, validate_dates, process_date, handle_centuries, handle_decades
+from utils.event_methods import validate_dates, process_date, handle_centuries, handle_decades
 
 def process_dates(df):
     if not ('endDate' in df.columns):

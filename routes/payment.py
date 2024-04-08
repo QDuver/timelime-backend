@@ -1,8 +1,7 @@
 
 import stripe
-from decorators.decorators import error_handler, token_required
-from utils.utils import get_secret
-from flask import Blueprint, jsonify, request, current_app as app
+from decorators.decorators import error_handler, auth_required
+from flask import Blueprint, jsonify, request
 import os
 from config import db
 
@@ -11,9 +10,9 @@ FE_URL = os.environ.get('FE_URL')
 
 @payment_bp.route('/cancel-premium', endpoint="cancel_premium", methods=['POST'])
 @error_handler
-@token_required
+@auth_required
 def cancel_premium():
-    stripe.api_key = get_secret('stripe')
+    stripe.api_key = os.environ.get('STRIPE')
     if(db.user.stripeCustomerId):
         customer = stripe.Customer.retrieve(db.user.stripeCustomerId)
         customer_subscriptions = stripe.Subscription.list(customer=customer.id)
@@ -24,26 +23,26 @@ def cancel_premium():
 
 @payment_bp.route('/create-checkout-session', endpoint="checkout", methods=['POST'])
 @error_handler
-@token_required
+@auth_required
 def checkout():
     payload = request.json
-    stripe.api_key = get_secret('stripe')
+    stripe.api_key = os.environ.get('STRIPE')
 
     checkout_session = stripe.checkout.Session.create(
         mode='setup',
         payment_method_types=['card'],
         success_url= f'{FE_URL}/{payload["lang"]}/profile?session_id='+ '{CHECKOUT_SESSION_ID}',
         cancel_url=f'{FE_URL}/{payload["lang"]}?cancel-payment=t',
-        customer_email=app.config['db'].user.email,
-        metadata={'uid': app.config['db'].user.uid}
+        customer_email=db.user.email,
+        metadata={'uid': db.user.uid}
     )
     return jsonify({'id': checkout_session.id})
 
 
 @payment_bp.route('/stripe-webhook', endpoint="webhook", methods=['POST'])
 def webhook():
-    stripe.api_key = get_secret('stripe')
-    endpoint_secret = get_secret('stripe-webhook')
+    stripe.api_key = os.environ.get('STRIPE')
+    endpoint_secret = os.environ.get('STRIPE_WEBHOOK')
     event = stripe.Webhook.construct_event(
          request.data, request.headers['STRIPE_SIGNATURE'], endpoint_secret)
 
@@ -76,7 +75,7 @@ def create_subscription(session_id, uid):
     if(db.get('stripe_sessions', session_id)):
         return
     db.add('stripe_sessions', {}, doc_id = session_id)
-    stripe.api_key = get_secret('stripe')
+    stripe.api_key = os.environ.get('STRIPE')
     prices = stripe.Price.list( expand=['data.product'] )
     session = stripe.checkout.Session.retrieve( session_id )
     setup_intent = stripe.SetupIntent.retrieve( session["setup_intent"] )

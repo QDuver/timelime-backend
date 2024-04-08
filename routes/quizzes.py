@@ -1,26 +1,22 @@
 
-from flask import Blueprint, jsonify, request, current_app as app
-import pandas as pd
-from decorators.decorators import  premium_required, print_full_exception, token_required, error_handler
-import utils.utils as utils
+from flask import Blueprint, jsonify, request
+from decorators.decorators import  premium_required, print_full_exception, auth_required, error_handler
 from ai import generate_quiz
 from config import db
 quizzes_bp = Blueprint('quizzes', __name__)
 
 
 @quizzes_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
-@token_required
+@auth_required
 @error_handler
 @premium_required('quiz')
 def create_quiz():
-    user = db.user
-    user.abort_if_already_ai_generating()
-    quiz = create_quiz_(app.config['db'], request.json['tid'], request.json['lang'],)
+    quiz = create_quiz_(db, request.json['tid'], request.json['lang'],)
     return jsonify(quiz), 200
 
 
 @quizzes_bp.route("/get-quizzes/<tid>", endpoint="get_quizzes", methods=['GET'])
-@token_required
+@auth_required
 @error_handler
 def get_quizzes(tid):
     quizzes = db.get("quizzes", where=('tid', '==', tid), order_by=('created_on', 'ASCENDING'))
@@ -30,7 +26,7 @@ def get_quizzes(tid):
     return jsonify({"quizzes": quizzes}), 200
 
 @quizzes_bp.route("/submit-quiz/", endpoint="submit_quiz", methods=['POST'])
-@token_required
+@auth_required
 @error_handler
 def submit_quiz():
     recap = compute_quiz_results(request.json)
@@ -40,7 +36,7 @@ def submit_quiz():
 
 
 @quizzes_bp.route("/delete-quiz/<quiz_id>", endpoint="delete_quiz", methods=['DELETE'])
-@token_required
+@auth_required
 @error_handler
 def delete_quiz(quiz_id):
     db.delete("quizzes", quiz_id)
@@ -53,16 +49,13 @@ def create_quiz_(tid, lang='en'):
     if(len(existing_quizzes) > 3):
         return jsonify({"message": "backend.maxNumberOfQuizReached"}), 400
     
-    db.user.update_ai_tracking_status('quiz', True)
     try:
         events = db.get('events', where=('tid', '==', tid))
         quiz = generate_quiz.main(events)
         quiz['tid'] = tid
-        db.user.update_ai_tracking_status('quiz', False, quiz)
         db.add('quizzes', quiz)
     except Exception as e:
         print_full_exception(e)
-        db.user.update_ai_tracking_status('quiz', False)
         raise Exception("Error generating quiz")
 
     

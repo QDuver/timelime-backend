@@ -7,8 +7,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain.output_parsers import PydanticOutputParser
 from typing import List, Optional
 
-from utils import event_methods
-from utils.utils import get_secret
 OPEN_API_MODEL = "gpt-3.5-turbo" 
 pd.set_option('display.max_columns', None)
 
