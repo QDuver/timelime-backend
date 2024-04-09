@@ -1,23 +1,19 @@
 
 import logging
-import sys
+from flask import jsonify
 import traceback
-from flask import jsonify, request
 from models.exceptions import CustomException
-from models.user import User
-from utils.constants import DEFAULT_QUOTAS
-from config import db
 import config as c
 
 def premium_required(func):
         def wrapper(*args, **kwargs):
-            if not(c.user.isPremium):
-                return jsonify({"message": "backend.premiumSubscriptionRequired"}), 403
+            if ((c.user is None) or (not c.user.isPremium)):
+                return CustomException('backend.premiumSubscriptionRequired')
             return func(*args, **kwargs)
         return wrapper
 
 def error_handler(func):
-    def decorator(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except CustomException as e:
@@ -30,15 +26,26 @@ def error_handler(func):
 
             print_full_exception(e)
             return jsonify({"message": 'backend.somethingWentWrong'}), 500  # Return a 500 Internal Server Error
-    return decorator
+    return wrapper
 
 def auth_required(func):
-
     def wrapper(*args, **kwargs):
         if c.user is None:
             raise CustomException("backend.notAuthenticated")
         return func(*args, **kwargs)
     return wrapper
+
+def igore_error_on_prod_but_raise_on_preprod(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if(c.is_prod()):
+                pass
+            else:
+                raise(e)
+    return wrapper
+
 
 def print_full_exception(e):
     logger = logging.getLogger('my_logger')

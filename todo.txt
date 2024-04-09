@@ -1,6 +1,11 @@
 Find tool to remove unnecessary imports and functions
+AI errors : ignore if on Prod, raise if on Staging
+generate timeline in different languages
+async image assocation
 handle nextQuotaRefresh
 handle AI quotas
 refactor print_full_exception
 separate anonymousUser from user
 create Clients
+Event and Timeline to models
+remove uid from events and categories

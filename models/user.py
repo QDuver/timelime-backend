@@ -3,32 +3,41 @@ import time
 from firebase_admin import auth
 from flask import jsonify
 from models.exceptions import CustomException
-from utils.constants import DEFAULT_QUOTAS
 import config as c
 
-class User:
-    DEFAULT_USER_SETTINGS = {
-        'uid': None,
-        'isPremium': False,
-        'isDarkMode': False,
-        'isScaled': False,
-        'lastLongPressHint': None,
-        'quotas': DEFAULT_QUOTAS,
-        'generating': {},
-        'quizResults': [], 
-        'joinedOn': None,
-        'lastLogin': None,
-        'displayName': None,
-        'email': None,
-        'photoUrl': None,
-        'isAnonymous': False,
-        'exp': None,
-        'expiresIn': None,
-        'lastPaymentFailed': None,
-        'stripeCustomerId': None,
-        'language': 'en'
-    }
 
+DEFAULT_QUOTAS = {
+    'search': 300,
+    'quiz': 200,
+    'timeline': 200,
+    'timelines_free': 5,
+    'events_free': 30,
+    'image': 50,
+    'premium': 3.5
+}   
+
+DEFAULT_USER_SETTINGS = {
+    'uid': None,
+    'isPremium': False,
+    'isDarkMode': False,
+    'isScaled': False,
+    'lastLongPressHint': None,
+    'quotas': DEFAULT_QUOTAS,
+    'generating': {},
+    'quizResults': [], 
+    'joinedOn': None,
+    'lastLogin': None,
+    'displayName': None,
+    'email': None,
+    'photoUrl': None,
+    'isAnonymous': False,
+    'exp': None,
+    'expiresIn': None,
+    'lastPaymentFailed': None,
+    'stripeCustomerId': None,
+    'language': 'en'
+}
+class User:
 
     def __init__(self, request=None, uid=None):
         self.uid = self.parse_token(request) if uid is None else uid
@@ -39,13 +48,13 @@ class User:
 
 
     def set_(self, user):
-        for key, default in self.DEFAULT_USER_SETTINGS.items():
+        for key, default in DEFAULT_USER_SETTINGS.items():
                 setattr(self, key, user.get(key, default))
         c.user = self
         self.update_user()
         
     def create_new_user(self):
-        user = self.DEFAULT_USER_SETTINGS
+        user = DEFAULT_USER_SETTINGS
         user['uid'] = self.uid
         user['isAnonymous'] = self.isAnonymous
         user['joinedOn'] = time.time()
@@ -71,7 +80,7 @@ class User:
         
     def to_dict(self):
         user_dict = {}
-        for attr in list(self.DEFAULT_USER_SETTINGS.keys()):
+        for attr in list(DEFAULT_USER_SETTINGS.keys()):
             user_dict[attr] = getattr(self, attr)
         return user_dict
 
@@ -90,7 +99,7 @@ class User:
             quotas = DEFAULT_QUOTAS['events_free']
             error = 'backend.freeEventsQuotaReached'
         if(type_=='timelines'):
-            n = len(c.db.get('timelines', where=('uid', '==', c.db.uid)))
+            n = len(c.db.get('timelines', where=('uid', '==', c.user.uid)))
             quotas = DEFAULT_QUOTAS['timelines_free']
             error = f'backend.freeTimelinesQuotaReached.{quotas}'
         if(n >= quotas):

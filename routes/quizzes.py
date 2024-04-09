@@ -1,8 +1,8 @@
 
 from flask import Blueprint, jsonify, request
-from decorators.decorators import  premium_required, print_full_exception, auth_required, error_handler
-from ai import generate_quiz
+from utils.decorators import  premium_required, print_full_exception, auth_required, error_handler
 from config import db
+from utils.quizzes import generate_ai_quiz
 quizzes_bp = Blueprint('quizzes', __name__)
 
 
@@ -51,7 +51,7 @@ def create_quiz_(tid, lang='en'):
     
     try:
         events = db.get('events', where=('tid', '==', tid))
-        quiz = generate_quiz.main(events)
+        quiz = generate_ai_quiz(events)
         quiz['tid'] = tid
         db.add('quizzes', quiz)
     except Exception as e:

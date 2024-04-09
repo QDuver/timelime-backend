@@ -1,6 +1,6 @@
 
 import stripe
-from decorators.decorators import error_handler, auth_required
+from utils.decorators import error_handler, auth_required
 from flask import Blueprint, jsonify, request
 import os
 from config import db

@@ -1,4 +1,4 @@
-from decorators.decorators import print_full_exception
+from utils.decorators import print_full_exception
 from google.cloud import storage
 from config import db
 from threading import Thread

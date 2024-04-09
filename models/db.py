@@ -1,5 +1,4 @@
 from firebase_admin import firestore
-from utils.constants import DEFAULT_QUOTAS
 from functools import wraps
 import config as c
 
@@ -83,4 +82,4 @@ class FirestoreDB:
             return
         doc = self.db.collection(collection).document(doc).get().to_dict()
         if(c.user.uid != doc['uid']):
-            raise Exception('You are not the owner of this timeline')
+            raise Exception('You are not the owner')

@@ -1,7 +1,7 @@
 
 import json
 from flask import Blueprint, request, jsonify
-from decorators.decorators import auth_required, error_handler
+from utils.decorators import auth_required, error_handler
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email
 from models.user import User

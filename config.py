@@ -4,12 +4,26 @@ from firebase_admin import credentials
 import os
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
+import json
 
 
 db = None
 udb = None
 user = None
 limiter = None
+
+def is_prod():
+    if(os.environ.get('FE_URL') == 'https://timelime.ai'):
+        return False
+    else:
+        return True
+
+def set_env_vars():
+    if(os.environ['COMPUTERNAME'] == 'LONESSDUVERGQ'):
+        os.environ['GCP_CREDENTIALS'] = 'C:/GroupM/Scripts/projects/timelime-dev-697e4c998738.json'
+        with open('C:/GroupM/Scripts/projects/openai.json', 'r') as file:
+            openai = json.load(file)
+        os.environ['OPENAI_API_KEY'] = openai["key"]
 
 def init_firebase():
     firebase_admin.initialize_app(credentials.Certificate(os.environ.get('GCP_CREDENTIALS')))

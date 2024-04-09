@@ -5,7 +5,7 @@ import openai
 import pandas as pd
 from models.user import User
 from routes.timelines import _process_timeline, create_new_timeline
-from utils import event_methods
+from utils import events
 
 langs = [
     {'name': 'French', 'code': 'fr'},
@@ -158,7 +158,7 @@ def translate_timeline():
 
     db.set_user(User(db, uid='0Gu3S71O2Thq0bSv5DTY7pszf1P2'))
     
-    events = event_methods.get_events(space_exploration["tid"])['events']
+    events = events.get_events(space_exploration["tid"])['events']
     events = pd.DataFrame(events)
     events = events.loc[events['isEndEvent'] != True]
     events = events.loc[events['isStepDate'] != True]
@@ -185,6 +185,6 @@ def translate_timeline():
         timeline = create_new_timeline(translation["timeline_name"], 'manual')
         timeline = _process_timeline(timeline)
         events['tid'] = timeline['id']
-        default_events = event_methods.create_events(events.to_dict('records'))
+        default_events = events.create_events(events.to_dict('records'))
         db.add_batch('events', default_events)
         print(translation, timeline['id'])

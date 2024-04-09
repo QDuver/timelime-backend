@@ -1,12 +1,44 @@
 from functools import cmp_to_key
-from config import db
+import config as c
 import time 
-import time
-from utils.constants import DEFAULT_QUOTAS, MONTHS
-import os
 import re
 import datetime
 
+from utils.decorators import igore_error_on_prod_but_raise_on_preprod
+
+
+MONTHS = {'january': 1, 'february': 2, 'march': 3, 'april': 4,
+        'may': 5, 'june': 6, 'july': 7, 'august': 8,
+        'september': 9, 'october': 10, 'november': 11, 'december': 12}
+
+
+def duplicate_events(old_timeline, new_timeline, duplicated_categories):
+    events = c.db.get("events", where=('tid', '==', old_timeline['id']))    
+    for event in events:
+        event['tid'] = new_timeline['id']
+        if 'categoryId' in event and event['categoryId'] is not None:
+            event['categoryId'] = duplicated_categories[event['categoryId']]            
+        del event['id']
+    return events
+
+def duplicate_categories(old_timeline, new_timeline):
+    categories = c.db.get("categories", where=('tid', '==', old_timeline['id']))
+
+    duplicated_categories = {}
+    for category in categories:
+        category_id = category['id']
+        del category['id']
+        category['tid'] = new_timeline['id']
+        category['uid'] = c.user.uid
+        new_id = c.db.add("categories", category)
+        duplicated_categories[category_id] = new_id
+
+    return duplicated_categories
+
+def assign_tid(events, timeline):
+    for event in events:
+        event['tid'] = timeline['id']
+    return events
 
 def strip_decimal_zeros(event):
     if('startDate' in event and event['startDate'] and '.0' in event['startDate']):
@@ -15,9 +47,9 @@ def strip_decimal_zeros(event):
         event['endDate'] = event['endDate'].rstrip('.0')
     return event
 
+@igore_error_on_prod_but_raise_on_preprod
 def strip_leading_zeros(event): #to avoid dates like 0010-01-01
-
-    def handle_if_dash_as_first(date): # to avoid dates like -0010-01-01
+    def handle_if_dash_as_first(date):
         if(not date):
             return '0'
         return date if date[0] != '-' else '0'+date
@@ -35,10 +67,10 @@ def strip_leading_zeros(event): #to avoid dates like 0010-01-01
 
 def create_or_edit_preprocessing(event, categories = None):
     if categories == None:
-        categories = db.get('categories', where=('tid', '==', event['tid']))
+        categories = c.db.get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' in event and event['categoryId']): #if category exists, but in case color or name may have changed
-        db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
+        c.db.edit('categories', event['categoryId'], {'color': event['categoryColor'], 'name': event['categoryName']})   
 
     elif('categoryName' in event and 'categoryColor' in event and event['categoryName'] and event['categoryColor']): #presence of categoryName and Color but no categoryId, check if one already exists
         foundCategory = False
@@ -48,8 +80,8 @@ def create_or_edit_preprocessing(event, categories = None):
                 foundCategory = True
                 break
         if(not foundCategory):
-            event['categoryId'] = db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': db.uid})
-            categories = db.get('categories', where=('tid', '==', event['tid']))
+            event['categoryId'] = c.db.add('categories', {'color': event['categoryColor'], 'name': event['categoryName'], 'tid': event['tid'], 'uid': c.db.uid})
+            categories = c.db.get('categories', where=('tid', '==', event['tid']))
 
     if('categoryId' not in event): 
         event['categoryId'] = None
@@ -67,6 +99,11 @@ def create_or_edit_preprocessing(event, categories = None):
     event['lastUsed'] = int(time.time())
     return event, categories
     
+def create_default_events(timeline):
+    today = {'uid': c.user.uid, 'tid': timeline['id'], 'name': f'Today', 'startDate': datetime.datetime.now().strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    yesterday = {'uid': c.user.uid, 'tid': timeline['id'], 'name': f'Yesterday', 'startDate': (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), 'categoryColor': '', 'categoryName': '', 'isDefault': True}
+    default_events = create_events([today, yesterday])
+    return default_events
 
 def create_events(events):
     for event in events:
@@ -74,10 +111,10 @@ def create_events(events):
             if ' (optional)' in key:
                 event[key.replace(' (optional)', '')] = event.pop(key)
 
-    categories = db.get('categories', where=('tid', '==', events[0]['tid']))
+    categories = c.db.get('categories', where=('tid', '==', events[0]['tid']))
     processed_events = []
     for event in events:
-        event['uid'] = db.uid
+        event['uid'] = c.db.uid
         event, categories = create_or_edit_preprocessing(event, categories)
         processed_events.append(event)
     return processed_events
@@ -105,11 +142,11 @@ def assign_none_to_empty(events):
     return events
 
 def get_events(timeline_id):    
-    events = db.get('events', where=('tid', '==', timeline_id))
+    events = c.db.get('events', where=('tid', '==', timeline_id))
     events = [event for event in events if 'name' in event and 'startDate' in event and event['startDate']]
     if(len(events) < 1):
         return {'events': [], 'categories': []}
-    categories = db.get('categories', where=('tid', '==', timeline_id))
+    categories = c.db.get('categories', where=('tid', '==', timeline_id))
     categories = [category for category in categories if 'name' in category and category['name']]
     events = merge_with_categories(events, categories)
     events = create_end_events(events)
@@ -222,7 +259,6 @@ def date_to_days(date):
 
 
 def  split_date(date, default=None):
-
     date = str(date)
     isNegative = False
     if (date[0] == '-'):
@@ -262,7 +298,8 @@ def process_negative_literals(date):
         newDate = '-'+newDate
     return newDate
 
-def process_date(date):
+@igore_error_on_prod_but_raise_on_preprod
+def process_event_date(date):
     if(date == None): return None
     newDate = date.lower().strip()
     newDate = newDate.replace(', ', '')
@@ -292,21 +329,19 @@ def process_date(date):
 
     return newDate
 
-
+@igore_error_on_prod_but_raise_on_preprod
 def handle_centuries(event):
     if('century' in event['startDate']):
         event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
         event['endDate'] = str(int(event['startDate']) + 100)
     return event
 
+@igore_error_on_prod_but_raise_on_preprod
 def handle_decades(event):
     if('s' in event['startDate']):
         event['startDate'] = re.search(r'\d+', event['startDate']).group()
         event['endDate'] = str(int(event['startDate']) + 10)
     return event
-
-
-
 
 def vaildate_date(date):
     if(date == None): return
