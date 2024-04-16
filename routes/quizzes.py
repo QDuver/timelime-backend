@@ -9,7 +9,7 @@ quizzes_bp = Blueprint('quizzes', __name__)
 @quizzes_bp.route("/create-quiz/", endpoint="create_quiz", methods=['POST'])
 @auth_required
 @error_handler
-@premium_required('quiz')
+@premium_required
 def create_quiz():
     quiz = create_quiz_(db, request.json['tid'], request.json['lang'],)
     return jsonify(quiz), 200

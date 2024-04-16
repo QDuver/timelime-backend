@@ -1,7 +1,8 @@
 from utils.decorators import print_full_exception
 from google.cloud import storage
-from config import db
+import config as c
 from threading import Thread
+from clients import dalle
 import os
 from googleapiclient.discovery import build
 SEARCH_ENGINE_ID = "90d862b25c6fc454e"
@@ -9,30 +10,22 @@ GOOGLE_IMAGE_API_KEY = os.environ.get('SEARCH_ENGINE')
 
 def generate_image(type, event, timelineName = None, request=None):
     if(type == 'ai'): 
-        thread = Thread(target=generate_ai_image, args=(event,))
+        return generate_ai_image(event,)
     elif(type == 'google'): 
-        thread = Thread(target=get_google_image, args=(event,))
+        return get_google_image(event,)
     elif(type == 'upload'): 
-        thread = Thread(target=handle_uploaded_image, args=(event, request))
-    thread.start()
+        return handle_uploaded_image(event, request)
 
-def _handle_async_generation(func):
-
-    def _attach_image(event, url):
-        event['imageGenerating'] = True
-        event['imageURL'] = url
-        udb.edit('events', event['id'], event)
-
-    def _stop_loading(event):
-        event["imageGenerating"] = False
-        udb.edit('events', event["id"], event)
+def _handle_generation(func):
 
     def wrapper(*args, **kwargs):
         try:
+            c.init_udb()
             event = args[0]
             url = func(*args, **kwargs)
             _attach_image(event, url)
             _stop_loading(event)
+            return url
         except Exception as e:
             _stop_loading(event)
             print_full_exception(e)
@@ -40,21 +33,24 @@ def _handle_async_generation(func):
 
     return wrapper
 
-@_handle_async_generation
+@_handle_generation
 def generate_ai_image(event):
+    print('Generating AI image')
     prompt = _generate_prompt_from_event(event)
+    print('Prompt:', prompt)
     url = dalle.generate_image(prompt)
+    print('Generated AI image', url)
     return url
 
 
-@_handle_async_generation
+@_handle_generation
 def get_google_image(event):
-    timelineName = udb.get('timelines', event['tid'])['name']
+    timelineName = c.db.get('timelines', event['tid'])['name']
     query = f"{timelineName} {event['name']}  {event['startDate'][:4]}"
     url = _fetch_google_images(query, 10)[0]
     return url
 
-@_handle_async_generation
+@_handle_generation
 def handle_uploaded_image(event, request):
     bucket_name = os.environ.get('BUCKET')
     file = request.files['file']
@@ -86,9 +82,17 @@ def _fetch_google_images(query, num):
 #         event['imageGenerating'] = True
 #         db.edit('events', event['id'], event)
 
+def _attach_image(event, url):
+    event['imageGenerating'] = True
+    event['imageURL'] = url
+    c.udb.edit('events', event['id'], event)
+
+def _stop_loading(event):
+    event["imageGenerating"] = False
+    c.udb.edit('events', event["id"], event)
 
 def _generate_prompt_from_event(event):
-    timelineName = db.get('timelines', event['tid'])['name']
+    timelineName = c.udb.get('timelines', event['tid'])['name']
     if('timeline' in timelineName.lower()):
         timelineName = ''
     prompt = f'A realistic futuristic photograph of {event["name"]}'

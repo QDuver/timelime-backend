@@ -60,7 +60,7 @@ def create_manual_timeline():
 
 @timeline_bp.route("/ai-timeline", endpoint="create_ai_timeline", methods=['POST'])
 @auth_required
-@premium_required('timeline')
+@premium_required
 @error_handler
 def create_ai_timeline():
     timeline = generate_ai_timeline(request.json['timelineName'], request.json['nEvents'], request.json['lang'])

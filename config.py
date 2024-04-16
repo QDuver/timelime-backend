@@ -14,9 +14,9 @@ limiter = None
 
 def is_prod():
     if(os.environ.get('FE_URL') == 'https://timelime.ai'):
-        return False
-    else:
         return True
+    else:
+        return False
 
 def set_env_vars():
     if(os.environ['COMPUTERNAME'] == 'LONESSDUVERGQ'):

@@ -1,11 +1,9 @@
 from functools import cmp_to_key
+import json
 import config as c
 import time 
 import re
 import datetime
-
-from utils.decorators import igore_error_on_prod_but_raise_on_preprod
-
 
 MONTHS = {'january': 1, 'february': 2, 'march': 3, 'april': 4,
         'may': 5, 'june': 6, 'july': 7, 'august': 8,
@@ -47,7 +45,6 @@ def strip_decimal_zeros(event):
         event['endDate'] = event['endDate'].rstrip('.0')
     return event
 
-@igore_error_on_prod_but_raise_on_preprod
 def strip_leading_zeros(event): #to avoid dates like 0010-01-01
     def handle_if_dash_as_first(date):
         if(not date):
@@ -298,7 +295,6 @@ def process_negative_literals(date):
         newDate = '-'+newDate
     return newDate
 
-@igore_error_on_prod_but_raise_on_preprod
 def process_event_date(date):
     if(date == None): return None
     newDate = date.lower().strip()
@@ -313,7 +309,7 @@ def process_event_date(date):
         newDate = process_negative_literals(newDate)
     if('bby' in newDate):
         newDate = process_negative_literals(newDate)
-    if('ce' in newDate):
+    if('ce' in newDate and 'tury' not in newDate):
         newDate = newDate.replace('ce', '')
     if('ad' in newDate):
         newDate = newDate.replace('ad', '')
@@ -326,38 +322,40 @@ def process_event_date(date):
         newDate = datetime.datetime.now().year
 
     newDate = str(newDate).strip()
-
     return newDate
 
-@igore_error_on_prod_but_raise_on_preprod
 def handle_centuries(event):
     if('century' in event['startDate']):
         event['startDate'] = re.search(r'\d+', event['startDate']).group() + '00'
         event['endDate'] = str(int(event['startDate']) + 100)
     return event
 
-@igore_error_on_prod_but_raise_on_preprod
 def handle_decades(event):
     if('s' in event['startDate']):
         event['startDate'] = re.search(r'\d+', event['startDate']).group()
         event['endDate'] = str(int(event['startDate']) + 10)
     return event
 
-def vaildate_date(date):
-    if(date == None): return
-    splitted = split_date(date)
-    if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
-        raise Exception('year is out of range')
 
-def validate_dates(row):
-    if(row['startDate']):
-        vaildate_date(row['startDate'])
-    if(row['endDate']):
-        vaildate_date(row['endDate'])
-    if(row['startDate'] == None or row['endDate'] == None): 
-        return row['endDate']
-    start_date = split_date(row['startDate'])
-    end_date = split_date(row['endDate'])
+def validate_date_formats(event):
+    
+    try:
+        _vaildate_date(event['startDate'])
+        _vaildate_date(event['endDate'])
+        return event
+    except Exception as e:
+        if(c.is_prod()):
+            event['name'] = 'DELETE ROW'
+            return event
+        else:
+            raise e
+
+
+def validate_end_date(event):
+    print('event', event)
+    if('endDate' in event and event['endDate'] == None): return None
+    start_date = split_date(event['startDate'])
+    end_date = split_date(event['endDate'])
     if(start_date['year'] >= end_date['year']):
         return None
     try:
@@ -370,4 +368,11 @@ def validate_dates(row):
             return None
     except KeyError:
         pass
-    return row['endDate']
+    return event['endDate']
+
+
+def _vaildate_date(date):
+    if(date == None): return
+    splitted = split_date(date)
+    if(splitted['year'] < -4600000000 or splitted['year'] > 4600000000):
+        raise Exception('year is out of range')

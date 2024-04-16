@@ -8,7 +8,7 @@ import config as c
 def premium_required(func):
         def wrapper(*args, **kwargs):
             if ((c.user is None) or (not c.user.isPremium)):
-                return CustomException('backend.premiumSubscriptionRequired')
+                raise CustomException('backend.premiumSubscriptionRequired')
             return func(*args, **kwargs)
         return wrapper
 
@@ -30,21 +30,12 @@ def error_handler(func):
 
 def auth_required(func):
     def wrapper(*args, **kwargs):
+        print('USER', c.user)
         if c.user is None:
             raise CustomException("backend.notAuthenticated")
         return func(*args, **kwargs)
     return wrapper
 
-def igore_error_on_prod_but_raise_on_preprod(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            if(c.is_prod()):
-                pass
-            else:
-                raise(e)
-    return wrapper
 
 
 def print_full_exception(e):

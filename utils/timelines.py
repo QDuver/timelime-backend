@@ -4,7 +4,7 @@ import time
 from models.exceptions import CustomException
 import config as c
 from utils import prompts
-from utils.events import assign_tid, process_event_date, handle_centuries, handle_decades, validate_dates, strip_leading_zeros
+from utils.events import assign_tid, process_event_date, handle_centuries, handle_decades, validate_date_formats, strip_leading_zeros, validate_end_date
 import json
 import numpy as np
 from clients import langchain as langchain
@@ -15,7 +15,7 @@ pd.set_option('display.max_columns', None)
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
 from typing import List, Optional
-from utils.events import validate_dates, handle_centuries, handle_decades
+from utils.events import handle_centuries, handle_decades
 
 def create_new_timeline(name, source):
     timeline = {'uid': c.user.uid, 'name': name, 'isPublic': False, 'lastUsed': int(time.time()), 'source': source}
@@ -40,7 +40,7 @@ def check_timeline_accessibility(timeline):
 
 def update_timeline(timeline):
     timeline['lastUsed'] = int(time.time())
-    c.db.edit("timelines", timeline.id, timeline)
+    c.db.edit("timelines", timeline['id'], timeline)
     return timeline
 
 
@@ -89,12 +89,17 @@ def process_ai_events(events):
     return df.to_dict(orient='records')
 
 def process_ai_events_dates(df):
+
     if not ('endDate' in df.columns):
       df['endDate'] = None
+
     df['startDate'] = df['startDate'].apply(lambda x: process_event_date(x))
     df['endDate'] = df['endDate'].apply(lambda x: process_event_date(x))
     df  = df.apply(lambda x: handle_centuries(x), axis=1)
     df  = df.apply(lambda x: handle_decades(x), axis=1)
     df = df.apply(lambda x: strip_leading_zeros(x), axis=1)
-    df['endDate'] = df.apply(validate_dates, axis=1)
+    df = df.apply(validate_date_formats, axis=1)
+    df = df[df['name'] != "DELETE_ROW"]
+
+    df['endDate'] = df.apply(lambda x: validate_end_date(x), axis=1)
     return df

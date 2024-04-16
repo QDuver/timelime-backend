@@ -81,7 +81,7 @@ def edit_event():
 @events_bp.route("/generate-image", endpoint="generate_image", methods=['POST'])
 @auth_required
 @error_handler
-@premium_required('image')
+@premium_required
 def generate_image():
     event = events.generate_image(request.json)
     return json.dumps(event)
@@ -116,7 +116,7 @@ def delete_category(category_id):
 @events_bp.route("/google-imgs", endpoint="google_images", methods=['POST'])
 @auth_required
 @error_handler
-@premium_required('search')
+@premium_required
 def google_images():
     links = images.get_google_images(request.json['eventName'], request.json['timelineName'], request.json['startDate'])
     return jsonify({"links": links}), 200
