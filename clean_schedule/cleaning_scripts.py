@@ -1,5 +1,4 @@
-
-
+import os
 from firestore import firestore_init
 from firebase_admin import firestore, auth
 from config import db
@@ -7,17 +6,19 @@ firestore_init.init()
 
 
 def delete_all_users():
+    admin_email = os.environ.get('ADMIN_EMAIL', 'quentin.duverge@gmail.com')
     page = auth.list_users()
     for user in page.users:
         user_dict = user.__dict__['_data']
-        if('email' in user_dict and user_dict['email'] == 'quentin.duverge@gmail.com'):
+        if('email' in user_dict and user_dict['email'] == admin_email):
             continue
         else:
             auth.delete_user(user.uid)
 
+    # Alternative using Firestore:
     # users = db.get('users')
     # for user in users:
-    #     if('email' in user and user['email'] == 'quentin.duverge@gmail.com'):
+    #     if('email' in user and user['email'] == admin_email):
     #         continue
     #     else:
     #         db.delete('users', user['id'])

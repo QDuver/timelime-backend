@@ -46,7 +46,11 @@ jobs:
       run: gcloud run deploy timelime-backend --image europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/timelime-backend/timelime-backend-img:latest --port 5000 --allow-unauthenticated --region europe-west2 \
       --set-env-vars FE_URL=${{env.FE_URL}} --set-env-vars BUCKET=${{env.BUCKET}} \
       --set-env-vars GCP_CREDENTIALS=${{secrets.GCP_CREDENTIALS_PROD}} \
-      --set-env-vars STRIPE=${{secrets.STRIPE_PROD}} --set-env-vars STRIPE_WEBHOOK=${{secrets.STRIPE_WEBHOOK_PROD}}
+      --set-env-vars OPENAI_API_KEY=${{secrets.OPENAI_API_KEY_PROD}} \
+      --set-env-vars STRIPE=${{secrets.STRIPE_PROD}} --set-env-vars STRIPE_WEBHOOK=${{secrets.STRIPE_WEBHOOK_PROD}} \
+      --set-env-vars SENDGRID_API_KEY=${{secrets.SENDGRID_API_KEY_PROD}} \
+      --set-env-vars CONTACT_EMAIL=${{secrets.CONTACT_EMAIL}} \
+      --set-env-vars ADMIN_EMAIL=${{secrets.ADMIN_EMAIL}}
 
     - name: Deploy Clean Schedule Cloud Function
       run: gcloud functions deploy clean-schedule --runtime python38 --region europe-west2 --source clean_schedule --trigger-http

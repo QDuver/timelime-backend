@@ -4,3 +4,27 @@ __pycache__/
 ai/generated/quizzes/*
 ai/generated/timelines/*
 *.pyc
+
+# Environment and credential files
+.env
+.env.*
+!.env.example
+*.json
+!package.json
+!tsconfig.json
+
+# Private keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+
+# IDE and OS files
+.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Local development files
+local_config.py

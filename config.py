@@ -19,11 +19,15 @@ def is_prod():
         return False
 
 def set_env_vars():
-    if(os.environ['COMPUTERNAME'] == 'LONESSDUVERGQ'):
-        os.environ['GCP_CREDENTIALS'] = 'C:/GroupM/Scripts/projects/timelime-dev-697e4c998738.json'
-        with open('C:/GroupM/Scripts/projects/openai.json', 'r') as file:
+    # For local development, set environment variables if not already set
+    # In production, these should be set by the deployment environment
+    if not os.environ.get('GCP_CREDENTIALS') and os.environ.get('LOCAL_DEV_CREDENTIALS_PATH'):
+        os.environ['GCP_CREDENTIALS'] = os.environ.get('LOCAL_DEV_CREDENTIALS_PATH')
+
+    if not os.environ.get('OPENAI_API_KEY') and os.environ.get('LOCAL_OPENAI_KEY_PATH'):
+        with open(os.environ.get('LOCAL_OPENAI_KEY_PATH'), 'r') as file:
             openai = json.load(file)
-        os.environ['OPENAI_API_KEY'] = openai["key"]
+            os.environ['OPENAI_API_KEY'] = openai["key"]
 
 def init_firebase():
     firebase_admin.initialize_app(credentials.Certificate(os.environ.get('GCP_CREDENTIALS')))

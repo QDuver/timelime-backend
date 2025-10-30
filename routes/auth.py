@@ -1,5 +1,6 @@
 
 import json
+import os
 from flask import Blueprint, request, jsonify
 from utils.decorators import auth_required, error_handler
 from sendgrid import SendGridAPIClient
@@ -28,12 +29,12 @@ def edit_user():
 
 @auth_bp.route("/contact", methods=['POST'], endpoint="contact")
 @auth_required
-@error_handler    
+@error_handler
 def contact():
-    sg = SendGridAPIClient('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')
+    sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
     message = Mail(
-        to_emails="quentin.duverge@gmail.com",
-        from_email=Email("quentin.duverge@gmail.com", request.json["email"]),
+        to_emails=os.environ.get('CONTACT_EMAIL', 'quentin.duverge@gmail.com'),
+        from_email=Email(os.environ.get('CONTACT_EMAIL', 'quentin.duverge@gmail.com'), request.json["email"]),
         subject="Someone contacting you from Timelime",
         html_content= request.json['message']
         )
