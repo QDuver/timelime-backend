@@ -12,6 +12,7 @@ udb = None
 user = None
 limiter = None
 
+
 def is_prod():
     if(os.environ.get('FE_URL') == 'https://timelime.ai'):
         return True

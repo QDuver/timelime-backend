@@ -9,6 +9,7 @@ from models.user import User
 import config as c
 auth_bp = Blueprint('auth', __name__)
 
+
 @auth_bp.route("/auth", endpoint="authenticate")
 @error_handler
 def authenticate():
